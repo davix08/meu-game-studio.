@@ -406,9 +406,9 @@ OBJETIVO FINAL: Criar um simulador de pesca 2D em Pixel Art, com exploração, c
 **Intent:** payoff builds *(provisional)*
 
 ## Look and references
-- Look: pixel art estilo RPG clássico, resolução interna 320x180 com escala inteira; paleta natural: verde (grama, copas), azul em degradê (água, mais escuro no fundo), marrom (terra, madeira), creme (interface retrô); água com ondas animadas, plantas balançando, sombras de peixes nadando; a noite cobre o mapa de azul escuro, com a janela da casa de pesca acesa; cada personagem e peixe desenhado, nunca emoji nem círculos simples.
-- References: RPGs clássicos em pixel art (a visão de cima, a interface retrô) *(inferred (strong))*.
-- View: 2D · Camera: top-down, seguindo o pescador, presa às bordas do mapa.
+- Look: 3D estilizado, aconchegante, como jogos de fazenda em 3D: terreno verde, caminhos de terra, árvores, pedras, flores, cercas, casas com telhados detalhados, lagos e píeres de madeira; personagens 3D animados; cores vivas e naturais (verde, azul, marrom). Sem pixel art. A referência é o vídeo do usuário, que não chegou: capturas de tela em references/ ajudam. *(you said, 2026-11-11 after play)*
+- References: jogos aconchegantes de fazenda em 3D *(you said; the video was not received)*. O protótipo 2D (`prototypes/lakebound/`, tag `one-shot/lakebound`) é a referência de regras e números.
+- View: 3D · Camera: superior inclinada, perspectiva isométrica, seguindo o pescador; adequada a telas pequenas de celular na horizontal.
 
 ## First minute
 O pescador acorda na margem às 6h ao lado da casa de pesca, com vara de bambu e isca simples. Uma dica curta aponta a água. Ele anda até a beira e toca na água: a boia cai, em alguns segundos surge um "!". Ele segura PUXAR, a barra aparece, a primeira Sardinha é fácil de manter na zona verde. "NOVA ESPÉCIE!", e o Livro marca 1/35.
@@ -434,6 +434,9 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 - [x] 6 níveis com tela de evolução, espécies liberadas e recompensa em moedas
 - [x] Energia, descanso, relógio de dia e noite em 4 períodos, sono automático
 - [x] Livro de Peixes, interface completa, controles de toque e teclado, salvamento automático
+- [ ] Etapa 1, base: dados do 2D (35 espécies, varas, iscas, níveis e valores de ajuste) no Godot, lógica separada do desenho, testes automáticos da pesca, economia e níveis
+- [ ] Etapa 2, esqueleto 3D: terreno, lago com água, câmera inclinada, pescador andando com joystick virtual e colisão
+- [ ] Etapa 3, pesca em 3D: tocar na água, lançar a boia, mordida, a mesma barra de disputa e a captura
 
 ## Your systems
 - movimentação e colisão · in the slice
