@@ -1,0 +1,166 @@
+# The one-shot's small check (check-run/1).
+# Written by one-shot-check.sh --record: the results are /prototype's reading of
+# evidence/self-check.tsv; never edited by hand.
+kind: check-run/1
+engine: web
+browser: "HeadlessChrome/153.0.0.0"
+time: "2026-11-11 17:02:37"
+checks:
+  - id: boots
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: shot
+    result: not_run
+    mark: not assessed
+    why: "the-check-browser-took-no-screenshot-here-play.png-was-taken-with-playwright"
+    evidence:
+  - id: outlines
+    result: pass
+    evidence:
+      - "evidence/figures.png"
+  - id: brief-words
+    result: pass
+    evidence:
+      - "evidence/brief-words.tsv"
+  - id: emoji
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: nearest-game
+    result: pass
+    evidence:
+      - "evidence/nearest-game.txt"
+brief_checklist:
+  - id: L1
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Look: pixel art estilo RPG clássico, resolução interna 320x180 com escala inteira; paleta natural: verde (grama, copas), azul em degradê (água, mais escuro no fundo), marrom (terra, madeira), creme (interface retrô); água com ondas animadas, plantas balançando, sombras de peixes nadando; a noite cobre o mapa de azul escuro, com a janela da casa de pesca acesa; cada personagem e peixe desenhado, nunca emoji nem círculos simples."
+  - id: L2
+    result: pass
+    evidence: "evidence/title.png"
+    item: "References: RPGs clássicos em pixel art (a visão de cima, a interface retrô) *(inferred (strong))*."
+  - id: L3
+    result: pass
+    evidence: "index.html:166"
+    item: "View: 2D · Camera: top-down, seguindo o pescador, presa às bordas do mapa."
+  - id: F1
+    result: pass
+    evidence: "evidence/house.png"
+    item: "Lago Esmeralda explorável com colisões, ilhas, vegetação e casa de pesca com balcão"
+  - id: F2
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Pesca completa: lançar, mordida, PUXAR, barra com zona verde e progresso, dificuldade por peixe"
+  - id: F3
+    result: pass
+    evidence: "evidence/figures.png"
+    item: "35 espécies em 5 raridades, cada uma com sprite próprio, peso, valor e dificuldade"
+  - id: F4
+    result: pass
+    evidence: "evidence/shop-rods.png"
+    item: "Loja: vender a bolsa; 5 varas, 6 iscas, lanche e isca da sorte, liberados por nível"
+  - id: F5
+    result: pass
+    evidence: "evidence/levelup.png"
+    item: "6 níveis com tela de evolução, espécies liberadas e recompensa em moedas"
+  - id: F6
+    result: pass
+    evidence: "evidence/rest.png"
+    item: "Energia, descanso, relógio de dia e noite em 4 períodos, sono automático"
+  - id: F7
+    result: pass
+    evidence: "evidence/book.png"
+    item: "Livro de Peixes, interface completa, controles de toque e teclado, salvamento automático"
+  - id: S1
+    result: pass
+    evidence: "evidence/play.png"
+    item: "movimentação e colisão · in the slice"
+  - id: S2
+    result: pass
+    evidence: "evidence/play.png"
+    item: "pesca · in the slice"
+  - id: S3
+    result: pass
+    evidence: "evidence/figures.png"
+    item: "peixes e raridades · in the slice"
+  - id: S4
+    result: pass
+    evidence: "evidence/shop-sell.png"
+    item: "economia e loja · in the slice"
+  - id: S5
+    result: pass
+    evidence: "evidence/levelup.png"
+    item: "níveis · in the slice"
+  - id: S6
+    result: pass
+    evidence: "evidence/rest.png"
+    item: "energia · in the slice"
+  - id: S7
+    result: pass
+    evidence: "evidence/night.png"
+    item: "dia e noite · in the slice"
+  - id: S8
+    result: pass
+    evidence: "evidence/shop-sell.png"
+    item: "inventário (bolsa) · in the slice"
+  - id: S9
+    result: pass
+    evidence: "evidence/book.png"
+    item: "Livro de Peixes · in the slice"
+  - id: S10
+    result: pass
+    evidence: "index.html:392"
+    item: "salvamento automático · in the slice"
+  - id: M1
+    result: pass
+    evidence: "evidence/play.png"
+    item: "O pescador acorda na margem às 6h ao lado da casa de pesca, com vara de bambu e isca simples."
+  - id: M2
+    result: pass
+    evidence: "evidence/night.png"
+    item: "Uma dica curta aponta a água."
+  - id: M3
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Ele anda até a beira e toca na água: a boia cai, em alguns segundos surge um \"!\"."
+  - id: M4
+    result: not_run
+    mark: not assessed
+    why: "the first bite is always the Sardinha (js/fish.js:19, difficulty 0.05, widest zone); whether it feels easy needs a person on PUXAR"
+    evidence: "config.js"
+    item: "Ele segura PUXAR, a barra aparece, a primeira Sardinha é fácil de manter na zona verde."
+  - id: M5
+    result: pass
+    evidence: "evidence/catch.png"
+    item: "\"NOVA ESPÉCIE!\", e o Livro marca 1/35."
+  - id: C1
+    result: not_run
+    mark: not assessed
+    why: "commons start with a 0.29-wide slow zone; whether that feels calm needs a human hand on PUXAR"
+    evidence: "config.js"
+    item: "Comuns são tranquilos."
+  - id: C2
+    result: not_run
+    mark: not assessed
+    why: "uncommons (level 2 after 5 species) have smaller zones and darts; whether it arrives at minute 3-5 depends on play speed: nobody has played it yet"
+    evidence: "config.js"
+    item: "O primeiro aperto vem lá pelo minuto 3 a 5: peixes incomuns que dão trancos e têm zona verde menor, e a energia que acaba e obriga a descansar ou comprar lanche."
+  - id: C3
+    result: pass
+    evidence: "config.js:23"
+    item: "Perder um peixe custa só a energia do lançamento."
+  - id: C4
+    result: pass
+    evidence: "data.js:50"
+    item: "Raros, épicos e lendários exigem vara e isca melhores."
+  - id: C5
+    result: pass
+    evidence: "config.js:23"
+    item: "*(provisional)*"
+measures:
+  - id: step-time
+    value: 1.900
+    unit: ms
+    by: browser
+    detail: "mean 0.016 ms, slowest 1.900 ms, 494 steps"

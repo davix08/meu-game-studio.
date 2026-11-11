@@ -1,0 +1,67 @@
+time	2026-11-11 17:02:37
+keep	lines	0	pinned	0
+briefword	2D	shown	evidence/play.png
+briefword	pixel art	shown	evidence/play.png
+briefword	Top-Down	shown	evidence/play.png
+checklist	L1	pass	evidence/play.png	Look: pixel art estilo RPG clássico, resolução interna 320x180 com escala inteira; paleta natural: verde (grama, copas), azul em degradê (água, mais escuro no fundo), marrom (terra, madeira), creme (interface retrô); água com ondas animadas, plantas balançando, sombras de peixes nadando; a noite cobre o mapa de azul escuro, com a janela da casa de pesca acesa; cada personagem e peixe desenhado, nunca emoji nem círculos simples.	pixel art drawn in code on a 320x180 world canvas scaled 4x without smoothing (the final fit to the screen is adaptive, not whole-number); green, blue, brown, cream palette; animated waves, swaying plants, fish shadows; night blue with the house windows lit (evidence/night.png)
+checklist	L2	pass	evidence/title.png	References: RPGs clássicos em pixel art (a visão de cima, a interface retrô) *(inferred (strong))*.	classic-RPG look: 16 px tiles, top view, wooden retro panels and monospace type
+checklist	L3	pass	index.html:166	View: 2D · Camera: top-down, seguindo o pescador, presa às bordas do mapa.	camera() follows the fisherman and clamps at the map edges; 2D top-down
+checklist	F1	noevidence	js/world.js:30	Lago Esmeralda explorável com colisões, ilhas, vegetação e casa de pesca com balcão	48x34 map with lake, two islands (one reached by a bridge), pier, trees, reeds, lily pads; tile collision (js/world.js:159); house with door and a counter inside (evidence/house.png)
+checklist	F2	pass	evidence/play.png	Pesca completa: lançar, mordida, PUXAR, barra com zona verde e progresso, dificuldade por peixe	cast, nibbles, bite "!", PUXAR, horizontal bar with green zone and progress; zone width, drift and darts scale with each species' difficulty (js/fishing.js:94)
+checklist	F3	pass	evidence/figures.png	35 espécies em 5 raridades, cada uma com sprite próprio, peso, valor e dificuldade	all 35 species with their own sprite, rarity, weight range, value and difficulty (data.js)
+checklist	F4	pass	evidence/shop-rods.png	Loja: vender a bolsa; 5 varas, 6 iscas, lanche e isca da sorte, liberados por nível	sell all (evidence/shop-sell.png); 5 rods, 6 baits, snack and luck bait, each locked to a level (js/economy.js:13)
+checklist	F5	pass	evidence/levelup.png	6 níveis com tela de evolução, espécies liberadas e recompensa em moedas	6 levels by species discovered; screen shows the new rarity, its species as silhouettes, the shop unlocks and the coin reward (js/levels.js:8)
+checklist	F6	pass	evidence/rest.png	Energia, descanso, relógio de dia e noite em 4 períodos, sono automático	energy bar, cast and run costs, ZZZ rest speeds time and refills; 4 periods in the HUD; 02:00 sleeps automatically into a new day (js/time.js:17, checked by script: day 3 -> 4, energy 100)
+checklist	F7	pass	evidence/book.png	Livro de Peixes, interface completa, controles de toque e teclado, salvamento automático	book with silhouettes and 8/35 progress; HUD with region, day, time, coins, level, energy, bag and value; touch buttons plus keyboard; autosave to localStorage (checked by reload: coins, day, book, bag, luck baits kept)
+checklist	S1	noevidence	js/world.js:159	movimentação e colisão · in the slice	moveBody with axis-separated tile collision; tap-to-move pathfinding (js/world.js:166)
+checklist	S2	noevidence	js/fishing.js:20	pesca · in the slice	cast -> wait -> bite -> fight -> caught or escaped
+checklist	S3	noevidence	js/fish.js:18	peixes e raridades · in the slice	rarity-weighted roll; rarer weighs less; bait, luck, deep water and schools tilt it
+checklist	S4	pass	evidence/shop-sell.png	economia e loja · in the slice	sell, buy, equip, items (js/economy.js)
+checklist	S5	pass	evidence/levelup.png	níveis · in the slice	js/levels.js:8
+checklist	S6	pass	evidence/rest.png	energia · in the slice	js/energy.js:6
+checklist	S7	pass	evidence/night.png	dia e noite · in the slice	js/time.js:25 lightAt; night overlay with lights
+checklist	S8	pass	evidence/shop-sell.png	inventário (bolsa) · in the slice	bag of 20 with total value in HUD (js/inventory.js:6)
+checklist	S9	pass	evidence/book.png	Livro de Peixes · in the slice	js/ui.js:333
+checklist	S10	noevidence	js/save.js:8	salvamento automático · in the slice	saved every 10 s and on every catch, sale, purchase, sleep, door; reload test kept the progress
+checklist	M1	pass	evidence/play.png	O pescador acorda na margem às 6h ao lado da casa de pesca, com vara de bambu e isca simples.	starts Dia 1 06:00 beside the fishing house with the bamboo rod and simple bait
+checklist	M2	pass	evidence/night.png	Uma dica curta aponta a água.	the hint "Ande até a beira e toque na água para lançar" and a bobbing arrow at the shore until the first catch
+checklist	M3	pass	evidence/play.png	Ele anda até a beira e toca na água: a boia cai, em alguns segundos surge um "!".	tap on water casts; the bobber lands; the bite shows a "!" over the fisherman (index.html drawWorld)
+checklist	M4	noevidence	js/fish.js:19	Ele segura PUXAR, a barra aparece, a primeira Sardinha é fácil de manter na zona verde.	the first bite is always the Sardinha (difficulty 0.05, widest zone)
+checklist	M5	pass	evidence/catch.png	"NOVA ESPÉCIE!", e o Livro marca 1/35.	catch card "NOVA ESPÉCIE!" and the HUD's Livro count goes up
+checklist	C1	not_assessed	config.js	Comuns são tranquilos.	commons start with a 0.29-wide slow zone; whether that feels calm needs a human hand on PUXAR
+checklist	C2	not_assessed	config.js	O primeiro aperto vem lá pelo minuto 3 a 5: peixes incomuns que dão trancos e têm zona verde menor, e a energia que acaba e obriga a descansar ou comprar lanche.	uncommons (level 2 after 5 species) have smaller zones and darts; whether it arrives at minute 3-5 depends on play speed: nobody has played it yet
+checklist	C3	noevidence	js/fishing.js:20	Perder um peixe custa só a energia do lançamento.	only the cast's energy (castCost 6) is spent; an escape costs nothing more
+checklist	C4	noevidence	data.js	Raros, épicos e lendários exigem vara e isca melhores.	rare-and-up fish have difficulty 0.45-0.95 and need the wider zone and power of better rods; better baits raise their odds
+checklist	C5	noevidence	design/game-brief.md	*(provisional)*	only the provisional mark of the Challenge paragraph, no item of its own
+browser	HeadlessChrome/153.0.0.0
+scene	play	0	title
+scene	play	1	play
+digits	log	bold 20px "Courier New", Courier, monospace	tabular	0
+digits	log	bold 28px "Courier New", Courier, monospace	tabular	0
+digits	log	bold 18px "Courier New", Courier, monospace	tabular	0
+digits	log	bold 16px "Courier New", Courier, monospace	tabular	0
+digits	log	bold 22px "Courier New", Courier, monospace	tabular	0
+measure	step-time	play	0.016	1.900	494
+lane	play	stop	8.2	319
+uncaught	play	0
+text	play	canvas	143,12,290,24	30.0	11.78	inside	LAGO ESMERALDA
+text	play	canvas	142,34,343,47	28.5	13.91	inside	Dia 1 · 06:16 · Manhã
+text	play	canvas	444,14,469,30	37.5	11.62	inside	30
+text	play	canvas	411,39,531,51	24.0	14.06	inside	Nv 1 Iniciante
+text	play	canvas	603,11,697,24	28.5	14.27	inside	Livro 0/35
+text	play	canvas	602,35,709,48	22.5	8.58	inside	próx. nível: 5
+text	play	canvas	834,22,859,33	24.0	5.78	inside	94%
+text	play	canvas	787,44,836,56	21.0	8.45	inside	Energia
+text	play	canvas	956,14,997,28	30.0	14.67	inside	0/20
+text	play	canvas	922,40,991,51	22.5	12.15	inside	~0 moedas
+text	play	canvas	419,451,863,467	28.5	10.31	inside	Ande até a beira e toque na água para lançar
+text	play	canvas	1062,22,1083,35	33.0	8.63	inside	II
+text	play	canvas	1022,482,1103,501	46.5	8.02	inside	PUXAR
+text	play	canvas	1034,517,1089,533	28.5	6.05	inside	lançar
+text	play	canvas	920,529,971,542	30.0	9.44	inside	LIVRO
+text	play	canvas	816,529,849,542	33.0	8.81	inside	ZZZ
+text	play	canvas	185,529,268,542	30.0	8.63	inside	LANCHE 1
+text	play	canvas	333,529,406,542	30.0	2.74	inside	SORTE 0
+text	play	canvas	457,87,823,101	30.0	12.12	inside	Puxou cedo demais: linha recolhida.
+screen	play	drawn
+responds	changed	4

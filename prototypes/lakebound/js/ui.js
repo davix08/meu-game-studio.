@@ -116,7 +116,7 @@ function drawButton(b, s) {
   let base = b.col || '#5a3a24';
   if (b.sel) base = '#a8742a';
   const flash = b.flash && Math.floor(s.t * 8) % 2 === 0;
-  ctx.globalAlpha = off ? 0.55 : 1;
+  ctx.globalAlpha = off ? 0.75 : 1;
   ctx.fillStyle = PAL.ink; ctx.fillRect(b.x - 3, b.y - 3, b.w + 6, b.h + 6);
   ctx.fillStyle = flash ? '#ffd23a' : PAL.uiEdge; ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
   ctx.fillStyle = pressed ? '#5a2a1a' : base; ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, b.h - 4);
