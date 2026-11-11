@@ -11,17 +11,17 @@
 		"panel_color": "#2b1d14b0"
 	},
 	"camera": {
-		"distance": 22.0,
-		"pitch_degrees": 52.0,
-		"yaw_degrees": 0.0,
-		"fov": 30.0,
+		"size": 14.0,
+		"distance": 30.0,
+		"pitch_degrees": 35.264,
+		"yaw_degrees": 45.0,
 		"near": 1.0,
-		"far": 140.0,
+		"far": 90.0,
 		"follow_smoothing": 6.0,
-		"margin_west": 10.0,
-		"margin_east": 10.0,
-		"margin_north": 9.0,
-		"margin_south": 5.5
+		"margin_west": 12.0,
+		"margin_east": 12.0,
+		"margin_north": 10.0,
+		"margin_south": 10.0
 	},
 	"joystick": {
 		"radius": 100.0,

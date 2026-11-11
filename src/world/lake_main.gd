@@ -2,7 +2,8 @@ class_name LakeMain
 extends Node3D
 ## Root script of scenes/main.tscn: builds everything in code (world, fisherman, camera, HUD,
 ## joystick) and feeds the fisherman from the joystick or the keyboard (WASD / arrows, Shift to
-## run; read with Input.is_physical_key_pressed, so the InputMap is untouched).
+## run; read with Input.is_physical_key_pressed, so the InputMap is untouched). The input is
+## screen-relative: it is rotated by the isometric camera yaw before moving the fisherman.
 ##
 ## Story 002 (design/game-brief.md, MVP feature 9). Walk and run speeds come from config.json
 ## (px/s, through [GameData]) and are converted to m/s by the 16 px per block scale.
@@ -12,6 +13,7 @@ var _world: LakeWorld
 var _fisherman: Fisherman
 var _stick: VirtualStick
 var _run_threshold: float = 0.95
+var _input_yaw: float = 0.0 ## Camera yaw in radians (world_look.json camera.yaw_degrees).
 
 
 func _ready() -> void:
@@ -39,6 +41,7 @@ func _ready() -> void:
 	hud.add_child(_stick)
 	_stick.setup(_look)
 	_run_threshold = _look.num("joystick", "run_threshold")
+	_input_yaw = deg_to_rad(_look.num("camera", "yaw_degrees"))
 
 
 func _process(delta: float) -> void:
@@ -50,7 +53,9 @@ func _process(delta: float) -> void:
 	if keys != Vector2.ZERO:
 		dir = keys
 		run = Input.is_physical_key_pressed(KEY_SHIFT)
-	_fisherman.step(delta, dir, run)
+	# Screen-space input (up = -y, right = +x) to world ground direction (x, z): the camera is
+	# yawed by +_input_yaw around Y, so rotate the input by -_input_yaw (Vector2.rotated).
+	_fisherman.step(delta, dir.rotated(-_input_yaw), run)
 
 
 func _keyboard_direction() -> Vector2:

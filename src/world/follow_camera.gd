@@ -1,8 +1,12 @@
 class_name FollowCamera
 extends Camera3D
-## Perspective camera looking down at the world at a fixed pitch and yaw (near-isometric), that
-## follows a target with exponential smoothing and keeps its focus point inside the map
-## bounds. Distance, pitch, yaw, FOV, smoothing and bounds margins come from world_look.json.
+## Orthographic isometric camera looking down at the world at a fixed pitch (35.264 degrees =
+## true isometric) and yaw (45 degrees), that follows a target with exponential smoothing and
+## keeps its focus point inside the map bounds. Because the view is orthographic, [member
+## Camera3D.size] (visible height in meters) sets the zoom and distance only has to be large
+## enough that the whole scene fits between near and far. Size, distance, pitch, yaw, near,
+## far, smoothing and bounds margins come from world_look.json (group "camera"). The yaw is
+## also what LakeMain uses to rotate the movement input, so "up on screen" stays "up on screen".
 ##
 ## Story 002 (design/game-brief.md, MVP feature 9). Process this node AFTER the target moves
 ## (add it to the tree after the node that moves the target).
@@ -28,7 +32,8 @@ func setup(look: WorldLook, target: Node3D) -> void:
 	_smoothing = look.num("camera", "follow_smoothing")
 	rotation = Vector3(-deg_to_rad(look.num("camera", "pitch_degrees")), deg_to_rad(look.num("camera", "yaw_degrees")), 0.0)
 	_offset = basis * Vector3(0.0, 0.0, look.num("camera", "distance"))
-	fov = look.num("camera", "fov")
+	projection = Camera3D.PROJECTION_ORTHOGONAL
+	size = look.num("camera", "size")
 	near = look.num("camera", "near")
 	far = look.num("camera", "far")
 	_min_focus = Vector2(look.num("camera", "margin_west"), look.num("camera", "margin_north"))
