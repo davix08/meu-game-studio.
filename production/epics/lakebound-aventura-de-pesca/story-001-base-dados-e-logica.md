@@ -1,7 +1,7 @@
 # Story 001: Base: dados e lógica do jogo no Godot
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: In Progress
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: L
@@ -91,3 +91,20 @@
 
 - Depends on: None
 - Unlocks: `production/epics/lakebound-aventura-de-pesca/story-002-esqueleto-3d.md`, `production/epics/lakebound-aventura-de-pesca/story-003-pesca-3d.md`
+
+## Completion Notes
+**Completed**: 2026-11-11
+**Criteria**: 6/7 passing (deferred: regras em GDScript sem desenho, conferir ao jogar o 3D)
+**Deviations**: None. Notes: a conversão do save v1 não foi testada com um save real do 2D; "abre no Godot 4.7 sem erros" foi confirmado pelo usuário no Godot do celular, sem imagem guardada.
+**Test Evidence**: waived at qa.level minimal
+**Reviewed by**: self, no independent review
+
+## Calls beyond the design
+- WorldQuery usa Vector3, com alcance e raio de cardume em pixels do 2D sem reescala (`src/core/world_query.gd`, `src/core/game_data.gd`) · kept 2026-11-11
+- O save guarda `pos [x,y,z]`; o save v1 vira px→x, py→z, y=0 (`src/core/save_game.gd`) · kept 2026-11-11
+- Os avisos de texto viraram códigos de resultado; o texto fica para a interface (`Economy.Result`, `Energy.Result`, `FishingMachine.CastResult`) · kept 2026-11-11
+- O lançamento mede só a distância no chão; o lançar pelo teclado ficou de fora (`src/core/fishing_machine.gd`) · kept 2026-11-11
+- O peixe fica 1,1 s no ar antes de ir para a bolsa: `catch_hold`, ajustável de 0,3 a 3 (`src/data/config.json`) · kept 2026-11-11
+- Cerca de 30 números que o 2D tinha soltos no código ficaram num bloco `fixed` não ajustável (`src/data/config.json`) · kept 2026-11-11
+- O save fica em `user://lakebound_save.json` e valida campos faltando ou inválidos (`src/core/save_game.gd`) · kept 2026-11-11
+- O sono automático não reposiciona o jogador; só emite `day_started` (`src/core/game_clock.gd`) · kept 2026-11-11

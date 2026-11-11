@@ -14,6 +14,6 @@ Features 8 a 10 do brief (etapas 1 a 3 do plano). Propriedade, construção, hor
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 001 | Base: dados e lógica do jogo no Godot | Logic | Ready | N/A |
+| 001 | Base: dados e lógica do jogo no Godot | Logic | Complete | N/A |
 | 002 | Esqueleto 3D: terreno, lago, câmera e pescador | Visual/Feel | Ready | N/A |
 | 003 | Pesca em 3D com a barra de disputa | Integration | Ready | N/A |
