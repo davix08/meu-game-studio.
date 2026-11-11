@@ -1,0 +1,30 @@
+L1	pass	evidence/play.png	pixel art drawn in code on a 320x180 world canvas scaled 4x without smoothing (the final fit to the screen is adaptive, not whole-number); green, blue, brown, cream palette; animated waves, swaying plants, fish shadows; night blue with the house windows lit (evidence/night.png)
+L2	pass	evidence/title.png	classic-RPG look: 16 px tiles, top view, wooden retro panels and monospace type
+L3	pass	index.html:166	camera() follows the fisherman and clamps at the map edges; 2D top-down
+F1	pass	js/world.js:30	48x34 map with lake, two islands (one reached by a bridge), pier, trees, reeds, lily pads; tile collision (js/world.js:159); house with door and a counter inside (evidence/house.png)
+F2	pass	evidence/play.png	cast, nibbles, bite "!", PUXAR, horizontal bar with green zone and progress; zone width, drift and darts scale with each species' difficulty (js/fishing.js:94)
+F3	pass	evidence/figures.png	all 35 species with their own sprite, rarity, weight range, value and difficulty (data.js)
+F4	pass	evidence/shop-rods.png	sell all (evidence/shop-sell.png); 5 rods, 6 baits, snack and luck bait, each locked to a level (js/economy.js:13)
+F5	pass	evidence/levelup.png	6 levels by species discovered; screen shows the new rarity, its species as silhouettes, the shop unlocks and the coin reward (js/levels.js:8)
+F6	pass	evidence/rest.png	energy bar, cast and run costs, ZZZ rest speeds time and refills; 4 periods in the HUD; 02:00 sleeps automatically into a new day (js/time.js:17, checked by script: day 3 -> 4, energy 100)
+F7	pass	evidence/book.png	book with silhouettes and 8/35 progress; HUD with region, day, time, coins, level, energy, bag and value; touch buttons plus keyboard; autosave to localStorage (checked by reload: coins, day, book, bag, luck baits kept)
+S1	pass	js/world.js:159	moveBody with axis-separated tile collision; tap-to-move pathfinding (js/world.js:166)
+S2	pass	js/fishing.js:20	cast -> wait -> bite -> fight -> caught or escaped
+S3	pass	js/fish.js:18	rarity-weighted roll; rarer weighs less; bait, luck, deep water and schools tilt it
+S4	pass	evidence/shop-sell.png	sell, buy, equip, items (js/economy.js)
+S5	pass	evidence/levelup.png	js/levels.js:8
+S6	pass	evidence/rest.png	js/energy.js:6
+S7	pass	evidence/night.png	js/time.js:25 lightAt; night overlay with lights
+S8	pass	evidence/shop-sell.png	bag of 20 with total value in HUD (js/inventory.js:6)
+S9	pass	evidence/book.png	js/ui.js:333
+S10	pass	js/save.js:8	saved every 10 s and on every catch, sale, purchase, sleep, door; reload test kept the progress
+M1	pass	evidence/play.png	starts Dia 1 06:00 beside the fishing house with the bamboo rod and simple bait
+M2	pass	evidence/night.png	the hint "Ande até a beira e toque na água para lançar" and a bobbing arrow at the shore until the first catch
+M3	pass	evidence/play.png	tap on water casts; the bobber lands; the bite shows a "!" over the fisherman (index.html drawWorld)
+M4	pass	js/fish.js:19	the first bite is always the Sardinha (difficulty 0.05, widest zone)
+M5	pass	evidence/catch.png	catch card "NOVA ESPÉCIE!" and the HUD's Livro count goes up
+C1	not_assessed	config.js	commons start with a 0.29-wide slow zone; whether that feels calm needs a human hand on PUXAR
+C2	not_assessed	config.js	uncommons (level 2 after 5 species) have smaller zones and darts; whether it arrives at minute 3-5 depends on play speed: nobody has played it yet
+C3	pass	js/fishing.js:20	only the cast's energy (castCost 6) is spent; an escape costs nothing more
+C4	pass	data.js	rare-and-up fish have difficulty 0.45-0.95 and need the wider zone and power of better rods; better baits raise their odds
+C5	pass	design/game-brief.md	only the provisional mark of the Challenge paragraph, no item of its own

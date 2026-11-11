@@ -1,0 +1,530 @@
+<!doctype html>
+<!-- PROTOTYPE - NOT FOR PRODUCTION -->
+<!-- Question: A disputa na barra, junto com a vontade de descobrir a próxima espécie, prende por uma sessão inteira? -->
+<!-- Date: 2026-11-11 -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1208">
+<title>Lakebound — Aventura de Pesca</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0c0a10; overflow: hidden; overscroll-behavior: none; }
+  body { font-variant-numeric: tabular-nums; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  canvas { display: block; margin: 0 auto; touch-action: none; }
+  #rotate { display: none; position: fixed; left: 0; right: 0; top: 0; padding: 10px; text-align: center;
+    font: bold 16px "Courier New", monospace; color: #f6ecd0; background: #2b1d14; border-bottom: 3px solid #e8c98a; }
+  @media (orientation: portrait) { #rotate { display: block; } }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="rotate">Gire o celular para jogar na horizontal</div>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script>
+'use strict';
+// The one-shot's starter core: fixed step, clock hook, window.game, the play and figures scenes.
+// Game systems live in js/ (one file per system); this file wires them together.
+
+// ---- Built to be checked ----------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+const tune = new Proxy({}, { get: (_, k) => CONFIG[k].value }); // live: tune.speed is CONFIG.speed.value
+const STEP = 1 / 60;            // simulation step in seconds; motion is per second, never per frame
+const W = 1280, H = 720;        // logical UI size; the world is drawn at 320 x 180 and scaled 4x
+const VW = 320, VH = 180;       // the pixel world's internal resolution
+const PIXEL = false;            // the UI stays crisp; the world canvas is scaled without smoothing
+const FONT = '"Courier New", Courier, monospace';
+const TITLE = 'Lakebound — Aventura de Pesca';
+const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
+const CHEAP = params.get('render') === 'cheap';
+let seed;
+function rng() { // mulberry32; every gameplay random call reads this, never Math.random
+  seed = (seed + 0x6D2B79F5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), seed | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const events = [];
+
+// ---- Screen ---------------------------------------------------------------------------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const worldCanvas = document.createElement('canvas'); worldCanvas.width = VW; worldCanvas.height = VH;
+const wctx = worldCanvas.getContext('2d');
+const lightCanvas = document.createElement('canvas'); lightCanvas.width = VW; lightCanvas.height = VH;
+const lctx = lightCanvas.getContext('2d');
+function fit() {
+  const k = Math.min(innerWidth / W, innerHeight / H);
+  const r = k * (devicePixelRatio || 1);
+  canvas.width = Math.round(W * r); canvas.height = Math.round(H * r);
+  canvas.style.width = Math.round(W * k) + 'px'; canvas.style.height = Math.round(H * k) + 'px';
+  canvas.style.marginTop = Math.max(0, Math.floor((innerHeight - H * k) / 2)) + 'px';
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+}
+addEventListener('resize', fit); fit();
+function clear(c) { ctx.fillStyle = c; ctx.fillRect(0, 0, W, H); }
+function text(s, x, y, size, c, align = 'center') {
+  ctx.fillStyle = c; ctx.font = `bold ${size}px ${FONT}`; ctx.textAlign = align;
+  ctx.textBaseline = 'middle'; ctx.fillText(s, x, y);
+}
+
+// ---- Input: keys by position (event.code), OS key repeat ignored ------------------------
+const down = new Set(), hit = new Set();
+const pressed = code => hit.has(code);
+addEventListener('keydown', e => {
+  startAudio();
+  if (!e.repeat) { down.add(e.code); hit.add(e.code); }
+  if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+});
+addEventListener('keyup', e => down.delete(e.code));
+addEventListener('blur', () => { down.clear(); if (state) state.ui.pullHeld = false; });
+// Touch and mouse: queued, then handled inside the fixed step.
+const ptrQ = [];
+function toLogical(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
+canvas.addEventListener('pointerdown', e => {
+  startAudio(); e.preventDefault();
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* fine */ }
+  if (e.pointerType === 'touch' && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+  ptrQ.push({ t: 'down', id: e.pointerId, ...toLogical(e) });
+});
+canvas.addEventListener('pointerup', e => ptrQ.push({ t: 'up', id: e.pointerId, ...toLogical(e) }));
+canvas.addEventListener('pointercancel', e => ptrQ.push({ t: 'up', id: e.pointerId, ...toLogical(e) }));
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---- Audio: started on first input, mute on M --------------------------------------------
+let audio = null, muted = false;
+function startAudio() {
+  if (!audio) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!window.GAME_AUDIO && !AC) return;
+    const ac = window.GAME_AUDIO || new AC();
+    const out = ac.createGain(); out.gain.value = muted ? 0 : tune.volume;
+    out.connect(ac.destination); audio = { ac, out };
+  }
+  if (audio.ac.state === 'suspended') audio.ac.resume();
+}
+function setMuted(m) { muted = m; if (audio) audio.out.gain.value = m ? 0 : tune.volume; }
+addEventListener('tune', () => setMuted(muted));
+function tone(freq, dur, type = 'square', vol = 0.3) {
+  if (!audio || muted) return;
+  const t = audio.ac.currentTime, o = audio.ac.createOscillator(), g = audio.ac.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(audio.out); o.start(t); o.stop(t + dur);
+}
+let scene, state, world, pullPressed = false;
+</script>
+<script src="js/art.js"></script>
+<script src="js/world.js"></script>
+<script src="js/fish.js"></script>
+<script src="js/fishing.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/economy.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/energy.js"></script>
+<script src="js/time.js"></script>
+<script src="js/save.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/ui.js"></script>
+<script>
+'use strict';
+// ---- Game state ----------------------------------------------------------------------------
+function freshState() {
+  return {
+    t: 0, score: 0, gained: '',
+    coins: tune.startCoins, level: 1, day: 1, minutes: tune.dayStart, energy: 100,
+    bag: [], book: {}, rodsOwned: ['bambu'], rod: 'bambu', baitsOwned: ['simples'], bait: 'simples',
+    snacks: 1, luckBaits: 0, luckLeft: 0, map: 'out', stats: { caught: 0, earned: 0 },
+    player: { x: OUT.spawn.x, y: OUT.spawn.y, dir: 0, path: null, after: null, moving: false, running: false, at: 0, catchT: 0, stuck: 0 },
+    fishing: newFishing(), resting: false, panel: null, panelQ: [],
+    ui: { shopTab: 0, bookSel: 0, pullHeld: false, pullPtr: null, newConfirm: 0 }, saveT: 0, fade: 0,
+  };
+}
+function reset(fromSave = true) {
+  seed = Number(params.get('seed')) || CONFIG.seed;
+  if (!world) {
+    world = { out: buildOutdoor(), in: buildIndoor() };
+    renderGround(world.out); renderGround(world.in);
+    buildFishArt(); buildIcons();
+  }
+  spawnWaterLife(world);
+  fx.parts.length = 0; fx.ripples.length = 0;
+  state = freshState();
+  const sv = fromSave ? loadSave() : null;
+  if (sv) applySave(state, sv);
+  state.score = discovered(state);
+}
+function curMap(s) { return s.map === 'in' ? world.in : world.out; }
+function camera(s) {
+  if (s.map === 'in') return { x: Math.round((world.in.w * TS - VW) / 2), y: Math.round((world.in.h * TS - VH) / 2) + 4 };
+  const m = world.out, P = s.player;
+  return { x: Math.round(Math.max(0, Math.min(m.w * TS - VW, P.x - VW / 2))), y: Math.round(Math.max(0, Math.min(m.h * TS - VH, P.y - 10 - VH / 2))) };
+}
+function enterHouse(s) {
+  if (s.fishing.st !== 'idle') return;
+  s.map = 'in'; s.player.x = IN.spawn.x; s.player.y = IN.spawn.y; s.player.dir = 1; s.player.path = null; s.resting = false;
+  fx.parts.length = 0; fx.ripples.length = 0; s.fade = 0.35; sfx.door(); saveGame(s);
+}
+function exitHouse(s) {
+  s.map = 'out'; s.player.x = OUT.door.x * TS + 8; s.player.y = (OUT.door.y + 1) * TS + 12; s.player.dir = 0; s.player.path = null; s.resting = false;
+  s.fade = 0.35; sfx.door(); saveGame(s);
+}
+
+// ---- World taps: walk, cast, or walk then act -------------------------------------------------
+function worldTap(s, ux, uy) {
+  const cam = camera(s), wx = ux / 4 + cam.x, wy = uy / 4 + cam.y, m = curMap(s), P = s.player;
+  const F = s.fishing;
+  if (F.st === 'bite' || F.st === 'fight') { pullPressed = true; s.ui.pullHeld = true; return; }
+  if (F.st === 'cast' || F.st === 'wait') { if (!isWaterAt(m, wx, wy)) { cancelFishing(s, 'Linha recolhida.'); } else return; }
+  s.resting = false;
+  const tx = Math.floor(wx / TS), ty = Math.floor(wy / TS);
+  if (s.map === 'out' && isWaterAt(m, wx, wy)) {
+    if (castAt(s, wx, wy)) return;
+    const why = castBlocker(s); if (why) return;
+    const range = rodOf(s).range * 0.92;
+    const path = findPath(m, P.x, P.y, (x, y) => Math.hypot(x * TS + 8 - wx, y * TS + 3 - wy) <= range);
+    if (path) { P.path = path; P.after = { kind: 'cast', x: wx, y: wy }; P.pathRun = path.length > tune.autoRunTiles; if (!path.length) arrive(s); }
+    else toast('Longe demais para lançar daqui.');
+    return;
+  }
+  // the house door, or the shop counter: walk there and act
+  if (s.map === 'out' && tx >= OUT.house.x && tx < OUT.house.x + OUT.house.w && ty >= OUT.house.y && ty <= OUT.house.y + OUT.house.h) {
+    walkTo(s, OUT.door.x, OUT.door.y + 1, { kind: 'enter' }); return;
+  }
+  if (s.map === 'in' && ty <= IN.counter.y + 1 && ty >= IN.counter.y - 1 && tx >= IN.counter.x0 && tx <= IN.counter.x1) {
+    walkTo(s, Math.max(IN.counter.x0, Math.min(IN.counter.x1, tx)), IN.counter.y + 1, { kind: 'shop' }); return;
+  }
+  if (s.map === 'in' && ty >= 7) { walkTo(s, IN.door.x, 6, { kind: 'exit' }); return; }
+  if (!solidAt(m, tx, ty)) {
+    const path = findPath(m, P.x, P.y, (x, y) => x === tx && y === ty);
+    if (path) { if (path.length) path[path.length - 1] = { x: wx, y: wy }; P.path = path; P.after = null; P.pathRun = path.length > tune.autoRunTiles; }
+  } else {
+    const path = findPath(m, P.x, P.y, (x, y) => Math.abs(x - tx) + Math.abs(y - ty) <= 1);
+    if (path) { P.path = path; P.after = null; P.pathRun = false; }
+  }
+}
+function walkTo(s, tx, ty, after) {
+  const P = s.player, path = findPath(curMap(s), P.x, P.y, (x, y) => x === tx && y === ty);
+  if (path) { P.path = path; P.after = after; P.pathRun = path.length > tune.autoRunTiles; if (!path.length) arrive(s); }
+}
+function arrive(s) {
+  const P = s.player, a = P.after; P.after = null; P.path = null;
+  if (!a) return;
+  if (a.kind === 'cast') castAt(s, a.x, a.y);
+  if (a.kind === 'enter') { P.dir = 1; enterHouse(s); }
+  if (a.kind === 'shop') { P.dir = 1; openShop(s); }
+  if (a.kind === 'exit') exitHouse(s);
+}
+
+// ---- Movement ---------------------------------------------------------------------------------
+function updatePlayer(s, dt) {
+  const P = s.player, m = curMap(s), F = s.fishing;
+  let mx = 0, my = 0;
+  if (down.has('ArrowLeft') || down.has('KeyA')) mx -= 1;
+  if (down.has('ArrowRight') || down.has('KeyD')) mx += 1;
+  if (down.has('ArrowUp') || down.has('KeyW')) my -= 1;
+  if (down.has('ArrowDown') || down.has('KeyS')) my += 1;
+  const locked = F.st === 'bite' || F.st === 'fight' || F.st === 'caught' || P.catchT > 0;
+  let running = false;
+  if ((mx || my) && !locked) {
+    P.path = null; P.after = null;
+    running = down.has('ShiftLeft') || down.has('ShiftRight');
+  } else if (P.path && !locked) {
+    const tg = P.path[0];
+    const dx = tg.x - P.x, dy = tg.y - P.y, d = Math.hypot(dx, dy);
+    if (d < 1.5) { P.path.shift(); if (!P.path.length) arrive(s); }
+    else { mx = dx / d; my = dy / d; running = P.pathRun; }
+  }
+  if (running && s.energy <= 0) running = false;
+  P.moving = false;
+  if ((mx || my) && !locked) {
+    if (F.st === 'cast' || F.st === 'wait') cancelFishing(s, 'Linha recolhida.');
+    s.resting = false;
+    const len = Math.hypot(mx, my), sp = (running ? tune.runSpeed : tune.walkSpeed) * dt;
+    const ox = P.x, oy = P.y;
+    moveBody(m, P, mx / len * sp, my / len * sp);
+    const moved = Math.hypot(P.x - ox, P.y - oy);
+    P.moving = moved > 0.05; P.running = running && P.moving;
+    if (Math.abs(mx) > Math.abs(my) + 0.1) P.dir = mx > 0 ? 3 : 2; else if (my) P.dir = my > 0 ? 0 : 1;
+    if (P.running) s.energy = Math.max(0, s.energy - tune.runDrain * dt);
+    if (P.path && moved < 0.02) { P.stuck += dt; if (P.stuck > 0.4) { P.path = null; P.after = null; P.stuck = 0; } } else P.stuck = 0;
+  }
+  if (P.moving) P.at += dt; else P.at = 0;
+  if (P.catchT > 0) P.catchT -= dt;
+}
+
+// ---- Scenes ---------------------------------------------------------------------------------
+function handlePointers(s, onTap) {
+  while (ptrQ.length) {
+    const e = ptrQ.shift();
+    if (e.t === 'down') onTap(e);
+    else if (s && s.ui.pullPtr === e.id) { s.ui.pullHeld = false; s.ui.pullPtr = null; }
+  }
+}
+const fireflies = [];
+const scenes = {
+  figures: {
+    update(dt) { state.t += dt; },
+    draw() {
+      clear('#16202c');
+      text('LAKEBOUND: figuras', 640, 24, 22, '#f6ecd0');
+      wctx.clearRect(0, 0, VW, VH);
+      const poses = [['idle', 0], ['walk', 3], ['run', 2], ['cast', 3], ['wait', 3], ['fight', 2], ['catch', 0], ['rest', 0]];
+      poses.forEach(([p, d], i) => drawPerson(wctx, 12 + i * 22, 40, d, p, 0.3, LOOK_FISHER, { phase: 0.6, rod: true, fishImg: FISH_ART.tilapia.img }));
+      drawPerson(wctx, 12 + 8 * 22 + 4, 40, 0, 'idle', 0, LOOK_KEEPER);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(worldCanvas, 0, 0, VW, 46, 20, 40, VW * 3, 46 * 3);
+      ['parado', 'andando', 'correndo', 'lançando', 'esperando', 'puxando', 'pegou', 'descanso', 'lojista'].forEach((n, i) => text(n, 20 + (12 + i * 22) * 3 + (i === 8 ? 12 : 0), i % 2 ? 196 : 176, 14, '#f6ecd0'));
+      DATA.species.forEach((sp, i) => {
+        const x = 18 + (i % 9) * 140, y = 206 + Math.floor(i / 9) * 128;
+        ctx.fillStyle = '#2a4a6a'; ctx.fillRect(x, y, 132, 120);
+        icon(FISH_ART[sp.id].img, x + 6, y + 4, 3);
+        text(sp.name, x + 66, y + 92, sp.name.length > 12 ? 13 : 15, DATA.rarities[sp.r].color);
+        text(DATA.rarities[sp.r].name, x + 66, y + 110, 13, '#c8d0d8');
+      });
+    },
+  },
+  title: {
+    update(dt) {
+      state.t += dt; updateWaterLife(world, dt); updateFx(dt);
+      const hasSave = !!loadSave();
+      state.ui.newConfirm = Math.max(0, state.ui.newConfirm - dt);
+      const start = () => { scene = 'play'; sfx.click(); };
+      const fresh = () => {
+        if (hasSave && state.ui.newConfirm <= 0) { state.ui.newConfirm = 3; toast('Toque de novo em NOVO JOGO para apagar o progresso.'); return; }
+        wipeSave(); reset(false); scene = 'play'; saveGame(state);
+      };
+      if (pressed('Enter') || pressed('Space')) start();
+      if (pressed('KeyN')) fresh();
+      handlePointers(null, e => {
+        if (e.x > 440 && e.x < 840 && e.y > 470 && e.y < 550) start();
+        else if (hasSave && e.x > 440 && e.x < 840 && e.y > 566 && e.y < 630) fresh();
+      });
+      updateToasts(dt);
+    },
+    draw() {
+      drawWorld(state);
+      ctx.fillStyle = 'rgba(10,8,6,0.45)'; ctx.fillRect(0, 0, W, H);
+      panel(300, 110, 680, 330, 'rgba(43,29,20,0.94)');
+      utext('LAKEBOUND', 640, 180, 84, '#ffd23a', 'center');
+      utext('Aventura de Pesca', 640, 250, 34, '#a8e0ff', 'center');
+      icon(FISH_ART.arowana.img, 640 - 60, 280 + Math.sin(state.t * 2) * 4, 3);
+      utext('Toque no chão: andar · Toque na água: lançar', 640, 382, 19, PAL.cream, 'center');
+      utext('Segure PUXAR para manter o peixe na zona verde', 640, 410, 19, PAL.cream, 'center');
+      const hasSave = !!loadSave();
+      drawButton(btn('t:play', 440, 470, 400, 80, hasSave ? 'CONTINUAR' : 'JOGAR', { col: '#3a8a3a' }), state);
+      if (hasSave) drawButton(btn('t:new', 440, 566, 400, 64, state.ui.newConfirm > 0 ? 'CONFIRMAR APAGAR?' : 'NOVO JOGO', { col: '#8a3a2a' }), state);
+      panel(40, 652, 1200, 56, 'rgba(26,18,8,0.92)');
+      utext('Teclado: setas/WASD andar · Shift correr · Espaço lançar/puxar · E entrar/loja · Q sair', 640, 668, 16, '#e8d8b0', 'center', true, false);
+      utext('Z descansar · L livro · F lanche · G sorte · P pausa · M som', 640, 692, 16, '#e8d8b0', 'center', true, false);
+      drawToasts();
+    },
+  },
+  play: {
+    update(dt) {
+      const s = state;
+      s.t += dt;
+      pullPressed = false;
+      handlePointers(s, e => {
+        const b = hitButton(s, e.x, e.y);
+        if (b) { pressButton(s, b); if (b.id === 'pull') s.ui.pullPtr = e.id; return; }
+        if (!s.panel) { worldTap(s, e.x, e.y); if (s.ui.pullHeld && s.ui.pullPtr === null) s.ui.pullPtr = e.id; }
+      });
+      if (s.panel) {
+        s.panel.t += dt;
+        const k = s.panel.kind;
+        if ((k === 'catch' && (pressed('Space') || pressed('Enter')) && s.panel.t > 0.35) || (k === 'levelup' && (pressed('Enter') || pressed('Space')) && s.panel.t > 0.6)) closePanel();
+        else if ((k === 'shop' || k === 'book') && (pressed('Escape') || (pressed('KeyL') && k === 'book') || pressed('KeyQ'))) closePanel();
+        else if (k === 'sleep' && s.panel.t > 2.5) closePanel();
+        if (s.panel && s.panel.kind === 'shop') { if (pressed('KeyV')) sellAll(s); for (let i = 0; i < 4; i++) if (pressed('Digit' + (i + 1))) s.ui.shopTab = i; }
+        if (s.panel && s.panel.kind === 'book') { const d = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 7, ArrowUp: -7 }; for (const c in d) if (pressed(c)) s.ui.bookSel = (s.ui.bookSel + d[c] + 35) % 35; }
+        s.ui.pullHeld = false;
+        updateToasts(dt);
+        return;
+      }
+      if (pressed('KeyP') || pressed('Escape')) { scene = 'pause'; return; }
+      // keyboard actions
+      const F = s.fishing, wasIdle = F.st === 'idle';
+      if (pressed('Space')) { if (wasIdle && s.map === 'out') castForward(s); else pullPressed = true; }
+      else if (pullPressed && wasIdle && s.map === 'out') { pullPressed = false; castForward(s); }
+      if (pressed('KeyE')) { if (nearDoor(s)) enterHouse(s); else if (nearCounter(s)) openShop(s); }
+      if (pressed('KeyQ') && s.map === 'in') exitHouse(s);
+      if (pressed('KeyZ')) toggleRest(s);
+      if (pressed('KeyL')) openPanel('book');
+      if (pressed('KeyF')) eatSnack(s);
+      if (pressed('KeyG')) useLuck(s);
+      const hold = s.ui.pullHeld || down.has('Space');
+      updateTime(s, dt);
+      updateEnergy(s, dt);
+      updatePlayer(s, dt);
+      updateFishing(s, dt, hold && !wasIdle, pullPressed && !wasIdle);
+      updateWaterLife(world, dt);
+      updateFx(dt);
+      updateToasts(dt);
+      if (isNight(s.minutes) && s.map === 'out' && rng() < dt * 3) { const c = camera(s); fireflies.push({ x: c.x + rng() * VW, y: c.y + rng() * VH, life: 3 + rng() * 3, ph: rng() * 6 }); }
+      for (const f of fireflies) { f.life -= dt; f.x += Math.sin(s.t + f.ph) * 6 * dt; f.y += Math.cos(s.t * 0.7 + f.ph) * 5 * dt; }
+      while (fireflies.length && fireflies[0].life <= 0) fireflies.shift();
+      if (s.fade > 0) s.fade -= dt;
+      s.saveT += dt; if (s.saveT >= tune.autosaveSeconds) { s.saveT = 0; saveGame(s); }
+      s.score = discovered(s);
+      s.gained = `${s.score}/35 espécies`;
+    },
+    draw() {
+      drawWorld(state);
+      drawHUD(state);
+      drawFishingUI(state);
+      if (!state.panel) for (const b of layoutButtons(state)) drawButton(b, state);
+      drawPanel(state);
+      drawToasts();
+      if (state.fade > 0) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, state.fade / 0.35)})`; ctx.fillRect(0, 0, W, H); }
+    },
+  },
+  pause: {
+    update(dt) {
+      if (pressed('KeyP') || pressed('Escape') || pressed('Enter')) { scene = 'play'; return; }
+      handlePointers(state, e => {
+        if (e.x > 440 && e.x < 840 && e.y > 330 && e.y < 410) scene = 'play';
+        else if (e.x > 440 && e.x < 840 && e.y > 430 && e.y < 500) { saveGame(state); scene = 'title'; }
+      });
+    },
+    draw() {
+      scenes.play.draw();
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
+      utext('PAUSADO', 640, 260, 56, '#ffd23a', 'center');
+      drawButton(btn('p:go', 440, 330, 400, 80, 'CONTINUAR', { col: '#3a8a3a' }), state);
+      drawButton(btn('p:menu', 440, 430, 400, 70, 'MENU (salvo)', {}), state);
+    },
+  },
+};
+
+// ---- World rendering ---------------------------------------------------------------------------
+function drawWorld(s) {
+  const m = curMap(s), cam = camera(s), t = s.t, g = wctx;
+  const L = lightAt(s.minutes), night = L.dark > 0.3;
+  g.fillStyle = '#0c0a10'; g.fillRect(0, 0, VW, VH);
+  g.drawImage(m.ground, -cam.x, -cam.y);
+  if (s.map === 'out') {
+    drawWaterAnim(g, m, cam.x, cam.y, VW, VH, t);
+    for (const sc of world.schools) {
+      const x = Math.round(sc.x - cam.x), y = Math.round(sc.y - cam.y);
+      if (x < -20 || y < -20 || x > VW + 20 || y > VH + 20) continue;
+      for (let i = 0; i < 6; i++) { const ph = (t * 0.8 + i / 6) % 1; R(g, x + Math.round(Math.sin(i * 2.3 + t) * 7), y + 4 - Math.round(ph * 8), ph < 0.8 ? 2 : 1, ph < 0.8 ? 2 : 1, PAL.foam); }
+      g.globalAlpha = 0.5; g.strokeStyle = PAL.foam; g.beginPath(); g.ellipse(x + 0.5, y + 0.5, 8 + Math.sin(t * 3) * 2, 4 + Math.sin(t * 3), 0, 0, 6.29); g.stroke(); g.globalAlpha = 1;
+    }
+    for (const sh of world.shadows) {
+      const x = Math.round(sh.x - cam.x), y = Math.round(sh.y - cam.y);
+      if (x < -10 || y < -10 || x > VW + 10 || y > VH + 10) continue;
+      const c = Math.cos(sh.a), sn = Math.sin(sh.a), wig = Math.sin(t * 10 + sh.x) * 1.2, len = 6 * sh.size;
+      g.fillStyle = 'rgba(14,40,70,0.55)';
+      for (let k = -len; k <= len; k++) { const w = k > len * 0.4 ? 1 : (k < -len * 0.6 ? 1 + (k < -len * 0.85 ? 1 : 0) : 2); const off = k < 0 ? wig * (-k / len) : 0; g.fillRect(Math.round(x + c * k - sn * off - w / 2), Math.round(y + sn * k + c * off - w / 2), w, w); }
+    }
+    for (const d of m.decor) if (d.x > cam.x - 12 && d.x < cam.x + VW + 12 && d.y > cam.y - 4 && d.y < cam.y + VH + 16) drawDecor(g, d, cam.x, cam.y, t);
+    if (s.stats.caught === 0 && s.fishing.st === 'idle' && scene === 'play') {
+      const ax = m.hint.x - cam.x, ay = m.hint.y - 6 - cam.y + Math.round(Math.sin(t * 5) * 2);
+      R(g, ax - 1, ay - 8, 3, 6, '#ffd23a'); R(g, ax - 3, ay - 2, 7, 1, '#ffd23a'); R(g, ax - 2, ay - 1, 5, 1, '#ffd23a'); R(g, ax - 1, ay, 3, 1, '#ffd23a'); R(g, ax, ay + 1, 1, 1, '#ffd23a');
+    }
+  } else {
+    drawInteriorWalls(g, cam.x, cam.y, night, t);
+  }
+  const F = s.fishing;
+  if (F.st !== 'idle' && F.bobX !== undefined && s.map === 'out') {
+    let bx = Math.round(F.bobX - cam.x), by = Math.round(F.bobY - cam.y);
+    if (F.st === 'wait') by += (F.nib > 0 ? 1 : 0) + (Math.sin(t * 3) > 0.7 ? 1 : 0);
+    if (F.st === 'bite') by += 2;
+    if (F.st === 'fight') { bx += Math.round(Math.sin(t * 25) * 1.5); by += 2; if (Math.sin(t * 7) > 0.97) ripple(F.bobX, F.bobY); }
+    if (F.st !== 'caught') { R(g, bx - 1, by - 3, 3, 2, '#e8402a'); R(g, bx - 1, by - 1, 3, 2, '#ffffff'); R(g, bx, by - 4, 1, 1, PAL.outline); if (F.st !== 'cast') R(g, bx - 2, by + 1, 5, 1, PAL.foam); }
+  }
+  const P = s.player;
+  let pose = 'idle'; const opt = { rod: true, rodCol: rodOf(s).col };
+  if (s.resting) pose = 'rest';
+  else if (P.catchT > 0) { pose = 'catch'; opt.fishImg = FISH_ART[P.catchId].img; }
+  else if (F.st === 'cast') { pose = 'cast'; opt.phase = F.t / tune.castTime; }
+  else if (F.st === 'wait' || F.st === 'bite') pose = 'wait';
+  else if (F.st === 'fight' || F.st === 'caught') pose = 'fight';
+  else if (P.moving) pose = P.running ? 'run' : 'walk';
+  let drawn = false, tip = null;
+  const drawP = () => { tip = drawPerson(g, P.x - cam.x, P.y - cam.y, P.dir, pose, pose === 'walk' || pose === 'run' ? P.at : t, LOOK_FISHER, opt); drawn = true; };
+  for (const p of m.props) {
+    if (!drawn && p.by > P.y) drawP();
+    if (p.x > cam.x - 60 && p.x < cam.x + VW + 90 && p.y > cam.y - 10 && p.y < cam.y + VH + 70) drawProp(g, p, cam.x, cam.y, t, night);
+  }
+  if (!drawn) drawP();
+  if (s.resting) { for (let i = 0; i < 3; i++) { const ph = (t * 0.6 + i / 3) % 1; const zx = Math.round(P.x - cam.x + 6 + ph * 8), zy = Math.round(P.y - cam.y - 20 - ph * 14); g.globalAlpha = 1 - ph; R(g, zx, zy, 4, 1, '#ffffff'); R(g, zx + 2, zy + 1, 1, 1, '#ffffff'); R(g, zx + 1, zy + 2, 1, 1, '#ffffff'); R(g, zx, zy + 3, 4, 1, '#ffffff'); g.globalAlpha = 1; } }
+  if (tip && F.st !== 'idle' && F.bobX !== undefined) {
+    const sx = tip.x, sy = tip.y;
+    let ex = F.bobX - cam.x, ey = F.bobY - cam.y - 2;
+    if (F.st === 'caught') { const k = Math.min(1, F.t / 0.9); ex = ex + (sx - ex) * k; ey = ey + (sy - ey) * k - Math.sin(Math.PI * k) * 30; }
+    g.strokeStyle = F.st === 'fight' ? 'rgba(255,255,255,0.95)' : 'rgba(240,240,255,0.75)'; g.lineWidth = 1; g.beginPath(); g.moveTo(sx + 0.5, sy + 0.5);
+    const sag = F.st === 'wait' || F.st === 'cast' ? 10 : 2;
+    g.quadraticCurveTo((sx + ex) / 2, Math.max(sy, ey) + sag, ex + 0.5, ey + 0.5); g.stroke();
+    if (F.st === 'caught') { const img = FISH_ART[F.sp.id].img; g.save(); g.translate(Math.round(ex), Math.round(ey)); g.rotate(Math.sin(t * 20) * 0.4); g.drawImage(img, -10, -6, 20, 12); g.restore(); }
+  }
+  drawFx(g, cam.x, cam.y, t);
+  if (L.tint) { g.fillStyle = `rgba(${L.tint[0]},${L.tint[1]})`; g.fillRect(0, 0, VW, VH); }
+  const dark = s.map === 'in' ? Math.min(0.25, L.dark * 0.4) : L.dark;
+  if (dark > 0.01) {
+    lctx.globalCompositeOperation = 'source-over'; lctx.clearRect(0, 0, VW, VH);
+    lctx.fillStyle = `rgba(8,14,48,${dark})`; lctx.fillRect(0, 0, VW, VH);
+    lctx.globalCompositeOperation = 'destination-out';
+    const lights = [...m.lights, { x: P.x, y: P.y - 8, r: 34 }];
+    for (const l of lights) {
+      const x = l.x - cam.x, y = l.y - cam.y; if (x < -l.r || y < -l.r || x > VW + l.r || y > VH + l.r) continue;
+      const gr = lctx.createRadialGradient(x, y, 0, x, y, l.r); gr.addColorStop(0, 'rgba(0,0,0,0.95)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      lctx.fillStyle = gr; lctx.fillRect(x - l.r, y - l.r, l.r * 2, l.r * 2);
+    }
+    g.drawImage(lightCanvas, 0, 0);
+    g.globalCompositeOperation = 'lighter';
+    for (const l of m.lights) { const x = l.x - cam.x, y = l.y - cam.y; if (x < -l.r || x > VW + l.r || y < -l.r || y > VH + l.r) continue; const gr = g.createRadialGradient(x, y, 0, x, y, l.r * 0.6); gr.addColorStop(0, `rgba(255,190,90,${0.25 * dark})`); gr.addColorStop(1, 'rgba(255,190,90,0)'); g.fillStyle = gr; g.fillRect(x - l.r, y - l.r, l.r * 2, l.r * 2); }
+    g.globalCompositeOperation = 'source-over';
+    for (const f of fireflies) { if (Math.sin(t * 4 + f.ph) > 0) R(g, Math.round(f.x - cam.x), Math.round(f.y - cam.y), 1, 1, '#e8ff8a'); }
+  }
+  if (F.st === 'bite' && scene !== 'title') { const x = Math.round(P.x - cam.x), y = Math.round(P.y - cam.y) - 34 + (Math.floor(t * 10) % 2); R(g, x - 4, y - 1, 9, 13, PAL.outline); R(g, x - 3, y, 7, 11, '#ffffff'); R(g, x - 1, y + 1, 3, 6, '#e8402a'); R(g, x - 1, y + 8, 3, 2, '#e8402a'); }
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(worldCanvas, 0, 0, W, H);
+}
+
+// ---- Loop: fixed step, frame time clamped ---------------------------------------------
+function step() {
+  if (pressed('KeyM')) { setMuted(!muted); hit.delete('KeyM'); }
+  scenes[scene].update(STEP); hit.clear();
+}
+let last, acc = 0, ALPHA = 1;
+function tick() {
+  const now = clock.now();
+  acc += Math.min(now - last, 0.25); last = now;
+  while (acc >= STEP) { step(); acc -= STEP; }
+  ALPHA = acc / STEP;
+  drawFrame();
+}
+function drawFrame() { scenes[scene].draw(); }
+function frame() { tick(); requestAnimationFrame(frame); }
+function timer() { if (document.visibilityState === 'visible' && clock.now() - last > 0.1) tick(); }
+addEventListener('pagehide', () => { if (state && scene !== 'title') saveGame(state); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && state && scene !== 'title') saveGame(state); });
+
+// ---- What a check can read and drive (?manual=1 stops the loop; players never see it) ----
+window.game = {
+  get scene() { return scene; },
+  get state() { return state; },
+  press(code) { hit.add(code); },
+  hold(code, on) { on ? down.add(code) : down.delete(code); },
+  get events() { return events; },
+  step(n = 1, draw = true, alpha = 1) {
+    for (let i = 0; i < n; i++) step();
+    if (draw) { ALPHA = alpha; drawFrame(); }
+  },
+};
+
+reset();
+scene = params.get('scene') || 'title';
+last = clock.now();
+if (params.get('manual') === '1') drawFrame();
+else { requestAnimationFrame(frame); setInterval(timer, 50); }
+</script>
+</body>
+</html>

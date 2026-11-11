@@ -1,0 +1,18 @@
+2D	the whole world is a flat 2D tile map drawn on a 320x180 canvas	evidence/play.png
+pixel art	every tile, figure, fish and prop is drawn pixel by pixel in code and scaled up with no smoothing	evidence/play.png
+Pixel Art	same as pixel art: world canvas 320x180 scaled 4x, nearest-neighbour	evidence/figures.png
+Top-Down	top-down camera that follows the fisherman and stops at the map edges	evidence/play.png
+visão superior	the same top-down view	evidence/play.png
+RPG clássicos	classic-RPG look: 16 px tiles, 4-direction characters, wooden retro panels and monospace type	evidence/play.png
+Câmera Top-Down	camera() in index.html follows the player from above	evidence/play.png
+Animações fluidas	4-frame walk, run, cast swing, wait, fight, catch and rest poses	evidence/figures.png
+Água com animações de ondas	drawWaterAnim: moving wave glints and shore foam every frame	evidence/play.png
+Vegetação animada	grass tufts, reeds, bushes and tree canopies sway (drawDecor, drawProp)	evidence/play.png
+Peixes nadando pelo mapa	fish shadows swim around the lake and flee from the bobber	evidence/play.png
+Efeitos visuais durante a pesca	splashes, ripples, the bobber dipping, the "!" bubble, the fish leaping to the hand	evidence/play.png
+Interface com estética retrô	wooden pixel panels, monospace type, cream on brown	evidence/play.png
+paleta de cores naturais	green grass and leaves, blue water, brown wood and dirt, sand (PAL in art.js)	evidence/play.png
+320x180	the world canvas is exactly 320x180 (VW, VH in index.html)	evidence/play.png
+escala adaptativa	fit() scales the canvas to any window; the world scales 4x inside it	evidence/play.png
+Lago Esmeralda	the outdoor map, named in the HUD	evidence/play.png
+Android	miss: no Android package in a one-shot; it runs in a phone's browser with touch controls and full screen
