@@ -1,13 +1,13 @@
 # Story 002: Esqueleto 3D: terreno, lago, câmera e pescador
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Progress
 > **Layer**: Core
 > **Type**: Visual/Feel
 > **Estimate**: L
 > **Build step**: core
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-11
 
 ## Context
 
