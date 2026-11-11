@@ -25,3 +25,29 @@ framework:
 # here. `/project-settings --local <key>=<value>` writes there; `/project-settings <key>=<value>`
 # edits this file. See `.claude/docs/config-resolution.md` for the full
 # precedence order.
+engine:
+  name: "Godot"
+  version: "4.7"
+  language: "GDScript"
+  # rendering: Android mid-range target; the studio table's 3D non-web default is Forward+ (desktop-focused)
+  rendering: "Mobile"
+  physics: "Jolt"
+specialists:
+  code: "godot-gdscript-specialist"
+  shader: "godot-shader-specialist"
+  ui: "godot-specialist"
+  additional: ["godot-gdextension-specialist"]
+naming:
+  classes: PascalCase
+  variables: snake_case
+  constants: SCREAMING_SNAKE
+  signals: past_tense
+  files: snake_case
+  scenes: snake_case
+commands:
+  # TODO: godot is not on PATH here (not installed in this container; installed later on the user's computer) — set the editor's full path via /project-settings
+  # build: no export preset yet. Create the Android preset, then set: godot --headless --export-debug '<preset>'
+  build: "[TO BE CONFIGURED]"
+  test: "godot --headless -s -d --remote-debug tcp://127.0.0.1:0 res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests --ignoreHeadlessMode"
+  run: "godot --path . --windowed --resolution 1280x720"
+  smoke: "godot --headless --quit-after 5"

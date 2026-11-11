@@ -1,0 +1,14 @@
+; Engine configuration file.
+; Written by /setup-engine on 2026-11-11 for Godot 4.7 (Mobile renderer).
+; run/main_scene is left unset: /dev-story or the user sets it once a scene exists.
+
+config_version=5
+
+[application]
+
+config/name="Lakebound"
+config/features=PackedStringArray("4.7", "Mobile")
+
+[rendering]
+
+renderer/rendering_method="mobile"
