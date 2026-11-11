@@ -406,8 +406,8 @@ OBJETIVO FINAL: Criar um simulador de pesca 2D em Pixel Art, com exploração, c
 **Intent:** payoff builds *(provisional)*
 
 ## Look and references
-- Look: 3D estilizado, aconchegante, como jogos de fazenda em 3D: terreno verde, caminhos de terra, árvores, pedras, flores, cercas, casas com telhados detalhados, lagos e píeres de madeira; personagens 3D animados; cores vivas e naturais (verde, azul, marrom). Sem pixel art. A referência é o vídeo do usuário, que não chegou: capturas de tela em references/ ajudam. *(you said, 2026-11-11 after play)*
-- References: jogos aconchegantes de fazenda em 3D *(you said; the video was not received)*. O protótipo 2D (`prototypes/lakebound/`, tag `one-shot/lakebound`) é a referência de regras e números.
+- Look: 3D estilizado com cara de pintado à mão, luz quente de fim de tarde, cores saturadas e muito verde, como `references/lakebound-3d-look.png` *(you said: "Eu quero desse jeito")*. Propriedade com casa de telhado vermelho e chaminé com fumaça, galpão, horta cercada, galinheiro, caixa d'água e moinho; rio com cachoeiras desaguando no lago, píer de madeira com barco a remo, ilhota, vitórias-régias, juncos e pedras; loja de pesca com toldo listrado azul e branco e placa de peixe, mural, banco, poste de luz, caminhos de terra, cercas e pinheiros. Personagens 3D animados. Sem pixel art. HUD: no topo, nível com barra de progresso, moedas, energia, dia e hora com sol, engrenagem; joystick embaixo à esquerda; botão grande de pescar, mochila, Descansar, Livro e Loja embaixo à direita.
+- References: `references/lakebound-3d-look.png` (o visual, a câmera, a vila e o HUD) *(you said)*. O protótipo 2D (`prototypes/lakebound/`, tag `one-shot/lakebound`) é a referência de regras e números. A barra de nível mostra espécies descobertas até o próximo nível, não XP *(you said)*.
 - View: 3D · Camera: superior inclinada, perspectiva isométrica, seguindo o pescador; adequada a telas pequenas de celular na horizontal.
 
 ## First minute
@@ -460,6 +460,7 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 ## Out of scope
 - APK nativo Android: este build roda no navegador do celular, com toque em tela cheia: grow it
 - outros mapas além do Lago Esmeralda: grow it
+- compras com dinheiro real (os botões "+" de moedas e energia da referência): ideia futura, não construída agora *(you said)*
 
 ## Build order
 1. Lago Esmeralda com pesca completa, 35 espécies, loja, níveis, energia, dia e noite, Livro, interface e salvamento: a primeira versão jogável e completa pedida.
