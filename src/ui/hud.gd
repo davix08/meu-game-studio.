@@ -22,9 +22,9 @@ var _elapsed: float = 0.0
 func setup(look: WorldLook) -> void:
 	_refresh = look.num("hud", "fps_refresh_seconds")
 	var region: Label = _make_pill(look, look.text("hud", "region_name"), look.integer("hud", "region_font_size"))
-	region.get_parent().set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE, look.integer("hud", "margin"))
+	(region.get_parent() as Control).set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE, look.integer("hud", "margin"))
 	_fps_label = _make_pill(look, "FPS 0", look.integer("hud", "fps_font_size"))
-	var fps_panel: Control = _fps_label.get_parent()
+	var fps_panel: Control = _fps_label.get_parent() as Control
 	fps_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, look.integer("hud", "margin"))
 	fps_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 
