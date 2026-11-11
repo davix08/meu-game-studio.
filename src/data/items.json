@@ -1,0 +1,18 @@
+[
+	{
+		"id": "lanche",
+		"name": "Lanche",
+		"price": 30,
+		"level": 1,
+		"desc": "Recupera energia",
+		"effect": "snack"
+	},
+	{
+		"id": "sorte",
+		"name": "Isca da sorte",
+		"price": 150,
+		"level": 2,
+		"desc": "Mais peixes raros por 2 horas",
+		"effect": "luck"
+	}
+]

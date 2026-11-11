@@ -1,0 +1,37 @@
+{
+	"levels": [
+		"Iniciante",
+		"Pescador",
+		"Veterano",
+		"Mestre",
+		"Lenda",
+		"Lenda do Lago"
+	],
+	"rarities": [
+		{
+			"name": "Comum",
+			"color": "#d9dccf",
+			"weight_key": "w_common"
+		},
+		{
+			"name": "Incomum",
+			"color": "#6fd06a",
+			"weight_key": "w_uncommon"
+		},
+		{
+			"name": "Raro",
+			"color": "#5aa8ff",
+			"weight_key": "w_rare"
+		},
+		{
+			"name": "Épico",
+			"color": "#c27bff",
+			"weight_key": "w_epic"
+		},
+		{
+			"name": "Lendário",
+			"color": "#ffc93c",
+			"weight_key": "w_legendary"
+		}
+	]
+}

@@ -1,0 +1,414 @@
+{
+	"seed": 1,
+	"tune": {
+		"volume": {
+			"value": 0.5,
+			"min": 0,
+			"max": 1,
+			"step": 0.05
+		},
+		"walk_speed": {
+			"value": 52,
+			"min": 20,
+			"max": 120,
+			"step": 2
+		},
+		"run_speed": {
+			"value": 88,
+			"min": 40,
+			"max": 180,
+			"step": 2
+		},
+		"run_drain": {
+			"value": 0.5,
+			"min": 0,
+			"max": 5,
+			"step": 0.1
+		},
+		"auto_run_tiles": {
+			"value": 7,
+			"min": 2,
+			"max": 30,
+			"step": 1
+		},
+		"minutes_per_second": {
+			"value": 2,
+			"min": 0.5,
+			"max": 20,
+			"step": 0.5
+		},
+		"day_start": {
+			"value": 360,
+			"min": 240,
+			"max": 600,
+			"step": 10
+		},
+		"day_end": {
+			"value": 1560,
+			"min": 1200,
+			"max": 1680,
+			"step": 10
+		},
+		"cast_cost": {
+			"value": 6,
+			"min": 0,
+			"max": 30,
+			"step": 1
+		},
+		"rest_regen": {
+			"value": 7,
+			"min": 1,
+			"max": 50,
+			"step": 1
+		},
+		"rest_time_mult": {
+			"value": 5,
+			"min": 1,
+			"max": 20,
+			"step": 1
+		},
+		"snack_energy": {
+			"value": 40,
+			"min": 5,
+			"max": 100,
+			"step": 5
+		},
+		"cast_time": {
+			"value": 0.55,
+			"min": 0.2,
+			"max": 2,
+			"step": 0.05
+		},
+		"wait_min": {
+			"value": 2.5,
+			"min": 0.5,
+			"max": 20,
+			"step": 0.5
+		},
+		"wait_max": {
+			"value": 7,
+			"min": 1,
+			"max": 30,
+			"step": 0.5
+		},
+		"react_window": {
+			"value": 1.4,
+			"min": 0.4,
+			"max": 4,
+			"step": 0.1
+		},
+		"react_hard": {
+			"value": 0.55,
+			"min": 0,
+			"max": 1.5,
+			"step": 0.05
+		},
+		"pull_accel": {
+			"value": 3.2,
+			"min": 0.5,
+			"max": 10,
+			"step": 0.1
+		},
+		"fall_accel": {
+			"value": 2.6,
+			"min": 0.5,
+			"max": 10,
+			"step": 0.1
+		},
+		"max_vel": {
+			"value": 1.3,
+			"min": 0.3,
+			"max": 4,
+			"step": 0.1
+		},
+		"zone_base": {
+			"value": 0.3,
+			"min": 0.08,
+			"max": 0.8,
+			"step": 0.01
+		},
+		"zone_shrink": {
+			"value": 0.15,
+			"min": 0,
+			"max": 0.4,
+			"step": 0.01
+		},
+		"zone_min": {
+			"value": 0.08,
+			"min": 0.03,
+			"max": 0.3,
+			"step": 0.01
+		},
+		"zone_speed": {
+			"value": 0.18,
+			"min": 0,
+			"max": 2,
+			"step": 0.02
+		},
+		"zone_speed_hard": {
+			"value": 0.85,
+			"min": 0,
+			"max": 3,
+			"step": 0.05
+		},
+		"dart_chance": {
+			"value": 0.75,
+			"min": 0,
+			"max": 3,
+			"step": 0.05
+		},
+		"progress_start": {
+			"value": 0.28,
+			"min": 0.05,
+			"max": 0.9,
+			"step": 0.01
+		},
+		"progress_gain": {
+			"value": 0.3,
+			"min": 0.05,
+			"max": 1.5,
+			"step": 0.01
+		},
+		"progress_loss": {
+			"value": 0.2,
+			"min": 0.02,
+			"max": 1.5,
+			"step": 0.01
+		},
+		"progress_loss_hard": {
+			"value": 0.22,
+			"min": 0,
+			"max": 1.5,
+			"step": 0.01
+		},
+		"w_common": {
+			"value": 60,
+			"min": 0,
+			"max": 100,
+			"step": 1
+		},
+		"w_uncommon": {
+			"value": 26,
+			"min": 0,
+			"max": 100,
+			"step": 1
+		},
+		"w_rare": {
+			"value": 10,
+			"min": 0,
+			"max": 100,
+			"step": 0.5
+		},
+		"w_epic": {
+			"value": 3.4,
+			"min": 0,
+			"max": 50,
+			"step": 0.1
+		},
+		"w_legendary": {
+			"value": 0.9,
+			"min": 0,
+			"max": 20,
+			"step": 0.1
+		},
+		"deep_bonus": {
+			"value": 0.3,
+			"min": 0,
+			"max": 2,
+			"step": 0.05
+		},
+		"spot_bonus": {
+			"value": 0.35,
+			"min": 0,
+			"max": 2,
+			"step": 0.05
+		},
+		"spot_wait": {
+			"value": 0.6,
+			"min": 0.1,
+			"max": 1,
+			"step": 0.05
+		},
+		"spot_radius": {
+			"value": 22,
+			"min": 6,
+			"max": 60,
+			"step": 1
+		},
+		"new_bias": {
+			"value": 2,
+			"min": 1,
+			"max": 10,
+			"step": 0.5
+		},
+		"luck_mult": {
+			"value": 2.5,
+			"min": 1,
+			"max": 10,
+			"step": 0.1
+		},
+		"luck_minutes": {
+			"value": 120,
+			"min": 10,
+			"max": 600,
+			"step": 10
+		},
+		"weight_skew": {
+			"value": 1.8,
+			"min": 1,
+			"max": 4,
+			"step": 0.1
+		},
+		"bag_size": {
+			"value": 20,
+			"min": 5,
+			"max": 60,
+			"step": 1
+		},
+		"start_coins": {
+			"value": 30,
+			"min": 0,
+			"max": 5000,
+			"step": 10
+		},
+		"need2": {
+			"value": 5,
+			"min": 1,
+			"max": 35,
+			"step": 1
+		},
+		"need3": {
+			"value": 12,
+			"min": 1,
+			"max": 35,
+			"step": 1
+		},
+		"need4": {
+			"value": 19,
+			"min": 1,
+			"max": 35,
+			"step": 1
+		},
+		"need5": {
+			"value": 25,
+			"min": 1,
+			"max": 35,
+			"step": 1
+		},
+		"need6": {
+			"value": 35,
+			"min": 1,
+			"max": 35,
+			"step": 1
+		},
+		"reward2": {
+			"value": 100,
+			"min": 0,
+			"max": 20000,
+			"step": 50
+		},
+		"reward3": {
+			"value": 300,
+			"min": 0,
+			"max": 20000,
+			"step": 50
+		},
+		"reward4": {
+			"value": 900,
+			"min": 0,
+			"max": 20000,
+			"step": 50
+		},
+		"reward5": {
+			"value": 2500,
+			"min": 0,
+			"max": 50000,
+			"step": 100
+		},
+		"reward6": {
+			"value": 8000,
+			"min": 0,
+			"max": 50000,
+			"step": 100
+		},
+		"fish_shadows": {
+			"value": 16,
+			"min": 0,
+			"max": 60,
+			"step": 1
+		},
+		"school_count": {
+			"value": 3,
+			"min": 0,
+			"max": 8,
+			"step": 1
+		},
+		"school_move_seconds": {
+			"value": 75,
+			"min": 10,
+			"max": 600,
+			"step": 5
+		},
+		"autosave_seconds": {
+			"value": 10,
+			"min": 2,
+			"max": 120,
+			"step": 1
+		},
+		"catch_hold": {
+			"value": 1.1,
+			"min": 0.3,
+			"max": 3,
+			"step": 0.1
+		}
+	},
+	"fixed": {
+		"energy_max": 100,
+		"start_level": 1,
+		"start_day": 1,
+		"start_snacks": 1,
+		"start_rod": "bambu",
+		"start_bait": "simples",
+		"first_catch_species": "sardinha",
+		"night_start_hour": 18,
+		"night_end_hour": 6,
+		"luck_min_rarity": 2,
+		"weight_decimals": 2,
+		"value_base_mult": 0.7,
+		"value_weight_mult": 0.6,
+		"nibble_first_min": 0.35,
+		"nibble_first_span": 0.3,
+		"nibble_end_margin": 0.6,
+		"nibble_duration": 0.25,
+		"nibble_gap_min": 0.6,
+		"nibble_gap_span": 1.2,
+		"zone_start": 0.5,
+		"zone_first_move": 0.4,
+		"indicator_start": 0.3,
+		"wall_bounce": 0.25,
+		"zone_hold_base": 1.6,
+		"zone_hold_hard": 1.1,
+		"zone_hold_rand_min": 0.5,
+		"dart_time": 0.25,
+		"dart_speed_mult": 3,
+		"gain_hard_penalty": 0.4
+	},
+	"periods": [
+		{
+			"hour": 0,
+			"name": "Madrugada"
+		},
+		{
+			"hour": 6,
+			"name": "Manhã"
+		},
+		{
+			"hour": 12,
+			"name": "Tarde"
+		},
+		{
+			"hour": 18,
+			"name": "Noite"
+		}
+	]
+}

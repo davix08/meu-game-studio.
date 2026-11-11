@@ -54,10 +54,23 @@
 
 ## Files
 
-- `src/core/` (lógica), `src/data/` (espécies, varas, iscas, níveis, configuração)
-- `tests/unit/lakebound/` (testes gdUnit4, `test_*.gd`)
-
----
+- `src/core/economy.gd`
+- `src/core/energy.gd`
+- `src/core/fish_roller.gd`
+- `src/core/fishing_machine.gd`
+- `src/core/game_clock.gd`
+- `src/core/game_data.gd`
+- `src/core/game_state.gd`
+- `src/core/progression.gd`
+- `src/core/random_source.gd`
+- `src/core/save_game.gd`
+- `src/core/world_query.gd`
+- `src/data/baits.json`
+- `src/data/config.json`
+- `src/data/items.json`
+- `src/data/levels.json`
+- `src/data/rods.json`
+- `src/data/species.json`
 
 ## QA Test Cases
 
