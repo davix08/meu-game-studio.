@@ -8,6 +8,14 @@ config_version=5
 
 config/name="Lakebound"
 config/features=PackedStringArray("4.7", "Mobile")
+run/main_scene="res://scenes/main.tscn"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [rendering]
 
