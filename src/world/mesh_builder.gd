@@ -24,6 +24,7 @@ var _indices: PackedInt32Array = PackedInt32Array()
 static func make_material(roughness: float) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
+	mat.vertex_color_is_srgb = true
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT
 	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED

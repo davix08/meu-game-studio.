@@ -55,10 +55,24 @@
 
 ## Files
 
-- `src/world/` (terreno, câmera), `src/player/` (pescador, joystick), `scenes/` (`main.tscn`, `world.tscn`)
-- `production/qa/evidence/story-002-evidence.md`
-
----
+- `project.godot`
+- `scenes/main.tscn`
+- `src/data/world_look.json`
+- `src/player/fisherman.gd`
+- `src/ui/hud.gd`
+- `src/ui/virtual_stick.gd`
+- `src/world/follow_camera.gd`
+- `src/world/lake_main.gd`
+- `src/world/lake_props.gd`
+- `src/world/lake_terrain.gd`
+- `src/world/lake_water.gd`
+- `src/world/lake_world.gd`
+- `src/world/lake_world_query.gd`
+- `src/world/mesh_builder.gd`
+- `src/world/prop_meshes.gd`
+- `src/world/water.gdshader`
+- `src/world/world_grid.gd`
+- `src/world/world_look.gd`
 
 ## QA Test Cases
 

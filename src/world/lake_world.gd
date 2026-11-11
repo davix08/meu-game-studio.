@@ -58,7 +58,7 @@ func _process(delta: float) -> void:
 		var puff: MeshInstance3D = _smoke[i]
 		puff.position = _smoke_origin + Vector3(t * _smoke_drift + sin(t * 6.0 + float(i)) * 0.15, t * _smoke_rise, 0.0)
 		# Grows then shrinks to nothing, so no transparency is needed.
-		puff.scale = Vector3.ONE * (sin(t * PI) * _smoke_size)
+		puff.scale = Vector3.ONE * maxf(sin(t * PI) * _smoke_size, 0.001)
 
 
 func _build_light(look: WorldLook) -> void:

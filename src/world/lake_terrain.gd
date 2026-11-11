@@ -152,13 +152,19 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 	material_override = material
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-	# Skirt: a flat quad far beyond the map edges.
+	# Skirt: four flat strips OUTSIDE the 48x34 grid (north, south, west, east) at the land
+	# height, so nothing covers the interior (the lake bed stays visible under the water).
 	var pad: float = look.num("terrain", "skirt_margin")
-	var sy: float = look.num("terrain", "skirt_height")
 	var w: float = float(WorldGrid.WIDTH)
 	var hgt: float = float(WorldGrid.HEIGHT)
+	var skirt_color: Color = look.color("colors", "skirt")
 	var skirt_builder := MeshBuilder.new()
-	skirt_builder.add_quad(Vector3(-pad, sy, -pad), Vector3(w + pad, sy, -pad), Vector3(w + pad, sy, hgt + pad), Vector3(-pad, sy, hgt + pad), look.color("colors", "skirt"), Vector3.UP)
+	for strip: Rect2 in [Rect2(-pad, -pad, w + pad * 2.0, pad), Rect2(-pad, hgt, w + pad * 2.0, pad), Rect2(-pad, 0.0, pad, hgt), Rect2(w, 0.0, pad, hgt)]:
+		var x0: float = strip.position.x
+		var z0: float = strip.position.y
+		var x1: float = strip.end.x
+		var z1: float = strip.end.y
+		skirt_builder.add_quad(Vector3(x0, land_h, z0), Vector3(x1, land_h, z0), Vector3(x1, land_h, z1), Vector3(x0, land_h, z1), skirt_color, Vector3.UP)
 	var skirt := MeshInstance3D.new()
 	skirt.mesh = skirt_builder.build()
 	skirt.material_override = material
