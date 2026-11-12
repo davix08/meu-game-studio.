@@ -33,3 +33,48 @@ project:
 modes:
   rigor: standard
   automation: guided
+
+platform:
+  multiplayer: false
+  online: false
+  targets: [Mobile]
+  primary_input: "Touch"
+  gamepad_support: "None"
+  touch_support: "Full"
+
+engine:
+  name: "Godot"
+  version: "4.7"
+  language: "GDScript"
+  rendering: "Compatibility"
+  physics: "Godot Physics 2D"
+
+specialists:
+  code: "godot-gdscript-specialist"
+  shader: "godot-shader-specialist"
+  ui: "godot-specialist"
+  additional: ["godot-gdextension-specialist"]
+
+naming:
+  classes: PascalCase
+  variables: snake_case
+  constants: SCREAMING_SNAKE
+  signals: past_tense
+  files: snake_case
+  scenes: snake_case
+
+performance:
+  target_framerate: 60
+  frame_budget_ms: 16.6
+  draw_call_limit: 200
+  memory_ceiling_mb: 512
+
+testing:
+  framework: gdUnit4
+
+# build: no export preset exists yet — set it with /project-settings once the Android preset is created.
+commands:
+  build: "[TO BE CONFIGURED]"
+  test: "godot --headless -s -d --remote-debug tcp://127.0.0.1:0 res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests --ignoreHeadlessMode"
+  run: "godot --path . --windowed --resolution 1280x720"
+  smoke: "godot --headless --quit-after 5"
