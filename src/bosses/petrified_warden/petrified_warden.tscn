@@ -1,0 +1,39 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://src/bosses/petrified_warden/petrified_warden.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://assets/data/bosses/petrified_warden.tres" id="2_data"]
+[ext_resource type="Script" path="res://src/bosses/petrified_warden/petrified_warden_visual.gd" id="3_visual"]
+[ext_resource type="Script" path="res://src/combat/health_component.gd" id="4_health"]
+[ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="5_hurtbox"]
+[ext_resource type="Script" path="res://src/combat/hitbox.gd" id="6_hitbox"]
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(240, 300)
+
+[sub_resource type="RectangleShape2D" id="contact_shape"]
+size = Vector2(200, 380)
+
+[node name="PetrifiedWarden" type="Node2D"]
+script = ExtResource("1_boss")
+data = ExtResource("2_data")
+
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("3_visual")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_health")
+
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+script = ExtResource("5_hurtbox")
+health = NodePath("../HealthComponent")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -250)
+shape = SubResource("hurt_shape")
+
+[node name="ContactHitbox" type="Area2D" parent="."]
+script = ExtResource("6_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ContactHitbox"]
+position = Vector2(0, -190)
+shape = SubResource("contact_shape")

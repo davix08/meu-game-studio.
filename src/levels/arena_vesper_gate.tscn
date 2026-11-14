@@ -1,0 +1,49 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/levels/level_manager.gd" id="1_level"]
+[ext_resource type="Script" path="res://src/levels/arena_background.gd" id="2_bg"]
+[ext_resource type="PackedScene" path="res://src/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://src/bosses/petrified_warden/petrified_warden.tscn" id="4_boss"]
+[ext_resource type="PackedScene" path="res://src/ui/hud/hud.tscn" id="5_hud"]
+
+[sub_resource type="WorldBoundaryShape2D" id="floor_shape"]
+
+[sub_resource type="RectangleShape2D" id="wall_shape"]
+size = Vector2(40, 1600)
+
+[node name="ArenaVesperGate" type="Node2D"]
+script = ExtResource("1_level")
+
+[node name="Background" type="Node2D" parent="."]
+script = ExtResource("2_bg")
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(0, 640)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(-20, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("wall_shape")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(1300, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("wall_shape")
+
+[node name="Boss" parent="." instance=ExtResource("4_boss")]
+position = Vector2(1060, 640)
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+position = Vector2(220, 640)
+
+[node name="Projectiles" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(640, 360)
+
+[node name="Hud" parent="." instance=ExtResource("5_hud")]

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/player/weapons/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Lanca de Luz"
+damage = 4
+fire_interval = 0.11
+projectile_speed = 1700.0
+projectile_radius = 9.0
+projectile_lifetime = 1.0
+spread_pixels = 6.0
+color = Color(0.75, 0.9, 1, 1)
+ex_damage = 28
+ex_speed = 1100.0
+ex_radius = 26.0
+ex_color = Color(0.55, 0.8, 1, 1)
+super_tick_damage = 12
+super_tick_interval = 0.08
+super_duration = 1.1
+super_length = 1400.0
+super_width = 90.0
+super_color = Color(1, 0.95, 0.7, 1)

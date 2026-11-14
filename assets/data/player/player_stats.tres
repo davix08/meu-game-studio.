@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="PlayerStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/player/player_stats.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_health = 3
+invulnerability_time = 1.2
+hit_stun_time = 0.3
+hit_knockback = Vector2(260, -380)
+move_speed = 420.0
+gravity = 2600.0
+max_fall_speed = 1400.0
+jump_velocity = -980.0
+jump_cut_multiplier = 0.45
+coyote_time = 0.1
+jump_buffer_time = 0.12
+dash_speed = 1000.0
+dash_duration = 0.22
+dash_cooldown = 0.25
+parry_window = 0.18
+parry_bounce_velocity = -900.0
+parry_invulnerability = 0.35
+max_cards = 5
+cards_per_damage = 0.012
+cards_per_parry = 1.0

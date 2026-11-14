@@ -1,0 +1,78 @@
+[gd_scene load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://src/player/player.gd" id="1_player"]
+[ext_resource type="Resource" path="res://assets/data/player/player_stats.tres" id="2_stats"]
+[ext_resource type="Script" path="res://src/player/states/player_state_machine.gd" id="3_sm"]
+[ext_resource type="Script" path="res://src/player/states/ground_state.gd" id="4_ground"]
+[ext_resource type="Script" path="res://src/player/states/duck_state.gd" id="5_duck"]
+[ext_resource type="Script" path="res://src/player/states/air_state.gd" id="6_air"]
+[ext_resource type="Script" path="res://src/player/states/dash_state.gd" id="7_dash"]
+[ext_resource type="Script" path="res://src/player/states/hit_state.gd" id="8_hit"]
+[ext_resource type="Script" path="res://src/player/states/dead_state.gd" id="9_dead"]
+[ext_resource type="Script" path="res://src/combat/health_component.gd" id="10_health"]
+[ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="11_hurtbox"]
+[ext_resource type="Script" path="res://src/player/weapons/player_weapon.gd" id="12_weapon"]
+[ext_resource type="Resource" path="res://assets/data/player/weapon_lance.tres" id="13_weapon_data"]
+[ext_resource type="Script" path="res://src/player/player_visual.gd" id="14_visual"]
+
+[sub_resource type="RectangleShape2D" id="body_shape"]
+size = Vector2(36, 76)
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(28, 64)
+
+[sub_resource type="CircleShape2D" id="parry_shape"]
+radius = 58.0
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_player")
+stats = ExtResource("2_stats")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -38)
+shape = SubResource("body_shape")
+
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("14_visual")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("10_health")
+
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+script = ExtResource("11_hurtbox")
+health = NodePath("../HealthComponent")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -36)
+shape = SubResource("hurt_shape")
+
+[node name="ParryArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ParryArea"]
+position = Vector2(0, -40)
+shape = SubResource("parry_shape")
+
+[node name="Weapon" type="Node2D" parent="."]
+script = ExtResource("12_weapon")
+data = ExtResource("13_weapon_data")
+
+[node name="StateMachine" type="Node" parent="."]
+script = ExtResource("3_sm")
+
+[node name="Ground" type="Node" parent="StateMachine"]
+script = ExtResource("4_ground")
+
+[node name="Duck" type="Node" parent="StateMachine"]
+script = ExtResource("5_duck")
+
+[node name="Air" type="Node" parent="StateMachine"]
+script = ExtResource("6_air")
+
+[node name="Dash" type="Node" parent="StateMachine"]
+script = ExtResource("7_dash")
+
+[node name="Hit" type="Node" parent="StateMachine"]
+script = ExtResource("8_hit")
+
+[node name="Dead" type="Node" parent="StateMachine"]
+script = ExtResource("9_dead")

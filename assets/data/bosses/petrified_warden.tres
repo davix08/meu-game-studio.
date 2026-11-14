@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/bosses/base/boss_data.gd" id="1_data"]
+[ext_resource type="Script" path="res://src/bosses/base/boss_phase_data.gd" id="2_phase"]
+
+[sub_resource type="Resource" id="phase_1"]
+script = ExtResource("2_phase")
+display_name = "Despertar"
+start_health_fraction = 1.0
+attacks = PackedStringArray("stone_volley", "ground_wave")
+attack_cooldown = 1.4
+projectile_speed_scale = 1.0
+parryable_every = 3
+tint = Color(1, 1, 1, 1)
+
+[sub_resource type="Resource" id="phase_2"]
+script = ExtResource("2_phase")
+display_name = "Runas Acesas"
+start_health_fraction = 0.66
+attacks = PackedStringArray("shard_rain", "stone_volley", "ground_wave")
+attack_cooldown = 1.1
+projectile_speed_scale = 1.15
+parryable_every = 4
+tint = Color(0.9, 0.95, 1, 1)
+
+[sub_resource type="Resource" id="phase_3"]
+script = ExtResource("2_phase")
+display_name = "Coracao Exposto"
+start_health_fraction = 0.33
+attacks = PackedStringArray("slam", "shard_rain", "slam", "stone_volley")
+attack_cooldown = 0.8
+projectile_speed_scale = 1.3
+parryable_every = 4
+tint = Color(1, 0.8, 0.75, 1)
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Vigia Petrificado"
+max_health = 1400
+contact_damage = 1
+projectile_damage = 1
+phases = Array[ExtResource("2_phase")]([SubResource("phase_1"), SubResource("phase_2"), SubResource("phase_3")])
