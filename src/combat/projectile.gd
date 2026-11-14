@@ -14,7 +14,7 @@ const PARRY_COLOR := Color(1.0, 0.78, 0.25)
 ## Units per second.
 var velocity: Vector2 = Vector2.ZERO
 ## Downward acceleration (0 = straight line).
-var gravity: float = 0.0
+var fall_acceleration: float = 0.0
 ## Seconds before the projectile frees itself.
 var lifetime: float = 3.0
 ## Can be parried by the player.
@@ -63,7 +63,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	velocity.y += gravity * delta
+	velocity.y += fall_acceleration * delta
 	global_position += velocity * delta
 	_age += delta
 	if _age >= lifetime or global_position.y >= floor_y:

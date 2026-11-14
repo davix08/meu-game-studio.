@@ -125,10 +125,10 @@ func _on_died() -> void:
 # --- Helpers for subclasses ------------------------------------------------
 
 ## Spawns an enemy projectile. Every Nth one of the phase is parryable.
-func spawn_projectile(start: Vector2, velocity: Vector2, radius: float, color: Color, gravity: float = 0.0) -> Projectile:
+func spawn_projectile(start: Vector2, velocity: Vector2, radius: float, color: Color, fall_acceleration: float = 0.0) -> Projectile:
 	var p := Projectile.new().setup(false, start, velocity * current_phase().projectile_speed_scale,
 			data.projectile_damage, radius, color)
-	p.gravity = gravity
+	p.fall_acceleration = fall_acceleration
 	p.lifetime = 6.0
 	p.floor_y = floor_y + radius
 	_projectile_counter += 1
