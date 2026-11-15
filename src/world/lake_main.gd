@@ -23,6 +23,7 @@ var _data: GameData
 var _state: GameState
 var _machine: FishingMachine
 var _energy: Energy
+var _life: WaterLife
 var _world: LakeWorld
 var _fisherman: Fisherman
 var _camera: FollowCamera
@@ -68,17 +69,17 @@ func _ready() -> void:
 	_water_plane = Plane(Vector3.UP, _water_y)
 	_state = GameState.create_new(_data)
 	var rng := RandomSource.new(_data.seed_value)
-	var life := WaterLife.new()
-	add_child(life)
-	life.setup(_look, _data, _world.grid, rng, _water_y)
-	_world.query.set_water_life(life)
+	_life = WaterLife.new()
+	add_child(_life)
+	_life.setup(_look, _data, _world.grid, rng, _water_y)
+	_world.query.set_water_life(_life)
 	var roller := FishRoller.new(_data, _state, rng)
 	var progression := Progression.new(_data, _state)
 	_machine = FishingMachine.new(_data, _state, rng, _world.query, roller, progression)
 	_energy = Energy.new(_data, _state, _machine)
 	var view := FishingView.new()
 	add_child(view)
-	view.setup(_look, _data, _machine, _fisherman, life, _water_y)
+	view.setup(_look, _data, _machine, _fisherman, _life, _water_y)
 	_fishing_hud = FishingHud.new()
 	hud.add_child(_fishing_hud)
 	_fishing_hud.setup(_look, _data, _state)
@@ -140,6 +141,7 @@ func _physics_process(delta: float) -> void:
 		elif phase == FishingMachine.Phase.CAST:
 			_machine.cancel()
 			press = false
+	_life.step(delta)
 	_machine.step(delta, hold, press)
 	_energy.step(delta)
 	if _machine.phase == FishingMachine.Phase.FIGHT:
@@ -149,9 +151,15 @@ func _physics_process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _machine == null:
 		return
-	if event is InputEventMouseButton:
+	# Touches cast directly (one cast per touch); only a real mouse (DEVICE_ID_MOUSE, 4.7) casts
+	# on click, so the mouse events Godot emulates from touches never cast a second time.
+	if event is InputEventScreenTouch:
+		var touch: InputEventScreenTouch = event
+		if touch.pressed:
+			_cast_at_screen(touch.position)
+	elif event is InputEventMouseButton:
 		var click: InputEventMouseButton = event
-		if click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+		if click.device == InputEvent.DEVICE_ID_MOUSE and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
 			_cast_at_screen(click.position)
 	elif event is InputEventKey:
 		var key: InputEventKey = event
@@ -177,7 +185,7 @@ func _cast_forward() -> void:
 	var ahead := Vector3(sin(yaw), 0.0, cos(yaw))
 	var from := Vector3(_fisherman.ground_pos.x, _water_y, _fisherman.ground_pos.y)
 	var reach: float = _data.rod_by_id(_state.rod).cast_range / WorldGrid.PIXELS_PER_BLOCK
-	var distance: float = reach
+	var distance: float = reach - 0.05 ## Just inside the range, so rounding never gives OUT_OF_RANGE.
 	while distance >= _FORWARD_STEP:
 		var point: Vector3 = from + ahead * distance
 		if _world.query.is_water(LakeWorldQuery.to_query_pos(Vector3(point.x, 0.0, point.z))):

@@ -48,6 +48,8 @@ var _card_time: float = 0.0
 var _card_fish: GameState.Catch
 var _card_new: bool = false
 var _card_record: bool = false
+var _card_armed: bool = false
+var _restore_frame: int = 0
 
 
 ## Builds the button, the Rest button and the card catcher; loads the texts.
@@ -109,6 +111,11 @@ func _process(delta: float) -> void:
 	if _machine == null:
 		return
 	_clock += delta
+	if _restore_frame > 0 and Engine.get_process_frames() >= _restore_frame:
+		_restore_frame = 0
+		pull.reset()
+		pull.visible = true
+		_rest_button.visible = true
 	_toast_left = maxf(0.0, _toast_left - delta)
 	_tranco_left = maxf(0.0, _tranco_left - delta)
 	if card_open:
@@ -262,6 +269,8 @@ func _on_fish_caught(fish: GameState.Catch, is_new: bool, is_record: bool) -> vo
 	_card_record = is_record
 	_card_time = 0.0
 	card_open = true
+	_card_armed = false
+	_restore_frame = 0
 	_catcher.visible = true
 	pull.reset()
 	pull.visible = false
@@ -274,15 +283,23 @@ func _on_level_up(new_level: int, _reward: int) -> void:
 
 
 func _on_catcher_input(event: InputEvent) -> void:
-	var tapped: bool = (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed) \
-		or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed)
-	if tapped and _card_time > _n("card_continue_delay"):
+	# Closes on RELEASE of a press that began on the card (both press and release are consumed);
+	# the PUXAR and Rest buttons come back one frame later, so the same touch cannot reach them.
+	var pressed: bool = false
+	if event is InputEventScreenTouch:
+		pressed = (event as InputEventScreenTouch).pressed
+	elif event is InputEventMouseButton:
+		pressed = (event as InputEventMouseButton).pressed
+	else:
+		return
+	_catcher.accept_event()
+	if pressed:
+		_card_armed = _card_time > _n("card_continue_delay")
+	elif _card_armed:
+		_card_armed = false
 		card_open = false
 		_catcher.visible = false
-		pull.visible = true
-		_rest_button.visible = true
-	if event is InputEventScreenTouch or event is InputEventMouseButton:
-		_catcher.accept_event()
+		_restore_frame = Engine.get_process_frames() + 1
 
 
 ## A text from texts_pt.json.

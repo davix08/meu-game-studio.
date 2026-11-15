@@ -172,20 +172,20 @@ func _new_school() -> School:
 
 ## A flat fish silhouette (body ellipse + tail), 1 unit long along +X, drawn as one MultiMesh.
 func _build_shadow_visual(look: WorldLook) -> void:
-	var tool := SurfaceTool.new()
-	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	tool.set_normal(Vector3.UP)
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	surface.set_normal(Vector3.UP)
 	var segments: int = 12
 	var center := Vector3(0.1, 0.0, 0.0)
 	for i: int in range(segments):
 		var a0: float = TAU * float(i) / float(segments)
 		var a1: float = TAU * float(i + 1) / float(segments)
-		tool.add_vertex(center)
-		tool.add_vertex(center + Vector3(cos(a0) * 0.4, 0.0, sin(a0) * 0.5))
-		tool.add_vertex(center + Vector3(cos(a1) * 0.4, 0.0, sin(a1) * 0.5))
-	tool.add_vertex(Vector3(-0.25, 0.0, 0.0))
-	tool.add_vertex(Vector3(-0.5, 0.0, 0.45))
-	tool.add_vertex(Vector3(-0.5, 0.0, -0.45))
+		surface.add_vertex(center)
+		surface.add_vertex(center + Vector3(cos(a0) * 0.4, 0.0, sin(a0) * 0.5))
+		surface.add_vertex(center + Vector3(cos(a1) * 0.4, 0.0, sin(a1) * 0.5))
+	surface.add_vertex(Vector3(-0.25, 0.0, 0.0))
+	surface.add_vertex(Vector3(-0.5, 0.0, 0.45))
+	surface.add_vertex(Vector3(-0.5, 0.0, -0.45))
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -193,7 +193,7 @@ func _build_shadow_visual(look: WorldLook) -> void:
 	material.albedo_color = look.color("fishing", "shadow_color")
 	_multi = MultiMesh.new()
 	_multi.transform_format = MultiMesh.TRANSFORM_3D
-	_multi.mesh = tool.commit()
+	_multi.mesh = surface.commit()
 	_multi.instance_count = _shadows.size()
 	var node := MultiMeshInstance3D.new()
 	node.multimesh = _multi

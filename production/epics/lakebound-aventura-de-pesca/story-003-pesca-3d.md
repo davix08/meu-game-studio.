@@ -54,10 +54,15 @@
 
 ## Files
 
-- `src/fishing/` (raycast, boia, linha), `src/ui/` (barra de disputa, HUD, botões)
-- `tests/integration/lakebound/` (ou um roteiro de playtest)
-
----
+- `src/data/texts_pt.json`
+- `src/data/world_look.json`
+- `src/fishing/fishing_view.gd`
+- `src/fishing/water_life.gd`
+- `src/player/fisherman.gd`
+- `src/ui/fishing_hud.gd`
+- `src/ui/pull_button.gd`
+- `src/world/lake_main.gd`
+- `src/world/lake_world_query.gd`
 
 ## QA Test Cases
 
