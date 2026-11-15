@@ -435,7 +435,7 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 - [x] Energia, descanso, relógio de dia e noite em 4 períodos, sono automático
 - [x] Livro de Peixes, interface completa, controles de toque e teclado, salvamento automático
 - [x] Etapa 1, base: dados do 2D (35 espécies, varas, iscas, níveis e valores de ajuste) no Godot, lógica separada do desenho, testes automáticos da pesca, economia e níveis
-- [ ] Etapa 2, esqueleto 3D: terreno, lago com água, câmera inclinada, pescador andando com joystick virtual e colisão
+- [x] Etapa 2, esqueleto 3D: terreno, lago com água, câmera inclinada, pescador andando com joystick virtual e colisão
 - [ ] Etapa 3, pesca em 3D: tocar na água, lançar a boia, mordida, a mesma barra de disputa e a captura
 - [ ] Etapa 4, cenário I: propriedade e vila como na referência (casa com varanda, galpão com trator, horta cercada com espantalho, galinheiro, caixa d'água e moinho, loja de pesca com toldo, mural, banco, poste e cercas), só como cenário
 - [ ] Etapa 5, cenário II: rio com cachoeiras, píer em L com barco, ilhota, água com espuma e modelos melhores

@@ -1,13 +1,13 @@
 # Story 002: Esqueleto 3D: terreno, lago, câmera e pescador
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: In Progress
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Visual/Feel
 > **Estimate**: L
 > **Build step**: core
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: 2026-11-11
+> **Last Updated**: 2026-11-15
 
 ## Context
 
@@ -93,3 +93,21 @@
 
 - Depends on: `production/epics/lakebound-aventura-de-pesca/story-001-base-dados-e-logica.md`
 - Unlocks: `production/epics/lakebound-aventura-de-pesca/story-003-pesca-3d.md`
+
+## Completion Notes
+**Completed**: 2026-11-15
+**Criteria**: 7/7 passing
+**Deviations**: ADVISORY, accepted by the user — own `VirtualStick` (src/ui/virtual_stick.gd) instead of the Godot 4.7 `VirtualJoystick` node named in the criterion. Notes: deep-water sparkle shows a regular dot grid (Story 005); the fisherman reads small at camera size 14 (accepted).
+**Test Evidence**: production/qa/evidence/story-002-esqueleto-3d/02-camera-isometrica-pescador-novo.jpg; sign-off production/qa/evidence/story-002-esqueleto-3d-evidence.md
+**Reviewed by**: self, no independent review
+
+## Calls beyond the design
+- Camera: isometric orthographic, size 14 m, pitch 35.264°, yaw 45°, distance 30, near 1, far 90, smoothing 6, edge margins 12/12/10/10 (`src/data/world_look.json` camera) · kept 2026-11-15
+- Input rotated by the camera yaw for keyboard and joystick (`src/world/lake_main.gd`) · kept 2026-11-15
+- 1 block = 1 m; WorldQuery positions in 2D pixels (×16, `to_query_pos`) (`src/world/lake_world_query.gd`, `world_grid.gd`) · kept 2026-11-15
+- Feet box centred 0.25 × 0.16 m; walk 3.25 m/s and run 5.5 m/s from config.json; run with Shift or the stick at ≥ 0.95 (`world_grid.gd`, `lake_main.gd`, `world_look.json`) · kept 2026-11-15
+- Fisherman ~1.30 m, head ~40%, after references/pescador-design-*.png: grey beard, dark curly hair, straw hat with red band, red vest over cream shirt, belt with gold buckle, jeans, brown boots, backpack; head/hat sway 4° (`src/player/fisherman.gd`, `world_look.json` player/colors) · kept 2026-11-15
+- Warm late-afternoon light #ffd9a0 1.35, procedural sky, fog #f4d3a0 0.006, MSAA 2×, saturated palette, vertex colours as sRGB (`src/world/lake_world.gd`, `mesh_builder.gd`, `world_look.json`) · kept 2026-11-15
+- Terrain relief ±0.12, water at −0.1, lake beds −0.38/−1.0, skirt strips outside the map; water shader `water.gdshader` (`src/world/lake_terrain.gd`, `lake_water.gd`) · kept 2026-11-15
+- Extras: pier lantern, rowboat, chimney smoke; no fences (`src/world/prop_meshes.gd`, `lake_world.gd`) · kept 2026-11-15
+- Joystick radius 100, dead zone 0.15; HUD with region and FPS only (`src/ui/virtual_stick.gd`, `hud.gd`) · kept 2026-11-15

@@ -15,7 +15,7 @@ Features 8 a 15 do brief (etapas 1 a 8 do plano). Construção, hortas, animais 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
 | 001 | Base: dados e lógica do jogo no Godot | Logic | Complete | N/A |
-| 002 | Esqueleto 3D: terreno, lago, câmera e pescador | Visual/Feel | Ready | N/A |
+| 002 | Esqueleto 3D: terreno, lago, câmera e pescador | Visual/Feel | Complete | N/A |
 | 003 | Pesca em 3D com a barra de disputa | Integration | Ready | N/A |
 | 004 | Cenário I: propriedade e vila | Visual/Feel | Ready | N/A |
 | 005 | Cenário II: rio, cachoeiras, píer em L, ilhota e modelos melhores | Visual/Feel | Ready | N/A |
