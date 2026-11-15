@@ -8,7 +8,7 @@ extends WorldQuery
 ## divided by [constant WorldGrid.PIXELS_PER_BLOCK] to find the block; y is ignored. The 3D
 ## scene must convert with [method to_query_pos] before talking to the FishingMachine.
 ##
-## Fish schools belong to Story 003, so [method in_school] answers false for now.
+## Fish schools (Story 003) are answered by the injected [WaterLife].
 ##
 ## Usage:
 ## [codeblock]
@@ -17,6 +17,7 @@ extends WorldQuery
 ## [/codeblock]
 
 var _grid: WorldGrid
+var _life: WaterLife
 
 
 func _init(grid: WorldGrid) -> void:
@@ -39,9 +40,14 @@ func is_deep(pos: Vector3) -> bool:
 	return _grid.is_deep(_block_x(pos), _block_z(pos))
 
 
-## Always false until the fish schools exist (Story 003).
-func in_school(_pos: Vector3) -> bool:
-	return false
+## Gives the query the swimming fish and schools that answer [method in_school].
+func set_water_life(life: WaterLife) -> void:
+	_life = life
+
+
+## True when [param pos] (2D pixel units) is inside a bubbling fish school.
+func in_school(pos: Vector3) -> bool:
+	return _life != null and _life.in_school(pos)
 
 
 func _block_x(pos: Vector3) -> int:

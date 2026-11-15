@@ -52,6 +52,39 @@ var _leg_left: Node3D
 var _leg_right: Node3D
 var _material: StandardMaterial3D
 
+## Fishing poses driven by FishingView; NONE is the plain walking animation.
+enum Pose { NONE, CAST, WAIT, FIGHT, LAND }
+
+const _POSE_KEYS: Array[String] = [
+	"cast_back_degrees", "cast_forward_degrees", "cast_left_degrees", "cast_bend_degrees",
+	"wait_arm_degrees", "wait_left_degrees", "wait_bend_degrees", "wait_sway_degrees", "wait_sway_freq",
+	"fight_arm_degrees", "fight_left_degrees", "fight_lean_degrees", "fight_bend_degrees", "fight_shake_degrees", "fight_shake_freq",
+	"land_arm_degrees", "land_left_degrees", "idle_bend_degrees", "pose_blend_speed",
+]
+
+## Current pose; the walking animation blends into it.
+var pose: Pose = Pose.NONE
+## Rod throw progress 0..1 used by [constant Pose.CAST].
+var cast_progress: float = 0.0
+## Color of the fish held up in [constant Pose.LAND].
+var catch_color: Color = Color.WHITE:
+	set(value):
+		catch_color = value
+		if _catch_material != null:
+			_catch_material.albedo_color = value
+
+var _pose_blend: float = 0.0
+var _pose_time: float = 0.0
+var _last_pose: Pose = Pose.WAIT
+var _has_face_target: bool = false
+var _face_yaw: float = 0.0
+var _rod_material: StandardMaterial3D
+var _catch_material: StandardMaterial3D
+var _catch_mesh: MeshInstance3D
+var _rod_tip_seg: Node3D
+var _rod_tip: Node3D
+var _pose_k: Dictionary[String, float] = {}
+
 
 ## Reads the tuning from [param look], builds the model and places it at the spawn point.
 func setup(look: WorldLook, grid: WorldGrid, terrain: LakeTerrain, walk_speed: float, run_speed: float) -> void:
@@ -81,6 +114,8 @@ func setup(look: WorldLook, grid: WorldGrid, terrain: LakeTerrain, walk_speed: f
 	scale = Vector3.ONE * look.num("player", "model_scale")
 	_material = MeshBuilder.make_material(look.num("player", "roughness"))
 	_build_model(look)
+	_load_pose(look)
+	_build_rod(look)
 	ground_pos = WorldGrid.SPAWN
 	position = Vector3(ground_pos.x, terrain.ground_height_at(ground_pos.x, ground_pos.y), ground_pos.y)
 
@@ -98,8 +133,12 @@ func step(delta: float, dir: Vector2, run: bool) -> void:
 		if move.y != 0.0 and _grid.box_free(ground_pos.x, ground_pos.y + move.y, _half_width, _half_depth):
 			ground_pos.y += move.y
 		rotation.y = lerp_angle(rotation.y, atan2(dir.x, dir.y), 1.0 - exp(-_turn_speed * delta))
+		_has_face_target = false
+	elif _has_face_target:
+		rotation.y = lerp_angle(rotation.y, _face_yaw, 1.0 - exp(-_turn_speed * delta))
 	var moved: bool = ground_pos.distance_squared_to(before) > 0.0000001
 	_animate(delta, moved, run)
+	_apply_pose(delta)
 	var ground: float = _terrain.ground_height_at(ground_pos.x, ground_pos.y)
 	var y: float = lerpf(position.y, ground, 1.0 - exp(-_height_follow * delta))
 	position = Vector3(ground_pos.x, y, ground_pos.y)
@@ -261,3 +300,105 @@ func _add_part(parent: Node3D, part_mesh: ArrayMesh, pos: Vector3) -> void:
 	node.material_override = _material
 	node.position = pos
 	parent.add_child(node)
+
+
+## Position of the rod tip in world space (where the fishing line starts).
+func get_rod_tip() -> Vector3:
+	return _rod_tip.global_position
+
+
+## Colors the held rod (the equipped rod's color).
+func set_rod_color(color: Color) -> void:
+	_rod_material.albedo_color = color
+
+
+## Turns the fisherman toward [param world_pos] while standing still (walking overrides it).
+func face_toward(world_pos: Vector3) -> void:
+	_face_yaw = atan2(world_pos.x - position.x, world_pos.z - position.z)
+	_has_face_target = true
+
+
+func _load_pose(look: WorldLook) -> void:
+	for key: String in _POSE_KEYS:
+		var value: float = look.num("fishing", key)
+		_pose_k[key] = deg_to_rad(value) if key.ends_with("_degrees") else value
+
+
+## The rod in the right hand (two segments so the tip can bend) and the hidden fish prop.
+func _build_rod(look: WorldLook) -> void:
+	var length: float = look.num("fishing", "rod_length")
+	var base_len: float = length * look.num("fishing", "rod_base_fraction")
+	var tip_len: float = length - base_len
+	var thick: float = look.num("fishing", "rod_thickness")
+	_rod_material = StandardMaterial3D.new()
+	_rod_material.roughness = look.num("player", "roughness")
+	var holder := Node3D.new()
+	holder.position = Vector3(0.0, -(look.num("player", "sleeve_length") + look.num("player", "forearm_length")), 0.0)
+	holder.rotation.x = PI * 0.5
+	_arm_right.add_child(holder)
+	_add_box(holder, Vector3(thick, base_len, thick), Vector3(0.0, base_len * 0.5, 0.0))
+	_rod_tip_seg = Node3D.new()
+	_rod_tip_seg.position = Vector3(0.0, base_len, 0.0)
+	holder.add_child(_rod_tip_seg)
+	_add_box(_rod_tip_seg, Vector3(thick * 0.6, tip_len, thick * 0.6), Vector3(0.0, tip_len * 0.5, 0.0))
+	_rod_tip = Node3D.new()
+	_rod_tip.position = Vector3(0.0, tip_len, 0.0)
+	_rod_tip_seg.add_child(_rod_tip)
+	_catch_material = StandardMaterial3D.new()
+	_catch_material.albedo_color = catch_color
+	_catch_mesh = MeshInstance3D.new()
+	_catch_mesh.mesh = SphereMesh.new()
+	_catch_mesh.material_override = _catch_material
+	_catch_mesh.scale = Vector3(look.num("fishing", "catch_length"), look.num("fishing", "catch_thickness"), look.num("fishing", "catch_thickness") * 0.6)
+	_catch_mesh.position = Vector3(0.0, look.num("fishing", "catch_height"), look.num("fishing", "catch_forward"))
+	_catch_mesh.visible = false
+	add_child(_catch_mesh)
+
+
+func _add_box(parent: Node3D, box_size: Vector3, pos: Vector3) -> void:
+	var box := BoxMesh.new()
+	box.size = box_size
+	var node := MeshInstance3D.new()
+	node.mesh = box
+	node.material_override = _rod_material
+	node.position = pos
+	parent.add_child(node)
+
+
+## Blends the arms, torso lean and rod bend toward the active fishing pose (after the walk animation).
+func _apply_pose(delta: float) -> void:
+	_pose_time += delta
+	_pose_blend = move_toward(_pose_blend, 0.0 if pose == Pose.NONE else 1.0, delta * _pose_k["pose_blend_speed"])
+	if pose != Pose.NONE:
+		_last_pose = pose
+	var arm_r: float = 0.0
+	var arm_l: float = 0.0
+	var lean: float = 0.0
+	var roll: float = 0.0
+	var bend: float = _pose_k["idle_bend_degrees"]
+	match _last_pose:
+		Pose.CAST:
+			var k: float = smoothstep(0.0, 1.0, cast_progress)
+			arm_r = lerpf(_pose_k["cast_back_degrees"], _pose_k["cast_forward_degrees"], k)
+			arm_l = _pose_k["cast_left_degrees"]
+			bend = lerpf(-_pose_k["cast_bend_degrees"], _pose_k["cast_bend_degrees"], k)
+		Pose.WAIT:
+			arm_r = _pose_k["wait_arm_degrees"] + sin(_pose_time * _pose_k["wait_sway_freq"]) * _pose_k["wait_sway_degrees"]
+			arm_l = _pose_k["wait_left_degrees"]
+			bend = _pose_k["wait_bend_degrees"]
+		Pose.FIGHT:
+			var shake: float = sin(_pose_time * _pose_k["fight_shake_freq"]) * _pose_k["fight_shake_degrees"]
+			arm_r = _pose_k["fight_arm_degrees"] + shake
+			arm_l = _pose_k["fight_left_degrees"] - shake
+			lean = _pose_k["fight_lean_degrees"]
+			roll = shake
+			bend = _pose_k["fight_bend_degrees"] + shake
+		Pose.LAND:
+			arm_r = _pose_k["land_arm_degrees"]
+			arm_l = _pose_k["land_left_degrees"]
+	_arm_right.rotation.x = lerpf(_arm_right.rotation.x, arm_r, _pose_blend)
+	_arm_left.rotation.x = lerpf(_arm_left.rotation.x, arm_l, _pose_blend)
+	_torso.rotation.x = lerpf(_torso.rotation.x, lean, _pose_blend)
+	_torso.rotation.z = lerpf(0.0, roll, _pose_blend)
+	_rod_tip_seg.rotation.x = lerpf(_pose_k["idle_bend_degrees"], bend, _pose_blend)
+	_catch_mesh.visible = pose == Pose.LAND
