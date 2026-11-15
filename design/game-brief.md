@@ -437,6 +437,11 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 - [x] Etapa 1, base: dados do 2D (35 espécies, varas, iscas, níveis e valores de ajuste) no Godot, lógica separada do desenho, testes automáticos da pesca, economia e níveis
 - [ ] Etapa 2, esqueleto 3D: terreno, lago com água, câmera inclinada, pescador andando com joystick virtual e colisão
 - [ ] Etapa 3, pesca em 3D: tocar na água, lançar a boia, mordida, a mesma barra de disputa e a captura
+- [ ] Etapa 4, cenário I: propriedade e vila como na referência (casa com varanda, galpão com trator, horta cercada com espantalho, galinheiro, caixa d'água e moinho, loja de pesca com toldo, mural, banco, poste e cercas), só como cenário
+- [ ] Etapa 5, cenário II: rio com cachoeiras, píer em L com barco, ilhota, água com espuma e modelos melhores
+- [ ] Etapa 6, HUD da referência funcionando (nível com barra de espécies, moedas, energia, dia e hora, ajustes; botão de pescar, mochila, Descansar, Livro e Loja)
+- [ ] Etapa 7, telas em 3D: loja, Livro de Peixes, bolsa e subida de nível
+- [ ] Etapa 8, dia e noite em 3D e salvamento automático ligado à cena
 
 ## Your systems
 - movimentação e colisão · in the slice
@@ -461,6 +466,7 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 - APK nativo Android: este build roda no navegador do celular, com toque em tela cheia: grow it
 - outros mapas além do Lago Esmeralda: grow it
 - compras com dinheiro real (os botões "+" de moedas e energia da referência): ideia futura, não construída agora *(you said)*
+- plantar na horta, cuidar das galinhas, usar o trator e navegar no barco: só cenário por enquanto: grow it *(you said: farm and animals are complementary)*
 
 ## Build order
 1. Lago Esmeralda com pesca completa, 35 espécies, loja, níveis, energia, dia e noite, Livro, interface e salvamento: a primeira versão jogável e completa pedida.
