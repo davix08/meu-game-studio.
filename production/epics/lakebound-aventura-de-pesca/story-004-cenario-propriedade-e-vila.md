@@ -1,7 +1,7 @@
 # Story 004: Cenário I: propriedade e vila
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: In Progress
+> **Status**: Complete
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: L
@@ -84,3 +84,15 @@
 
 - Depends on: `production/epics/lakebound-aventura-de-pesca/story-002-esqueleto-3d.md`
 - Unlocks: None
+
+## Completion Notes
+**Completed**: 2026-11-16
+**Criteria**: 8/8 passing as seen on the screenshots; two caveats below
+**Deviations**: None. Notes: the user said an item from the detail list was missing without naming it (water tower, turning mill blades, walking hens, chimney smoke, notice board, woodpile, fish sign) — not verified; window and lamp glow exists in the code but is off until Story 008; layout points (windmill in front of the house porch, shop touching the house, lamp 3 on shore sand, awning over the plaza) move to the bigger map.
+**Test Evidence**: production/qa/evidence/story-004-cenario-propriedade-e-vila/ (01-casa-loja-galpao-moinho.jpg, 02-horta-galinheiro-pier.jpg); sign-off production/qa/evidence/story-004-cenario-propriedade-e-vila-evidence.md
+**Reviewed by**: self, no independent review
+
+## Calls beyond the design
+- Placements in cells (`src/data/world_look.json` estate): shed (12,2) 4×3, tractor (16,3) 3×2, garden (20,2) 7×4 with scarecrow and crate strip, coop (28,2) 4×4 with 4 hens, water tower (3,2), windmill (13,9) with 5 blades at 0.7 rad/s, fish shop (2,7) facing east with dirt plaza (6,7), lamps (7,9) (14,8) (19,8), notice board (11,8), bench (17,8), path fences with a gate gap at (15,6) · kept as is 2026-11-16 (layout fixes go into the bigger map)
+- House rebuilt in `src/world/estate_meshes.gd`: 12 roof bands, 14 cm porch without collision, beams, flower boxes, east window · kept 2026-11-16
+- Shop roof blue-grey #7893ab/#647f98 with an 8-stripe awning; garden, coop and fences fully solid with no gate; shop crates and barrels without collision; window and lamp glow off until Story 008; ground lift 0.13 for low pieces · kept 2026-11-16
