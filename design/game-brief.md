@@ -393,6 +393,8 @@ Antes de adicionar novos recursos, verifique se eles são compatíveis com os si
 
 OBJETIVO FINAL: Criar um simulador de pesca 2D em Pixel Art, com exploração, coleção de espécies, progressão, economia e uma experiência divertida para Android.
 
+After play (2026-11-16): "Então vamos deixar o mapa maior, com isso tudo" (references/vila-referencia.jpg). Estilo: "Fazenda moderna aconchegante". Mapa: "Mapa maior, tudo junto". Construções: "Com função já": Casas dos vizinhos, Oficina (no lugar da ferraria), Armazém (depósito), "Eu vou querer a cervejaria tmb embutido com o restaurante que os npc vão estar la para comer e beber e comprar tmb", Pasto com animais, Campos de plantio, Loja de roupas (no lugar da tecelaria), "Mas aqui, as plantações vc que tem que plantar e colher, vc será tipo o prefeito da cidade, mesma coisa dos animais".
+
 **Pitch:** Um simulador de pesca top-down em pixel art: explore o Lago Esmeralda, dispute cada peixe numa barra de tensão, venda, melhore a vara e complete o Livro com 35 espécies.
 
 **Genre:** simulador de pesca / coleção com exploração
@@ -454,6 +456,16 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 - inventário (bolsa) · in the slice
 - Livro de Peixes · in the slice
 - salvamento automático · in the slice
+- mapa maior com a vila ao redor do lago · later
+- armazém (depósito) · later
+- oficina de melhoria de varas · later
+- casas dos vizinhos e pedidos de peixe · later
+- vizinhos (NPCs) com rotina: comer, beber e comprar · later
+- cervejaria-restaurante · later
+- campos de plantio (plantar e colher) · later
+- pasto com animais (cuidar e produzir) · later
+- loja de roupas · later
+- papel de prefeito da cidade · later
 
 ## Keep
 -
@@ -466,7 +478,7 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 - APK nativo Android: este build roda no navegador do celular, com toque em tela cheia: grow it
 - outros mapas além do Lago Esmeralda: grow it
 - compras com dinheiro real (os botões "+" de moedas e energia da referência): ideia futura, não construída agora *(you said)*
-- plantar na horta, cuidar das galinhas, usar o trator e navegar no barco: só cenário por enquanto: grow it *(you said: farm and animals are complementary)*
+- navegar no barco: grow it
 
 ## Build order
 1. Lago Esmeralda com pesca completa, 35 espécies, loja, níveis, energia, dia e noite, Livro, interface e salvamento: a primeira versão jogável e completa pedida.
