@@ -179,7 +179,7 @@ func _build_garden_plants() -> void:
 			var cell := Vector2i(roundi(x * 4.0), row)
 			var size: float = lerpf(0.85, 1.2, WorldGrid.hash2(cell.x, cell.y, 41))
 			var plant_basis: Basis = Basis(Vector3.UP, WorldGrid.hash2(cell.x, cell.y, 42) * TAU) * Basis.from_scale(Vector3.ONE * size)
-			transforms.append(Transform3D(plant_basis,Vector3(x, 0.16, bed.y)))
+			transforms.append(Transform3D(plant_basis, Vector3(x, 0.16 + _look.num(EstateMeshes.GROUP, "ground_lift"), bed.y)))
 			colors.append(tints[row % tints.size()])
 	_add_multimesh(EstateMeshes.plant(_look), transforms, colors)
 	var strip: Vector2 = EstateMeshes.garden_strip_center(_look)
@@ -227,9 +227,9 @@ func _build_shed_props() -> void:
 			log_c.append(Color(tint, tint, tint, 1.0))
 	_add_multimesh(EstateMeshes.log_piece(_look), log_t, log_c)
 
-	var tr: Rect2i = EstateMeshes.cell_rect(_look, "tractor")
-	var cx: float = float(tr.position.x) + float(tr.size.x) * 0.5
-	var cz: float = float(tr.position.y) + float(tr.size.y) * 0.5
+	var tractor_rect: Rect2i = EstateMeshes.cell_rect(_look, "tractor")
+	var cx: float = float(tractor_rect.position.x) + float(tractor_rect.size.x) * 0.5
+	var cz: float = float(tractor_rect.position.y) + float(tractor_rect.size.y) * 0.5
 	var big_r: float = _look.num(EstateMeshes.GROUP, "wheel_big_radius")
 	var big_w: float = _look.num(EstateMeshes.GROUP, "wheel_big_width")
 	var small_r: float = _look.num(EstateMeshes.GROUP, "wheel_small_radius")

@@ -358,7 +358,8 @@ static func _shed(mb: MeshBuilder, look: WorldLook) -> void:
 	var wood_a: Color = look.color("colors", "wood_a")
 	var wood_b: Color = look.color("colors", "wood_b")
 	var post: Color = look.color("colors", "wood_dark")
-	_box(mb, x0, 0.0, z0, x1, 0.05, z1, look.color("colors", "dirt_b"))
+	var lift: float = look.num(GROUP, "ground_lift")
+	_box(mb, x0, 0.0, z0, x1, 0.05 + lift, z1, look.color("colors", "dirt_b"))
 	_planks(mb, x0, x1, z0, z0 + 0.12, 0.05, wall_y, 12, wood_a, wood_b)
 	_planks(mb, x0, x0 + 0.12, z0, z1, 0.05, wall_y, 12, wood_a, wood_b)
 	_box(mb, x1 - 0.1, 0.9, z0, x1, 1.0, z1, post)
@@ -410,10 +411,11 @@ static func _garden(mb: MeshBuilder, look: WorldLook) -> void:
 	var soil_light: Color = look.color(GROUP, "soil_light")
 	var beds: Array[Vector3] = garden_beds(look)
 	var x_end: float = float(g.end.x) - look.num(GROUP, "garden_strip")
-	_box(mb, float(g.position.x) + 0.3, 0.0, float(g.position.y) + 0.3, x_end + 0.2, 0.04, float(g.end.y) - 0.3, soil_light)
+	var lift: float = look.num(GROUP, "ground_lift")
+	_box(mb, float(g.position.x) + 0.3, 0.0, float(g.position.y) + 0.3, x_end + 0.2, 0.04 + lift, float(g.end.y) - 0.3, soil_light)
 	for bed: Vector3 in beds:
-		_box(mb, bed.x, 0.0, bed.y - 0.21, bed.z, 0.16, bed.y + 0.21, soil_dark)
-		_box(mb, bed.x + 0.05, 0.16, bed.y - 0.08, bed.z - 0.05, 0.175, bed.y + 0.08, soil_light)
+		_box(mb, bed.x, 0.0, bed.y - 0.21, bed.z, 0.16 + lift, bed.y + 0.21, soil_dark)
+		_box(mb, bed.x + 0.05, 0.16 + lift, bed.y - 0.08, bed.z - 0.05, 0.175 + lift, bed.y + 0.08, soil_light)
 	# Scarecrow in the free strip: pole, arms, shirt, head, straw hat and straw tufts.
 	var s: Vector2 = garden_strip_center(look) + Vector2(0.0, -0.6)
 	var wood: Color = look.color("colors", "wood_dark")
@@ -455,7 +457,7 @@ static func _coop(mb: MeshBuilder, look: WorldLook) -> void:
 	_box(mb, x1 - 0.02, 1.0, z0 + 0.25, x1 + 0.45, 1.05, z0 + 0.95, look.color("colors", "roof_b"))
 	# Hay patches, a feeder and a water bowl inside the pen.
 	for spot: Vector3 in [Vector3(0.9, 0.0, 1.9), Vector3(2.5, 0.0, 2.9), Vector3(1.6, 0.0, 3.2)]:
-		mb.add_ellipsoid(Vector3(float(pen.position.x) + spot.x, 0.02, float(pen.position.y) + spot.z), Vector3(0.28, 0.05, 0.22), hay.darkened(0.1), hay, 7, 3, true)
+		mb.add_ellipsoid(Vector3(float(pen.position.x) + spot.x, 0.02 + look.num(GROUP, "ground_lift"), float(pen.position.y) + spot.z), Vector3(0.28, 0.05, 0.22), hay.darkened(0.1), hay, 7, 3, true)
 	var fx: float = float(pen.end.x) - 0.7
 	_box(mb, fx - 0.2, 0.0, float(pen.end.y) - 0.7, fx + 0.2, 0.16, float(pen.end.y) - 0.5, wood)
 	mb.add_cone(Vector3(fx - 0.4, 0.0, float(pen.end.y) - 0.9), 0.14, 0.17, 0.08, look.color(GROUP, "water_bowl"), look.color(GROUP, "water_bowl"), 8, true)

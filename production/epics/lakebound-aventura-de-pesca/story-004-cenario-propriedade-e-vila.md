@@ -57,10 +57,13 @@
 
 ## Files
 
-- `src/world/` (props, construções e grade novos), `src/data/world_look.json`
-- `production/qa/evidence/story-004-cenario-propriedade-e-vila-evidence.md`
-
----
+- `src/data/world_look.json`
+- `src/world/estate_meshes.gd`
+- `src/world/lake_estate.gd`
+- `src/world/lake_props.gd`
+- `src/world/lake_world.gd`
+- `src/world/prop_meshes.gd`
+- `src/world/world_grid.gd`
 
 ## QA Test Cases
 

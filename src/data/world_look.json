@@ -280,6 +280,7 @@
 	},
 	"estate": {
 		"clear_margin": 1,
+		"ground_lift": 0.13,
 		"roof_bands": 10,
 		"lights_on": 0,
 		"glow_energy": 2.5,
