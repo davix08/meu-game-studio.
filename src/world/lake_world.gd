@@ -21,6 +21,9 @@ var grid: WorldGrid
 var terrain: LakeTerrain
 ## The fishing question interface over [member grid] (positions in 2D pixel units).
 var query: LakeWorldQuery
+## The house, farm and village (Story 004); call [method LakeEstate.set_lights] to light the
+## windows and lamps (Story 008).
+var estate: LakeEstate
 
 var _smoke: Array[MeshInstance3D] = []
 var _smoke_origin: Vector3 = Vector3.ZERO
@@ -34,6 +37,7 @@ var _smoke_time: float = 0.0
 ## Builds the grid, the 3D scene content, the light and the environment.
 func build(look: WorldLook) -> void:
 	grid = WorldGrid.new()
+	LakeEstate.plan(grid, look)
 	query = LakeWorldQuery.new(grid)
 	terrain = LakeTerrain.new()
 	add_child(terrain)
@@ -44,6 +48,9 @@ func build(look: WorldLook) -> void:
 	var props := LakeProps.new()
 	add_child(props)
 	props.build(grid, terrain, look)
+	estate = LakeEstate.new()
+	add_child(estate)
+	estate.build(terrain, look)
 	_build_light(look)
 	_build_environment(look)
 	_build_smoke(look)

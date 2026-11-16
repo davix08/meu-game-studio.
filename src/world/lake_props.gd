@@ -19,7 +19,6 @@ func build(grid: WorldGrid, terrain: LakeTerrain, look: WorldLook) -> void:
 	_terrain = terrain
 	_look = look
 	_material = MeshBuilder.make_material(look.num("props", "roughness"))
-	_add_static(PropMeshes.house(look))
 	_add_static(PropMeshes.wood(look, grid))
 	if look.integer("boat", "enabled") == 1:
 		_add_static(PropMeshes.boat(look))

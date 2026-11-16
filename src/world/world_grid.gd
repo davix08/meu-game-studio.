@@ -143,6 +143,40 @@ func box_free(x: float, z: float, half_width: float, half_depth: float) -> bool:
 	return true
 
 
+## Removes every placement (trees, bushes, rocks, tufts...) and solid flag inside [param rect]
+## and turns flower blocks into plain grass, so a building can stand there (Story 004). The
+## house footprint and the sign by the door are never touched.
+func clear_area(rect: Rect2i) -> void:
+	for i in range(placements.size() - 1, -1, -1):
+		if rect.has_point(placements[i].cell):
+			placements.remove_at(i)
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			if x < 0 or y < 0 or x >= WIDTH or y >= HEIGHT or HOUSE.has_point(Vector2i(x, y)):
+				continue
+			if x == DOOR.x + 2 and y == DOOR.y + 1:
+				continue
+			_solid[y * WIDTH + x] = 0
+			if _tiles[y * WIDTH + x] == Tile.FLOWERS:
+				_tiles[y * WIDTH + x] = Tile.GRASS
+
+
+## Marks every block of [param rect] as solid (a building or fence footprint). Water stays
+## water, so [method is_water] and [method is_deep] are unchanged.
+func block_area(rect: Rect2i) -> void:
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			if x >= 0 and y >= 0 and x < WIDTH and y < HEIGHT:
+				_solid[y * WIDTH + x] = 1
+
+
+## Paints the non-water blocks of [param rect] as dirt path.
+func paint_dirt(rect: Rect2i) -> void:
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			_paint_path(x, y)
+
+
 func _set_tile(x: int, y: int, tile: int) -> void:
 	if x < 0 or y < 0 or x >= WIDTH or y >= HEIGHT:
 		return
