@@ -1,13 +1,13 @@
 # Story 004: Cenário I: propriedade e vila
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Progress
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: L
 > **Build step**: core
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-16
 
 ## Context
 
