@@ -1,6 +1,11 @@
 class_name SaveGame
 extends RefCounted
-## Saving and loading the [GameState] as JSON in user://, format version 2.
+## Saving and loading the [GameState] as JSON in user://, format version 3.
+##
+## Format 3 (Stories 008-018) adds the town (warehouse, rod levels, goods, requests, plots,
+## animals, troughs, pending products, clothes, lots, city level and scores, restaurant stock,
+## neighbor walkers) and the settings. A format 2 save loads too: its position was on the
+## 48x34 map and is moved by [constant WorldGrid.ORIGIN] onto the bigger map.
 ##
 ## Keeps the same fields as the 2D save (coins, level, day, minutes, energy, bag,
 ## book, rods_owned, rod, baits_owned, bait, snacks, luck_baits, luck_left, map,
@@ -18,7 +23,9 @@ extends RefCounted
 ## [/codeblock]
 
 ## Version written by this class.
-const FORMAT_VERSION: int = 2
+const FORMAT_VERSION: int = 3
+## Previous format (before the town), still read.
+const V2_VERSION: int = 2
 ## Version of the 2D prototype's save ("v": 1).
 const V1_VERSION: int = 1
 ## Default save file.
@@ -27,9 +34,7 @@ const DEFAULT_PATH: String = "user://lakebound_save.json"
 
 ## The save dictionary (format 2) for [param state].
 static func to_dict(state: GameState) -> Dictionary:
-	var bag: Array[Dictionary] = []
-	for fish: GameState.Catch in state.bag:
-		bag.append({"id": fish.id, "weight": fish.weight, "value": fish.value})
+	var bag: Array[Dictionary] = _fish_list(state.bag)
 	var book: Dictionary = {}
 	for id: String in state.book:
 		var entry: GameState.BookEntry = state.book[id]
@@ -54,7 +59,38 @@ static func to_dict(state: GameState) -> Dictionary:
 		"stats": {"caught": state.stats_caught, "earned": state.stats_earned},
 		"pos": [state.position.x, state.position.y, state.position.z],
 		"dir": state.dir,
+		"storage": _fish_list(state.storage),
+		"storage_upgrades": state.storage_upgrades,
+		"rod_levels": state.rod_levels.duplicate(),
+		"goods": state.goods.duplicate(),
+		"requests": state.requests.duplicate(true),
+		"plots": state.plots.duplicate(true),
+		"garden_bait_left": state.garden_bait_left,
+		"animals": state.animals.duplicate(true),
+		"troughs": state.troughs.duplicate(),
+		"pending": state.pending.duplicate(true),
+		"clothes_owned": Array(state.clothes_owned),
+		"outfit": state.outfit.duplicate(),
+		"lots_built": Array(state.lots_built),
+		"city_level": state.city_level,
+		"request_score": state.request_score,
+		"food_score": state.food_score,
+		"dishes": state.dishes.duplicate(true),
+		"drinks": state.drinks,
+		"sales_today": state.sales_today,
+		"meals_wanted": state.meals_wanted,
+		"meals_served": state.meals_served,
+		"npcs": state.npcs.duplicate(true),
+		"sound_on": state.sound_on,
+		"show_fps": state.show_fps,
 	}
+
+
+static func _fish_list(fish_list: Array[GameState.Catch]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for fish: GameState.Catch in fish_list:
+		out.append({"id": fish.id, "weight": fish.weight, "value": fish.value})
+	return out
 
 
 ## Writes [param state] to [param path]. Returns false when the file cannot be written.
@@ -80,6 +116,8 @@ static func read(path: String = DEFAULT_PATH) -> Dictionary:
 	var save: Dictionary = parsed
 	if save.has("version") and int(_number(save, "version", 0)) == FORMAT_VERSION:
 		return save
+	if save.has("version") and int(_number(save, "version", 0)) == V2_VERSION:
+		return convert_v2(save)
 	if not save.has("version") and int(_number(save, "v", 0)) == V1_VERSION:
 		return convert_v1(save)
 	push_warning("SaveGame: %s has an unknown version; ignored" % path)
@@ -122,6 +160,19 @@ static func convert_v1(v1: Dictionary) -> Dictionary:
 		out["book"] = book
 	if v1.has("px") and v1.has("py"):
 		out["pos"] = [v1["px"], 0.0, v1["py"]]
+	out["version"] = V2_VERSION
+	return convert_v2(out)
+
+
+## Converts a format 2 save: same fields, the position moved onto the bigger map (Story 009).
+static func convert_v2(v2: Dictionary) -> Dictionary:
+	var out: Dictionary = v2.duplicate(true)
+	out["version"] = FORMAT_VERSION
+	if out.get("pos") is Array and (out["pos"] as Array).size() == 3:
+		var pos: Array = out["pos"]
+		if _is_number(pos[0]) and _is_number(pos[2]):
+			pos[0] = float(pos[0]) + float(WorldGrid.ORIGIN.x) * WorldGrid.PIXELS_PER_BLOCK
+			pos[2] = float(pos[2]) + float(WorldGrid.ORIGIN.y) * WorldGrid.PIXELS_PER_BLOCK
 	return out
 
 
@@ -165,6 +216,74 @@ static func apply(state: GameState, data: GameData, save: Dictionary) -> void:
 		var pos: Array = save["pos"]
 		if _is_number(pos[0]) and _is_number(pos[1]) and _is_number(pos[2]):
 			state.position = Vector3(float(pos[0]), float(pos[1]), float(pos[2]))
+	_apply_town(state, data, save)
+
+
+static func _apply_town(state: GameState, data: GameData, save: Dictionary) -> void:
+	if save.get("storage") is Array:
+		var holder := GameState.new()
+		_apply_bag(holder, data, save["storage"])
+		state.storage = holder.bag
+	state.storage_upgrades = int(_number(save, "storage_upgrades", state.storage_upgrades))
+	if save.get("rod_levels") is Dictionary:
+		var levels: Dictionary = save["rod_levels"]
+		for id: Variant in levels:
+			if data.has_rod(str(id)) and _is_number(levels[id]):
+				state.rod_levels[str(id)] = int(levels[id])
+	if save.get("goods") is Dictionary:
+		var goods: Dictionary = save["goods"]
+		for id: Variant in goods:
+			if _is_number(goods[id]):
+				state.goods[str(id)] = int(goods[id])
+	if save.get("requests") is Dictionary:
+		state.requests = (save["requests"] as Dictionary).duplicate(true)
+	if save.get("plots") is Array:
+		state.plots.clear()
+		for p: Variant in save["plots"]:
+			if p is Dictionary:
+				var plot: Dictionary = p
+				state.plots.append({"crop": str(plot.get("crop", "")), "days": int(_number(plot, "days", 0)), "watered": bool(plot.get("watered", false))})
+	state.garden_bait_left = _number(save, "garden_bait_left", state.garden_bait_left)
+	if save.get("animals") is Array:
+		state.animals.clear()
+		for a: Variant in save["animals"]:
+			if a is Dictionary:
+				var animal: Dictionary = a
+				state.animals.append({"kind": str(animal.get("kind", "")), "joy": _number(animal, "joy", 50.0)})
+	if save.get("troughs") is Dictionary:
+		var troughs: Dictionary = save["troughs"]
+		for id: Variant in troughs:
+			if _is_number(troughs[id]):
+				state.troughs[str(id)] = int(troughs[id])
+	if save.get("pending") is Dictionary:
+		state.pending = (save["pending"] as Dictionary).duplicate(true)
+	if save.get("clothes_owned") is Array:
+		state.clothes_owned = PackedStringArray(save["clothes_owned"])
+	if save.get("outfit") is Dictionary:
+		var outfit: Dictionary = save["outfit"]
+		for slot: Variant in outfit:
+			state.outfit[str(slot)] = str(outfit[slot])
+	if save.get("lots_built") is Array:
+		state.lots_built = PackedStringArray(save["lots_built"])
+	state.city_level = int(_number(save, "city_level", state.city_level))
+	state.request_score = _number(save, "request_score", state.request_score)
+	state.food_score = _number(save, "food_score", state.food_score)
+	if save.get("dishes") is Array:
+		state.dishes.clear()
+		for d: Variant in save["dishes"]:
+			if d is Dictionary:
+				var dish: Dictionary = d
+				state.dishes.append({"name": str(dish.get("name", "")), "value": int(_number(dish, "value", 0))})
+	state.drinks = int(_number(save, "drinks", state.drinks))
+	state.sales_today = int(_number(save, "sales_today", state.sales_today))
+	state.meals_wanted = int(_number(save, "meals_wanted", state.meals_wanted))
+	state.meals_served = int(_number(save, "meals_served", state.meals_served))
+	if save.get("npcs") is Dictionary:
+		state.npcs = (save["npcs"] as Dictionary).duplicate(true)
+	if save.get("sound_on") is bool:
+		state.sound_on = save["sound_on"]
+	if save.get("show_fps") is bool:
+		state.show_fps = save["show_fps"]
 
 
 static func _apply_bag(state: GameState, data: GameData, bag: Array) -> void:

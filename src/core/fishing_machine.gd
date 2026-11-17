@@ -140,7 +140,7 @@ func cast_at(at: Vector3) -> CastResult:
 		return blocked
 	var from: Vector3 = _state.position
 	var distance: float = Vector2(at.x - from.x, at.z - from.z).length()
-	if distance > _data.rod_by_id(_state.rod).cast_range:
+	if distance > _data.rod_for(_state).cast_range:
 		return CastResult.OUT_OF_RANGE
 	if not _world.is_water(at):
 		return CastResult.NOT_WATER
@@ -189,6 +189,8 @@ func _begin_wait() -> void:
 	var base: float = wait_min + _rng.next_float() * (_data.tune("wait_max") - wait_min)
 	var school_mult: float = _data.tune("spot_wait") if on_school else 1.0
 	wait_time = base * _data.bait_by_id(_state.bait).wait * school_mult
+	if _state.garden_bait_left > 0.0 and _data.town != null:
+		wait_time *= _data.town.num("farm", "bait_wait_mult")
 	_nibble_at = wait_time * (_data.fixed("nibble_first_min") + _rng.next_float() * _data.fixed("nibble_first_span"))
 	nibble_left = 0.0
 	_set_phase(Phase.WAIT)
@@ -213,7 +215,7 @@ func _wait_step(dt: float, press: bool) -> void:
 
 func _start_fight() -> void:
 	var d: float = species.difficulty
-	zone_width = maxf(_data.tune("zone_min"), _data.tune("zone_base") + _data.rod_by_id(_state.rod).zone - d * _data.tune("zone_shrink"))
+	zone_width = maxf(_data.tune("zone_min"), _data.tune("zone_base") + _data.rod_for(_state).zone - d * _data.tune("zone_shrink"))
 	zone_center = _data.fixed("zone_start")
 	_zone_target = zone_center
 	_zone_timer = _data.fixed("zone_first_move")
@@ -228,7 +230,7 @@ func _start_fight() -> void:
 
 func _fight_step(dt: float, hold: bool) -> void:
 	var d: float = species.difficulty
-	var rod: GameData.Rod = _data.rod_by_id(_state.rod)
+	var rod: GameData.Rod = _data.rod_for(_state)
 	# Indicator physics: PUXAR pushes up, releasing lets it fall; the bar ends bounce it.
 	var accel: float = _data.tune("pull_accel") if hold else -_data.tune("fall_accel")
 	var max_vel: float = _data.tune("max_vel")

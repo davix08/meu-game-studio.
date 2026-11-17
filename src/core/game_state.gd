@@ -24,6 +24,11 @@ signal level_up(new_level: int, reward: int)
 signal fish_caught(fish: Catch, is_new: bool, is_record: bool)
 ## A new day began (manual or automatic sleep). The world puts the player back at the spawn.
 signal day_started(new_day: int, auto: bool)
+## Something in the town changed (storage, goods, plots, animals, lots, clothes, restaurant).
+## The 3D views and open screens refresh on it. Emitted by the town systems (Stories 010-018).
+signal town_changed
+## The city reached [param new_level] and paid [param reward] coins (Story 018).
+signal city_level_up(new_level: int, reward: int)
 
 ## Map id for the outdoor lake map (the only one where fishing is allowed).
 const MAP_OUTDOOR: String = "out"
@@ -98,6 +103,54 @@ var dir: int = 0
 ## True while resting (energy regenerates, time runs faster). Not saved, as in the 2D.
 var resting: bool = false
 
+# --- Town (Stories 010-018). Saved by [SaveGame] format 3. ---
+## Fish kept in the warehouse (Story 010).
+var storage: Array[Catch] = []
+## Warehouse expansions bought.
+var storage_upgrades: int = 0
+## Workshop level of each rod id (missing = 0) (Story 011).
+var rod_levels: Dictionary[String, int] = {}
+## Countable goods: crops, eggs, milk, wool, seeds, feed (good id -> count).
+var goods: Dictionary[String, int] = {}
+## Neighbor requests: neighbor id -> {"species", "count", "ready_day", "done"} (Story 012).
+var requests: Dictionary = {}
+## Farm plots in plot order: {"crop": "" or crop id, "days": int, "watered": bool} (Story 015).
+var plots: Array[Dictionary] = []
+## Game minutes left of the garden bait (a crop used as bait).
+var garden_bait_left: float = 0.0
+## Animals: {"kind": animal id, "joy": float} (Story 016).
+var animals: Array[Dictionary] = []
+## Feed units in the trough of each ranch home (home id -> units).
+var troughs: Dictionary[String, int] = {}
+## Products waiting to be collected at each home: home id -> {good id: count}.
+var pending: Dictionary = {}
+## Clothing pieces owned (Story 017).
+var clothes_owned: PackedStringArray = PackedStringArray()
+## Equipped piece per slot ("hat", "shirt", "boots" -> piece id).
+var outfit: Dictionary[String, String] = {}
+## Lot ids built (Story 018).
+var lots_built: PackedStringArray = PackedStringArray()
+## City level, 1-based.
+var city_level: int = 1
+## Recent deliveries to neighbors, decaying every day (feeds the satisfaction).
+var request_score: float = 0.0
+## How well the restaurant fed the neighbors lately, 0..1.
+var food_score: float = 0.5
+## Restaurant dishes on sale: {"name": String, "value": int} (Story 014).
+var dishes: Array[Dictionary] = []
+## Drinks left today.
+var drinks: int = 0
+## Coins the restaurant made today.
+var sales_today: int = 0
+## Meals the neighbors wanted today and how many found a dish.
+var meals_wanted: int = 0
+var meals_served: int = 0
+## Neighbor walkers: id -> {"x": float, "z": float, "step": int} (Story 013).
+var npcs: Dictionary = {}
+## Settings: sound on, FPS counter shown (Story 006).
+var sound_on: bool = true
+var show_fps: bool = false
+
 
 ## A new game, as the 2D freshState builds it, from config.json values.
 ##
@@ -117,6 +170,38 @@ static func create_new(data: GameData) -> GameState:
 	state.baits_owned = PackedStringArray([state.bait])
 	state.snacks = int(data.fixed("start_snacks"))
 	return state
+
+
+## Fills the town part of a new game from [param town] (lots built at the start, start animals,
+## default clothes, a full trough day 1). Call once after [method create_new].
+func init_town(town: TownData) -> void:
+	for lot: Variant in town.lots():
+		var l: Dictionary = lot
+		if bool(l.get("start_built", false)):
+			lots_built.append(str(l["id"]))
+	for kind: Variant in town.list("ranch", "start_animals"):
+		animals.append({"kind": str(kind), "joy": town.num("ranch", "joy_start")})
+	for slot: String in ["hat", "shirt", "boots"]:
+		var first: Dictionary = town.clothes(slot)[0]
+		clothes_owned.append(str(first["id"]))
+		outfit[slot] = str(first["id"])
+	food_score = town.num("city", "food_start")
+	drinks = int(town.num("restaurant", "drinks_per_day"))
+
+
+## Count of a good.
+func good_count(id: String) -> int:
+	return goods.get(id, 0)
+
+
+## Adds [param amount] (may be negative) of a good, never below 0.
+func add_good(id: String, amount: int) -> void:
+	goods[id] = maxi(0, good_count(id) + amount)
+
+
+## True when the lot [param id] is built.
+func is_built(id: String) -> bool:
+	return lots_built.has(id)
 
 
 ## Total sale value of the bag.

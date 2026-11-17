@@ -1,13 +1,13 @@
 # Story 014: Cervejaria-restaurante (versão simples)
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Feature
 > **Type**: Integration
 > **Estimate**: L
 > **Build step**: thin — cervejaria-restaurante
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -68,7 +68,7 @@
 **Story Type**: Integration
 **Required evidence**: testes dispensados no `qa.level: minimal`; capturas de tela e uma anotação de playtest.
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-014-cervejaria-restaurante-evidence.md` (sign-off pending)
 
 ---
 

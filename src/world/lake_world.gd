@@ -24,6 +24,10 @@ var query: LakeWorldQuery
 ## The house, farm and village (Story 004); call [method LakeEstate.set_lights] to light the
 ## windows and lamps (Story 008).
 var estate: LakeEstate
+## The sun, the environment and the sky material, driven by [DayNight] (Story 008).
+var sun: DirectionalLight3D
+var environment: Environment
+var sky_material: ProceduralSkyMaterial
 
 var _smoke: Array[MeshInstance3D] = []
 var _smoke_origin: Vector3 = Vector3.ZERO
@@ -37,6 +41,7 @@ var _smoke_time: float = 0.0
 ## Builds the grid, the 3D scene content, the light and the environment.
 func build(look: WorldLook) -> void:
 	grid = WorldGrid.new()
+	TownPlan.plan(grid, look)
 	LakeEstate.plan(grid, look)
 	query = LakeWorldQuery.new(grid)
 	terrain = LakeTerrain.new()
@@ -51,6 +56,9 @@ func build(look: WorldLook) -> void:
 	estate = LakeEstate.new()
 	add_child(estate)
 	estate.build(terrain, look)
+	var falls := RiverFalls.new()
+	add_child(falls)
+	falls.build(look)
 	_build_light(look)
 	_build_environment(look)
 	_build_smoke(look)
@@ -69,7 +77,7 @@ func _process(delta: float) -> void:
 
 
 func _build_light(look: WorldLook) -> void:
-	var sun := DirectionalLight3D.new()
+	sun = DirectionalLight3D.new()
 	sun.light_color = look.color("light", "color")
 	sun.light_energy = look.num("light", "energy")
 	sun.rotation_degrees = Vector3(-look.num("light", "pitch_degrees"), look.num("light", "yaw_degrees"), 0.0)
@@ -82,7 +90,7 @@ func _build_light(look: WorldLook) -> void:
 
 
 func _build_environment(look: WorldLook) -> void:
-	var sky_material := ProceduralSkyMaterial.new()
+	sky_material = ProceduralSkyMaterial.new()
 	sky_material.sky_top_color = look.color("environment", "sky_top_color")
 	sky_material.sky_horizon_color = look.color("environment", "sky_horizon_color")
 	sky_material.ground_horizon_color = look.color("environment", "ground_horizon_color")
@@ -100,6 +108,7 @@ func _build_environment(look: WorldLook) -> void:
 	env.fog_light_color = look.color("environment", "fog_color")
 	env.fog_density = look.num("environment", "fog_density")
 	env.fog_sky_affect = look.num("environment", "fog_sky_affect")
+	environment = env
 	var holder := WorldEnvironment.new()
 	holder.environment = env
 	add_child(holder)

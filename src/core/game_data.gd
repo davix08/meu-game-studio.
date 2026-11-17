@@ -85,6 +85,10 @@ class Item:
 	var effect: String = ""
 
 
+## Town values (town.json), set by the scene after loading; null in tests that do not need them.
+## Read by [method rod_for] for the workshop upgrades (Story 011).
+var town: TownData
+
 ## Seed for the run's [RandomSource].
 var seed_value: int = 1
 ## All species, in data.js order.
@@ -213,6 +217,25 @@ func has_rod(id: String) -> bool:
 ## True when [param id] names a bait (used when loading saves).
 func has_bait(id: String) -> bool:
 	return _baits_by_id.has(id)
+
+
+## The equipped rod of [param state] with its workshop upgrades applied (Story 011): each level
+## adds range, green zone and power from town.json. Without [member town] it is the plain rod.
+func rod_for(state: GameState) -> Rod:
+	var base: Rod = rod_by_id(state.rod)
+	var level: int = state.rod_levels.get(state.rod, 0)
+	if town == null or level <= 0:
+		return base
+	var rod := Rod.new()
+	rod.id = base.id
+	rod.name = base.name
+	rod.price = base.price
+	rod.level = base.level
+	rod.color = base.color
+	rod.cast_range = base.cast_range + town.num("workshop", "range_per_level") * level
+	rod.zone = base.zone + town.num("workshop", "zone_per_level") * level
+	rod.power = base.power + town.num("workshop", "power_per_level") * level
+	return rod
 
 
 ## Highest player level.

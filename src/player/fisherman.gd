@@ -84,6 +84,10 @@ var _catch_mesh: MeshInstance3D
 var _rod_tip_seg: Node3D
 var _rod_tip: Node3D
 var _pose_k: Dictionary[String, float] = {}
+var _look_ref: WorldLook
+## Color overrides of the clothes (Story 017): keys of the "colors" group, e.g. "hat", "vest".
+var _outfit: Dictionary = {}
+var _rod_color: Color = Color.WHITE
 
 
 ## Reads the tuning from [param look], builds the model and places it at the spawn point.
@@ -113,6 +117,7 @@ func setup(look: WorldLook, grid: WorldGrid, terrain: LakeTerrain, walk_speed: f
 	_head_sway = deg_to_rad(look.num("player", "head_sway_degrees"))
 	scale = Vector3.ONE * look.num("player", "model_scale")
 	_material = MeshBuilder.make_material(look.num("player", "roughness"))
+	_look_ref = look
 	_build_model(look)
 	_load_pose(look)
 	_build_rod(look)
@@ -171,20 +176,48 @@ func _animate(delta: float, moving: bool, running: bool) -> void:
 ## references/). Every measure and color comes from world_look.json ("player" and "colors").
 ## Parts: torso (pelvis, cream shirt, red open vest, belt, backpack), head pivot (face, grey beard,
 ## curly hair, straw hat), two arms (shoulder pivots) and two legs (hip pivots).
+## Builds only the model, for a display such as the clothes shop viewer (no grid, no walking).
+func setup_display(look: WorldLook) -> void:
+	_hip_height = look.num("player", "hip_height")
+	_material = MeshBuilder.make_material(look.num("player", "roughness"))
+	_look_ref = look
+	_build_model(look)
+	_load_pose(look)
+	_build_rod(look)
+
+
+## Dresses the fisherman (Story 017): [param colors] maps "colors" keys ("hat", "hat_dark",
+## "hat_band", "vest", "vest_edge", "shirt", "boots") to new colors; the model is rebuilt.
+func set_outfit(colors: Dictionary) -> void:
+	_outfit = colors
+	if _look_ref == null or _torso == null:
+		return
+	for node: Node3D in [_torso, _leg_left, _leg_right]:
+		node.free()
+	_catch_mesh.free()
+	_build_model(_look_ref)
+	_build_rod(_look_ref)
+	_rod_material.albedo_color = _rod_color
+
+
+func _oc(look: WorldLook, key: String) -> Color:
+	return _outfit[key] if _outfit.has(key) else look.color("colors", key)
+
+
 func _build_model(look: WorldLook) -> void:
 	var skin: Color = look.color("colors", "skin")
-	var shirt: Color = look.color("colors", "shirt")
-	var vest: Color = look.color("colors", "vest")
-	var vest_edge: Color = look.color("colors", "vest_edge")
+	var shirt: Color = _oc(look, "shirt")
+	var vest: Color = _oc(look, "vest")
+	var vest_edge: Color = _oc(look, "vest_edge")
 	var belt: Color = look.color("colors", "belt")
 	var buckle: Color = look.color("colors", "buckle")
-	var hat: Color = look.color("colors", "hat")
-	var hat_dark: Color = look.color("colors", "hat_dark")
-	var band: Color = look.color("colors", "hat_band")
+	var hat: Color = _oc(look, "hat")
+	var hat_dark: Color = _oc(look, "hat_dark")
+	var band: Color = _oc(look, "hat_band")
 	var pack: Color = look.color("colors", "pack")
 	var pack_dark: Color = look.color("colors", "pack_dark")
 	var pants: Color = look.color("colors", "pants")
-	var boots: Color = look.color("colors", "boots")
+	var boots: Color = _oc(look, "boots")
 	var eye: Color = look.color("colors", "eye")
 	var hair: Color = look.color("colors", "hair")
 	var beard: Color = look.color("colors", "beard")
@@ -309,7 +342,14 @@ func get_rod_tip() -> Vector3:
 
 ## Colors the held rod (the equipped rod's color).
 func set_rod_color(color: Color) -> void:
+	_rod_color = color
 	_rod_material.albedo_color = color
+
+
+## Moves the fisherman to [param pos] (blocks x, z) at once (new day, loading a save).
+func teleport(pos: Vector2) -> void:
+	ground_pos = pos
+	position = Vector3(pos.x, _terrain.ground_height_at(pos.x, pos.y), pos.y)
 
 
 ## Turns the fisherman toward [param world_pos] while standing still (walking overrides it).

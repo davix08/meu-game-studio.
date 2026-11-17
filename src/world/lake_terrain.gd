@@ -58,6 +58,7 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 	var shallow_h: float = look.num("terrain", "shallow_bed_height")
 	var deep_h: float = look.num("terrain", "deep_bed_height")
 	var relief: float = look.num("terrain", "relief_height")
+	var dry_min: float = look.num("terrain", "water_level") + look.num("terrain", "dry_margin")
 
 	# Per-block color and base height.
 	var cell_colors: PackedColorArray = PackedColorArray()
@@ -111,6 +112,9 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 			var land_fraction: float = float(land_count) / float(count)
 			var noise: float = 0.6 * sin(x * 0.31 + 1.7) * sin(z * 0.27 + 0.4) + 0.4 * sin(x * 0.83 - z * 0.61)
 			var h: float = h_sum / float(count) + relief * noise * land_fraction
+			# Dry land never dips under the water (no stray puddles on the bigger map, Story 009).
+			if land_count == count:
+				h = maxf(h, dry_min)
 			var n: int = j * cols + i
 			_heights[n] = h
 			vertices[n] = Vector3(x, h, z)
@@ -170,6 +174,11 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 	skirt.material_override = material
 	skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(skirt)
+
+
+## The grid the terrain was built from.
+func get_grid() -> WorldGrid:
+	return _grid
 
 
 ## Terrain height (meters) at a world position. Docks and bridges return the deck height.

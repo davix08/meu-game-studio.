@@ -1,6 +1,6 @@
 {
 	"hud": {
-		"region_name": "Lago Esmeralda",
+		"region_name": "Vila do Lago Esmeralda",
 		"region_font_size": 30,
 		"fps_font_size": 22,
 		"margin": 20,
@@ -16,12 +16,12 @@
 		"pitch_degrees": 35.264,
 		"yaw_degrees": 45.0,
 		"near": 1.0,
-		"far": 90.0,
+		"far": 110.0,
 		"follow_smoothing": 6.0,
-		"margin_west": 12.0,
-		"margin_east": 12.0,
-		"margin_north": 10.0,
-		"margin_south": 10.0
+		"margin_west": 10.0,
+		"margin_east": 10.0,
+		"margin_north": 8.0,
+		"margin_south": 8.0
 	},
 	"joystick": {
 		"radius": 100.0,
@@ -87,13 +87,14 @@
 		"water_level": -0.1,
 		"relief_height": 0.12,
 		"grass_variation": 0.5,
-		"skirt_margin": 60.0,
+		"skirt_margin": 80.0,
 		"skirt_height": -0.25,
-		"roughness": 1.0
+		"roughness": 1.0,
+		"dry_margin": 0.05
 	},
 	"water": {
-		"shallow_color": "#3cc6e0",
-		"deep_color": "#1565b8",
+		"shallow_color": "#45d2ea",
+		"deep_color": "#1a6cc4",
 		"foam_color": "#eaf9ff",
 		"glint_color": "#fff2c0",
 		"alpha_shallow": 0.55,
@@ -102,7 +103,12 @@
 		"wave_speed": 0.8,
 		"wave_scale": 1.4,
 		"foam_width": 0.18,
-		"glint_strength": 0.6
+		"glint_strength": 0.6,
+		"flow_speed": 1.6,
+		"flow_scale": 2.4,
+		"flow_strength": 0.45,
+		"flow_dir_x": -0.55,
+		"flow_dir_z": 0.83
 	},
 	"light": {
 		"color": "#ffd9a0",
@@ -110,7 +116,7 @@
 		"pitch_degrees": 38.0,
 		"yaw_degrees": -55.0,
 		"shadow_enabled": 1,
-		"shadow_max_distance": 55.0,
+		"shadow_max_distance": 45.0,
 		"shadow_blur": 1.5,
 		"shadow_atlas_size": 2048
 	},
@@ -168,7 +174,12 @@
 		"height_min": 1.0,
 		"height_max": 1.0,
 		"shadow": 0,
-		"palette": ["#f4e46a", "#ffffff", "#f08ab0", "#b08af0"],
+		"palette": [
+			"#f4e46a",
+			"#ffffff",
+			"#f08ab0",
+			"#b08af0"
+		],
 		"lily_flower_color": "#f8c8dc"
 	},
 	"tuft": {
@@ -206,8 +217,8 @@
 	},
 	"boat": {
 		"enabled": 1,
-		"x": 24.1,
-		"z": 11.5
+		"x": 48.1,
+		"z": 28.5
 	},
 	"smoke": {
 		"count": 5,
@@ -285,24 +296,41 @@
 		"lights_on": 0,
 		"glow_energy": 2.5,
 		"glow_color": "#ffd070",
-		"plaza_x": 6, "plaza_y": 7, "plaza_w": 2, "plaza_h": 2,
-		"shed_x": 12, "shed_y": 2, "shed_w": 4, "shed_h": 3,
+		"plaza_x": 30,
+		"plaza_y": 24,
+		"plaza_w": 2,
+		"plaza_h": 2,
+		"shed_x": 36,
+		"shed_y": 19,
+		"shed_w": 4,
+		"shed_h": 3,
 		"shed_wall_height": 2.4,
 		"shed_roof_rise": 1.0,
 		"pile_base": 5,
 		"pile_layers": 3,
-		"tractor_x": 16, "tractor_y": 3, "tractor_w": 3, "tractor_h": 2,
-		"wheel_big_radius": 0.55, "wheel_big_width": 0.35,
-		"wheel_small_radius": 0.3, "wheel_small_width": 0.2,
-		"garden_x": 20, "garden_y": 2, "garden_w": 7, "garden_h": 4,
+		"tractor_x": 40,
+		"tractor_y": 20,
+		"tractor_w": 3,
+		"tractor_h": 2,
+		"wheel_big_radius": 0.55,
+		"wheel_big_width": 0.35,
+		"wheel_small_radius": 0.3,
+		"wheel_small_width": 0.2,
+		"garden_x": 44,
+		"garden_y": 19,
+		"garden_w": 7,
+		"garden_h": 4,
 		"garden_rows": 5,
 		"garden_strip": 1.8,
 		"plant_spacing": 0.45,
-		"pen_x": 28, "pen_y": 2, "pen_w": 4, "pen_h": 4,
+		"pen_x": 52,
+		"pen_y": 19,
+		"pen_w": 4,
+		"pen_h": 4,
 		"coop_width": 2.2,
 		"coop_depth": 1.5,
 		"fence_inset": 0.15,
-		"hen_count": 4,
+		"hen_count": 0,
 		"hen_white_count": 2,
 		"hen_seed": 7,
 		"hen_margin": 0.45,
@@ -316,32 +344,71 @@
 		"hen_peck_max": 2.2,
 		"hen_peck_angle": 0.55,
 		"hen_peck_freq": 7.0,
-		"tower_x": 3, "tower_y": 2, "tower_w": 2, "tower_h": 2,
-		"mill_x": 13, "mill_y": 9, "mill_w": 2, "mill_h": 2,
+		"tower_x": 27,
+		"tower_y": 19,
+		"tower_w": 2,
+		"tower_h": 2,
+		"mill_x": 27,
+		"mill_y": 42,
+		"mill_w": 2,
+		"mill_h": 2,
 		"mill_blades": 5,
 		"mill_speed": 0.7,
 		"mill_yaw_degrees": 35,
 		"mill_blade_length": 1.9,
 		"mill_hub_height": 3.1,
 		"mill_hub_forward": 0.7,
-		"shop_x": 2, "shop_y": 7, "shop_w": 4, "shop_h": 3,
+		"shop_x": 25,
+		"shop_y": 24,
+		"shop_w": 4,
+		"shop_h": 3,
 		"shop_wall_height": 2.3,
 		"shop_roof_rise": 1.1,
 		"awning_stripes": 8,
 		"crates_count": 3,
 		"barrels_count": 2,
 		"prop_gap": 0.6,
-		"board_x": 11, "board_y": 8, "board_w": 2, "board_h": 1,
-		"bench_x": 17, "bench_y": 8, "bench_w": 2, "bench_h": 1,
+		"board_x": 35,
+		"board_y": 25,
+		"board_w": 2,
+		"board_h": 1,
+		"bench_x": 41,
+		"bench_y": 25,
+		"bench_w": 2,
+		"bench_h": 1,
 		"lamp_count": 3,
-		"lamp_1_x": 7, "lamp_1_y": 9, "lamp_1_w": 1, "lamp_1_h": 1,
-		"lamp_2_x": 14, "lamp_2_y": 8, "lamp_2_w": 1, "lamp_2_h": 1,
-		"lamp_3_x": 19, "lamp_3_y": 8, "lamp_3_w": 1, "lamp_3_h": 1,
+		"lamp_1_x": 31,
+		"lamp_1_y": 26,
+		"lamp_1_w": 1,
+		"lamp_1_h": 1,
+		"lamp_2_x": 38,
+		"lamp_2_y": 25,
+		"lamp_2_w": 1,
+		"lamp_2_h": 1,
+		"lamp_3_x": 43,
+		"lamp_3_y": 25,
+		"lamp_3_w": 1,
+		"lamp_3_h": 1,
 		"pathfence_count": 2,
-		"pathfence_1_x": 12, "pathfence_1_y": 6, "pathfence_1_w": 3, "pathfence_1_h": 1,
-		"pathfence_2_x": 16, "pathfence_2_y": 6, "pathfence_2_w": 4, "pathfence_2_h": 1,
-		"flowerbox_palette": ["#ff6b8a", "#ffd23a", "#ffffff", "#ff9a3a"],
-		"plant_tints": ["#ffffff", "#d8ffc0", "#fff3b0"],
+		"pathfence_1_x": 36,
+		"pathfence_1_y": 23,
+		"pathfence_1_w": 3,
+		"pathfence_1_h": 1,
+		"pathfence_2_x": 40,
+		"pathfence_2_y": 23,
+		"pathfence_2_w": 4,
+		"pathfence_2_h": 1,
+		"flowerbox_palette": [
+			"#ff6b8a",
+			"#ffd23a",
+			"#ffffff",
+			"#ff9a3a"
+		],
+		"plant_tints": [
+			"#ffffff",
+			"#d8ffc0",
+			"#fff3b0"
+		],
 		"tractor_red": "#d83a2a",
 		"tractor_dark": "#8c241c",
 		"tire": "#2b2622",
@@ -384,7 +451,8 @@
 		"paper_b": "#f4e0a0",
 		"paper_c": "#bfe4f4",
 		"pin": "#e0443a",
-		"lamp_iron": "#2f2a28"
+		"lamp_iron": "#2f2a28",
+		"garden_plants": 0
 	},
 	"fishing": {
 		"arc_height": 2.2,
@@ -555,7 +623,7 @@
 		"card_continue_font": 20,
 		"card_continue_color": "#a8e0ff",
 		"mini_x": 20,
-		"mini_y": 84,
+		"mini_y": 96,
 		"mini_width": 220,
 		"mini_height": 22,
 		"mini_font": 14,
@@ -582,5 +650,508 @@
 		"pull_bobber_white": "#ffffff",
 		"pull_font": 22,
 		"pull_text_color": "#ffffff"
+	},
+	"town": {
+		"roads": [
+			[
+				4,
+				12,
+				88,
+				2
+			],
+			[
+				23,
+				14,
+				2,
+				33
+			],
+			[
+				23,
+				24,
+				10,
+				1
+			],
+			[
+				69,
+				14,
+				2,
+				46
+			],
+			[
+				66,
+				47,
+				4,
+				1
+			],
+			[
+				6,
+				14,
+				2,
+				44
+			],
+			[
+				6,
+				56,
+				65,
+				2
+			],
+			[
+				46,
+				9,
+				3,
+				3
+			]
+		],
+		"plaza": [
+			42,
+			9,
+			11,
+			3
+		],
+		"lots": {
+			"prefeitura": [
+				44,
+				3,
+				6,
+				6,
+				0
+			],
+			"armazem": [
+				29,
+				4,
+				6,
+				5,
+				0
+			],
+			"roupas": [
+				36,
+				4,
+				5,
+				5,
+				0
+			],
+			"restaurante": [
+				54,
+				3,
+				7,
+				6,
+				0
+			],
+			"oficina": [
+				63,
+				4,
+				5,
+				5,
+				0
+			],
+			"casa_1": [
+				20,
+				59,
+				5,
+				4,
+				1
+			],
+			"casa_2": [
+				34,
+				59,
+				5,
+				4,
+				1
+			],
+			"casa_3": [
+				48,
+				59,
+				5,
+				4,
+				1
+			],
+			"campos": [
+				9,
+				16,
+				13,
+				11,
+				2
+			],
+			"pasto": [
+				9,
+				31,
+				13,
+				11,
+				2
+			]
+		},
+		"river": [
+			[
+				86,
+				-1
+			],
+			[
+				85,
+				6
+			],
+			[
+				80,
+				11
+			],
+			[
+				75,
+				16
+			],
+			[
+				71,
+				21
+			],
+			[
+				66,
+				27
+			],
+			[
+				62,
+				33
+			]
+		],
+		"river_radius": 1.45,
+		"forests": [
+			[
+				74,
+				22,
+				20,
+				20,
+				0.55
+			],
+			[
+				74,
+				44,
+				20,
+				22,
+				0.5
+			],
+			[
+				0,
+				44,
+				6,
+				22,
+				0.6
+			],
+			[
+				26,
+				64,
+				46,
+				4,
+				0.6
+			],
+			[
+				0,
+				0,
+				24,
+				11,
+				0.35
+			]
+		],
+		"boulders": [
+			[
+				83,
+				3
+			],
+			[
+				87,
+				5
+			],
+			[
+				82,
+				9
+			],
+			[
+				78,
+				13
+			],
+			[
+				73,
+				18
+			],
+			[
+				68,
+				24
+			],
+			[
+				64,
+				30
+			]
+		],
+		"field_plot_cols": 2,
+		"field_plot_rows": 4,
+		"field_plot_length": 5,
+		"garden_plots_west_gap": 0.6,
+		"interact_radius": 1.8,
+		"door_reach": 1.7,
+		"sign_color": "#c99a5c",
+		"site_fence": "#b08a50",
+		"roof_tile_a": "#c2442f",
+		"roof_tile_b": "#a3352a",
+		"brick": "#b8643a",
+		"plank": "#a8743f",
+		"plank_light": "#c99a5c",
+		"wall_cream": "#f1e3c2",
+		"wall_blue": "#a8c8e0",
+		"wall_green": "#b8d8a8",
+		"wall_pink": "#f0c8c0",
+		"wall_yellow": "#f4dc96",
+		"roof_green": "#4a8a5a",
+		"roof_blue": "#4a6a9a",
+		"roof_brown": "#7a4a2a",
+		"roof_slate": "#5a6070",
+		"flag_red": "#d83a2a",
+		"flag_white": "#ffffff",
+		"metal": "#7a7e86",
+		"anvil": "#3a3a40",
+		"fire": "#ff9a3a",
+		"barrel": "#9a6a3a",
+		"table": "#b8844a",
+		"cloth_a": "#e86a9a",
+		"cloth_b": "#6ab0e8",
+		"cloth_c": "#f0d040",
+		"mailbox": "#d83a2a",
+		"trough": "#8a5a2b",
+		"water_blue": "#6ac0e8",
+		"hay": "#e8c860",
+		"crop_soil_dry": "#7a5236",
+		"crop_soil_wet": "#4a2f1e",
+		"crop_leaf": "#4cae3a",
+		"crop_leaf_light": "#7acb48",
+		"marker_color": "#ffd23a",
+		"marker_height": 3.2,
+		"marker_bob": 0.15,
+		"cliff_dark": "#5e636c",
+		"cliff_light": "#8d929a",
+		"fall_color": "#dff4ff",
+		"chunk_size": 16,
+		"small_prop_range": 55.0
+	},
+	"daynight": {
+		"hours": [
+			0,
+			4.5,
+			6,
+			8,
+			12,
+			16,
+			18,
+			19.5,
+			21,
+			24
+		],
+		"sun_energy": [
+			0.08,
+			0.08,
+			0.55,
+			1.15,
+			1.35,
+			1.3,
+			1.0,
+			0.35,
+			0.1,
+			0.08
+		],
+		"sun_pitch": [
+			70,
+			30,
+			10,
+			25,
+			60,
+			40,
+			22,
+			10,
+			40,
+			70
+		],
+		"sun_colors": [
+			"#6a7ab8",
+			"#7a88c0",
+			"#ffb070",
+			"#ffe0b0",
+			"#fff2dc",
+			"#ffd9a0",
+			"#ffa860",
+			"#ff8a50",
+			"#7a88c8",
+			"#6a7ab8"
+		],
+		"sky_top": [
+			"#0e1838",
+			"#1a2448",
+			"#5a8ac8",
+			"#5f9fd8",
+			"#4a90e0",
+			"#5f9fd8",
+			"#5a80c0",
+			"#3a4a80",
+			"#141e40",
+			"#0e1838"
+		],
+		"sky_horizon": [
+			"#1e2a50",
+			"#3a4070",
+			"#ffc890",
+			"#f7d8a8",
+			"#cfe4f4",
+			"#f7c98f",
+			"#ff9a60",
+			"#c06a60",
+			"#28305a",
+			"#1e2a50"
+		],
+		"ambient": [
+			"#4a5a90",
+			"#5a6aa0",
+			"#e8c8b0",
+			"#ffe8c8",
+			"#fff4e0",
+			"#ffe8c8",
+			"#ffc8a0",
+			"#a088b0",
+			"#4a5a90",
+			"#4a5a90"
+		],
+		"ambient_energy": [
+			0.45,
+			0.5,
+			0.65,
+			0.75,
+			0.85,
+			0.75,
+			0.7,
+			0.55,
+			0.45,
+			0.45
+		],
+		"fog": [
+			"#1e2a50",
+			"#3a4070",
+			"#f4d3a0",
+			"#f4e0b8",
+			"#dcecf4",
+			"#f4d3a0",
+			"#f0a070",
+			"#7a6080",
+			"#28305a",
+			"#1e2a50"
+		],
+		"sun_yaw": -55.0,
+		"lights_on_hour": 18.6,
+		"lights_off_hour": 6.2,
+		"fireflies": 40,
+		"firefly_color": "#d8ff6a",
+		"firefly_size": 0.05,
+		"firefly_area": 14.0,
+		"firefly_height": 1.2,
+		"window_light_energy": 2.5
+	},
+	"npc": {
+		"scale": 0.92,
+		"tap_radius": 1.2,
+		"bob": 0.04,
+		"step_freq": 9.0
+	},
+	"boulder": {
+		"scale_min": 1.8,
+		"scale_max": 2.6,
+		"height_min": 0.8,
+		"height_max": 1.3,
+		"shadow": 1
+	},
+	"tree2": {
+		"scale_min": 0.9,
+		"scale_max": 1.2,
+		"height_min": 0.9,
+		"height_max": 1.2,
+		"shadow": 1
+	},
+	"ui": {
+		"font_size": 24,
+		"title_size": 34,
+		"small_size": 19,
+		"panel_fill": "#fbefd2",
+		"panel_border": "#8a5a32",
+		"panel_border_width": 4,
+		"corner_radius": 18,
+		"ink": "#4a2f1c",
+		"muted": "#8a6a48",
+		"good": "#3f8a3a",
+		"bad": "#c0392b",
+		"button_fill": "#6ab04c",
+		"button_hover": "#7cc45a",
+		"button_pressed": "#4f8f38",
+		"button_disabled": "#b8a88a",
+		"button_text": "#ffffff",
+		"button_border": "#3f6e2a",
+		"tab_fill": "#e8c98f",
+		"tab_active": "#f6a93b",
+		"row_fill": "#f3e2bc",
+		"row_alt": "#efd9ab",
+		"dim": "#1e140c99",
+		"sheet_width": 940,
+		"sheet_height": 620,
+		"row_height": 64,
+		"button_height": 56,
+		"pad": 14,
+		"top_height": 64,
+		"top_margin": 14,
+		"pill_fill": "#2b1d14c8",
+		"pill_text": "#fff6dc",
+		"coin": "#ffd23a",
+		"coin_dark": "#c89a1a",
+		"star": "#ffd23a",
+		"energy_fill": "#6ad04a",
+		"energy_low": "#e04a3a",
+		"energy_back": "#00000060",
+		"species_fill": "#5ab0f0",
+		"sun": "#ffd23a",
+		"moon": "#e8eef8",
+		"round_button": 44,
+		"action_gap": 14,
+		"context_width": 250,
+		"context_height": 62,
+		"context_fill": "#f6a93bee",
+		"fish_body_light": 0.25
+	},
+	"sfx": {
+		"mix_rate": 22050,
+		"volume_db": -8.0,
+		"players": 4,
+		"click": [
+			660,
+			0.06,
+			0.0
+		],
+		"coin": [
+			988,
+			0.12,
+			1318
+		],
+		"cast": [
+			300,
+			0.18,
+			520
+		],
+		"bite": [
+			880,
+			0.15,
+			0.0
+		],
+		"catch": [
+			523,
+			0.35,
+			1046
+		],
+		"level": [
+			523,
+			0.5,
+			1568
+		],
+		"error": [
+			180,
+			0.18,
+			0.0
+		]
 	}
 }

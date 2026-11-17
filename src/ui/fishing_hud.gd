@@ -2,9 +2,9 @@ class_name FishingHud
 extends Control
 ## Fishing interface drawn over the 3D view (a full-screen Control inside the Hud CanvasLayer):
 ## the bite banner, the fight bars (progress, green zone, indicator, mood, TRANCO!), short toasts,
-## the simple capture card (closes on tap; the polished one is Story 007), the big PUXAR button
-## ([PullButton]) and a PROVISIONAL mini energy/bag display with a Rest button (Story 006 replaces
-## them). It only displays and emits signals: it never changes game state.
+## the capture card (new species, new record, name, rarity, weight, value; closes on tap) and the
+## big PUXAR button ([PullButton]). Story 006 moved energy, bag and Rest to [TopBar] and
+## [ActionBar]. It only displays and emits signals: it never changes game state.
 ##
 ## Reads the [FishingMachine] public fields and [GameState]; all texts come from texts_pt.json;
 ## sizes, colors and positions from the "fishing" group of world_look.json (1280x720 base).
@@ -17,11 +17,8 @@ extends Control
 ## hud.add_child(fishing_hud)
 ## fishing_hud.setup(look, data, state)
 ## fishing_hud.bind(machine)
-## fishing_hud.rest_pressed.connect(on_rest)
 ## [/codeblock]
 
-## The player pressed the (provisional) Rest button.
-signal rest_pressed
 
 ## Where the Portuguese texts live.
 const TEXTS_PATH: String = "res://src/data/texts_pt.json"
@@ -37,7 +34,6 @@ var _state: GameState
 var _machine: FishingMachine
 var _texts: Dictionary = {}
 var _style: StyleBoxFlat
-var _rest_button: Button
 var _catcher: Control
 var _clock: float = 0.0
 var _toast_text: String = ""
@@ -67,13 +63,6 @@ func setup(look: WorldLook, data: GameData, state: GameState) -> void:
 	pull = PullButton.new()
 	add_child(pull)
 	pull.setup(look)
-	_rest_button = Button.new()
-	_rest_button.focus_mode = Control.FOCUS_NONE
-	_rest_button.position = Vector2(_n("mini_x"), _n("mini_y") + _n("mini_height") + _n("rest_gap"))
-	_rest_button.size = Vector2(_n("rest_width"), _n("rest_height"))
-	_rest_button.add_theme_font_size_override(&"font_size", int(_n("rest_font")))
-	_rest_button.pressed.connect(rest_pressed.emit)
-	add_child(_rest_button)
 	_catcher = Control.new()
 	_catcher.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_catcher.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -115,7 +104,6 @@ func _process(delta: float) -> void:
 		_restore_frame = 0
 		pull.reset()
 		pull.visible = true
-		_rest_button.visible = true
 	_toast_left = maxf(0.0, _toast_left - delta)
 	_tranco_left = maxf(0.0, _tranco_left - delta)
 	if card_open:
@@ -129,7 +117,6 @@ func _process(delta: float) -> void:
 			pull.label = _t("pull_bite")
 		_:
 			pull.label = _t("pull_fight")
-	_rest_button.text = _t("rest_stop") if _state.resting else _t("rest_start")
 	queue_redraw()
 
 
@@ -158,19 +145,10 @@ func _draw() -> void:
 		_text(cx, _n("toast_y") + _n("toast_font") * _n("text_baseline"), _toast_text, int(_n("toast_font")), _c("ui_white"))
 
 
-## PROVISIONAL (Story 006 replaces it): energy bar and the bag / book counters.
+## The bag and book counters under the top bar (the energy bar moved to [TopBar], Story 006).
 func _draw_mini() -> void:
-	var x: float = _n("mini_x")
-	var y: float = _n("mini_y")
-	var w: float = _n("mini_width")
-	var h: float = _n("mini_height")
-	draw_rect(Rect2(x, y, w, h), _c("mini_back"))
-	var fraction: float = clampf(_state.energy / _data.fixed("energy_max"), 0.0, 1.0)
-	var fill: Color = _c("mini_energy_low") if _state.energy < _data.tune("cast_cost") else _c("mini_energy")
-	draw_rect(Rect2(x + 2.0, y + 2.0, (w - 4.0) * fraction, h - 4.0), fill)
-	_text(x + w * 0.5, y + h - 5.0, "%s %d" % [_t("energy"), int(_state.energy)], int(_n("mini_font")), _c("ui_white"))
 	var bag_line: String = _t("bag_book") % [_state.bag.size(), int(_data.tune("bag_size")), _state.discovered(), _data.species.size()]
-	_text(x, y + h + _n("mini_bag_gap") * 0.7, bag_line, int(_n("mini_bag_font")), _c("ui_cream"), HORIZONTAL_ALIGNMENT_LEFT)
+	_text(_n("mini_x"), _n("mini_y") + _n("mini_bag_gap"), bag_line, int(_n("mini_bag_font")), _c("ui_cream"), HORIZONTAL_ALIGNMENT_LEFT)
 
 
 func _draw_bite(cx: float) -> void:
@@ -274,10 +252,10 @@ func _on_fish_caught(fish: GameState.Catch, is_new: bool, is_record: bool) -> vo
 	_catcher.visible = true
 	pull.reset()
 	pull.visible = false
-	_rest_button.visible = false
 
 
 func _on_level_up(new_level: int, _reward: int) -> void:
+	# The full level-up screen is Story 007's ([Screens.open_level_up]); this is the short banner.
 	show_toast("level_up")
 	_toast_text = _t("level_up") % _data.level_names[new_level - 1].to_upper()
 

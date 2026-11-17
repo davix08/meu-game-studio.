@@ -4,6 +4,7 @@
 // Variants: none (one shader, one material).
 // The mesh vertex color carries the water depth in COLOR.r (0 at the shore, 1 at the deepest
 // point), so the color, the transparency and the shore foam come from the depth.
+// Story 005: COLOR.g is 1 on river water, where stripes of foam run along flow_dir (the current).
 shader_type spatial;
 render_mode cull_disabled;
 
@@ -18,13 +19,20 @@ uniform float wave_speed = 0.8;
 uniform float wave_scale = 1.4;
 uniform float foam_width = 0.18;
 uniform float glint_strength = 0.6;
+// River current: direction on the ground (x, z), speed, stripe frequency and foam amount.
+uniform vec2 flow_dir = vec2(-0.55, 0.83);
+uniform float flow_speed = 1.6;
+uniform float flow_scale = 2.4;
+uniform float flow_strength = 0.45;
 
 varying vec3 wpos;
 varying float depth01;
+varying float river;
 
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	depth01 = COLOR.r;
+	river = COLOR.g;
 	float w = sin(wpos.x * wave_scale + TIME * wave_speed) * cos(wpos.z * wave_scale * 0.8 - TIME * wave_speed * 0.7);
 	VERTEX.y += w * wave_height * clamp(depth01 * 4.0, 0.0, 1.0);
 }
@@ -38,6 +46,11 @@ void fragment() {
 	float foam_wave = 0.5 + 0.5 * sin(wpos.x * 3.0 + wpos.z * 2.0 + TIME * 1.6);
 	float foam = shore * (0.35 + 0.65 * foam_wave);
 	float glint = pow(max(ripple, 0.0), 6.0) * glint_strength;
+	// Current: stripes moving along flow_dir, broken up across the flow by a slower wave.
+	float along = dot(wpos.xz, flow_dir) * flow_scale - TIME * flow_speed;
+	float across = dot(wpos.xz, vec2(-flow_dir.y, flow_dir.x));
+	float stripes = smoothstep(0.55, 1.0, sin(along + sin(across * 1.7) * 1.3));
+	foam = max(foam, stripes * flow_strength * river);
 	ALBEDO = mix(col, foam_color.rgb, foam);
 	EMISSION = glint_color.rgb * glint;
 	ROUGHNESS = 0.2;

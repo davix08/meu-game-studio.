@@ -5,7 +5,10 @@ extends Node3D
 ## reeds, lily pads) as one MultiMeshInstance3D per kind, so each kind is a single draw call.
 ## Positions come from the [WorldGrid] placements, so the 3D map matches the 2D one.
 ##
-## Story 002 (design/game-brief.md, MVP feature 9).
+## Story 002 (design/game-brief.md, MVP feature 9). Story 009: on the bigger map every kind is
+## split into square chunks (town.chunk_size blocks) so the camera culls what is off screen, and the
+## small decorations (tufts, flowers, reeds, lilies) stop drawing beyond town.small_prop_range.
+## Story 005: big boulders along the river, and one tree in five gets a warm autumn tint.
 
 var _grid: WorldGrid
 var _terrain: LakeTerrain
@@ -26,6 +29,7 @@ func build(grid: WorldGrid, terrain: LakeTerrain, look: WorldLook) -> void:
 	_scatter(&"pine", PropMeshes.pine(look))
 	_scatter(&"bush", PropMeshes.bush(look))
 	_scatter(&"rock", PropMeshes.rock(look))
+	_scatter(&"boulder", PropMeshes.rock(look))
 	_scatter(&"tuft", PropMeshes.tuft(look))
 	_scatter(&"reed", PropMeshes.reed(look))
 	_scatter(&"lily", PropMeshes.lily(look))
@@ -52,7 +56,10 @@ func _scatter(kind: StringName, mesh: ArrayMesh) -> void:
 			y = _look.num("terrain", "water_level") + _look.num("lily", "height_above_water")
 		transforms.append(_instance_transform(group, p.cell, Vector3(p.pos.x, y, p.pos.y)))
 		var tint: float = lerpf(_look.num("props", "tint_min"), _look.num("props", "tint_max"), WorldGrid.hash2(p.cell.x, p.cell.y, 14))
-		colors.append(Color(tint, tint, tint, 1.0))
+		var color := Color(tint, tint, tint, 1.0)
+		if kind == &"tree" and WorldGrid.hash2(p.cell.x, p.cell.y, 16) > 0.8:
+			color = Color(tint * 1.12, tint * 0.86, tint * 0.5, 1.0)
+		colors.append(color)
 	_add_multimesh(mesh, transforms, colors, _look.integer(group, "shadow") == 1)
 
 
@@ -94,6 +101,24 @@ func _instance_transform(group: String, cell: Vector2i, origin: Vector3) -> Tran
 func _add_multimesh(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool) -> void:
 	if transforms.is_empty():
 		return
+	var chunk: float = _look.num("town", "chunk_size")
+	var groups: Dictionary = {}
+	for i in transforms.size():
+		var key := Vector2i(floori(transforms[i].origin.x / chunk), floori(transforms[i].origin.z / chunk))
+		if not groups.has(key):
+			groups[key] = []
+		(groups[key] as Array).append(i)
+	var small: bool = not casts_shadow
+	for key: Variant in groups:
+		var part_t: Array[Transform3D] = []
+		var part_c: Array[Color] = []
+		for i: Variant in groups[key]:
+			part_t.append(transforms[int(i)])
+			part_c.append(colors[int(i)])
+		_add_chunk(mesh, part_t, part_c, casts_shadow, small)
+
+
+func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool, small: bool) -> void:
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
 	multi.use_colors = true
@@ -106,4 +131,6 @@ func _add_multimesh(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Arr
 	node.multimesh = multi
 	node.material_override = _material
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if casts_shadow else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if small:
+		node.visibility_range_end = _look.num("town", "small_prop_range")
 	add_child(node)

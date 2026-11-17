@@ -1,13 +1,13 @@
 # Story 017: Loja de roupas (versão simples)
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: M
 > **Build step**: thin — loja de roupas
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -68,7 +68,7 @@
 **Story Type**: UI
 **Required evidence**: uma captura de tela guardada de cada tela tocada, em `production/qa/evidence/story-017-loja-roupas/`.
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-017-loja-roupas-evidence.md` (sign-off pending)
 
 ---
 

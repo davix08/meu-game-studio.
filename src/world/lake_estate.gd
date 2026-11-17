@@ -171,6 +171,9 @@ func _build_garden_plants() -> void:
 	var tints: Array[Color] = _look.color_list(EstateMeshes.GROUP, "plant_tints")
 	var spacing: float = _look.num(EstateMeshes.GROUP, "plant_spacing")
 	var beds: Array[Vector3] = EstateMeshes.garden_beds(_look)
+	# Story 015: with garden_plants 0 the beds are farm plots and [FarmView] draws the crops.
+	if _look.integer(EstateMeshes.GROUP, "garden_plants") == 0:
+		beds.clear()
 	for row in beds.size():
 		var bed: Vector3 = beds[row]
 		var count: int = int((bed.z - bed.x) / spacing)
@@ -181,7 +184,8 @@ func _build_garden_plants() -> void:
 			var plant_basis: Basis = Basis(Vector3.UP, WorldGrid.hash2(cell.x, cell.y, 42) * TAU) * Basis.from_scale(Vector3.ONE * size)
 			transforms.append(Transform3D(plant_basis, Vector3(x, 0.16 + _look.num(EstateMeshes.GROUP, "ground_lift"), bed.y)))
 			colors.append(tints[row % tints.size()])
-	_add_multimesh(EstateMeshes.plant(_look), transforms, colors)
+	if not transforms.is_empty():
+		_add_multimesh(EstateMeshes.plant(_look), transforms, colors)
 	var strip: Vector2 = EstateMeshes.garden_strip_center(_look)
 	var crate_t: Array[Transform3D] = [Transform3D(Basis(Vector3.UP, 0.3), Vector3(strip.x, 0.0, strip.y + 1.0))]
 	var crate_c: Array[Color] = [Color.WHITE]

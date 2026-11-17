@@ -1,13 +1,13 @@
 # Story 013: Vizinhos (NPCs) com rotina (versão simples)
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Feature
 > **Type**: Integration
 > **Estimate**: L
 > **Build step**: thin — vizinhos (NPCs) com rotina: comer, beber e comprar
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -68,7 +68,7 @@
 **Story Type**: Integration
 **Required evidence**: testes dispensados no `qa.level: minimal`; capturas de tela e uma anotação de playtest (ver os vizinhos seguirem a rotina durante um dia).
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-013-vizinhos-rotina-evidence.md` (sign-off pending)
 
 ---
 

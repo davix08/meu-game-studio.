@@ -1,13 +1,13 @@
 # Story 012: Casas dos vizinhos e pedidos de peixe (versão simples)
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Feature
 > **Type**: Integration
 > **Estimate**: L
 > **Build step**: thin — casas dos vizinhos e pedidos de peixe
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -69,7 +69,7 @@
 **Story Type**: Integration
 **Required evidence**: testes dispensados no `qa.level: minimal`; uma anotação curta de playtest (receber o pedido, pescar, entregar, ver a recompensa e o pedido novo no dia seguinte) e capturas de tela.
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-012-casas-vizinhos-pedidos-evidence.md` (sign-off pending)
 
 ---
 

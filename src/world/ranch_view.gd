@@ -1,0 +1,216 @@
+class_name RanchView
+extends Node3D
+## Draws the animals (Story 016): hens in the coop pen of Story 004, sheep and cows in the
+## pasture lot. They wander, stop to graze or peck, and lie still at night. Products waiting to
+## be collected show next to each home (eggs by the coop, milk cans and wool by the trough), and
+## the trough shows hay while it has feed. Rebuilt on [signal GameState.town_changed].
+##
+## Usage:
+## [codeblock]
+## var ranch := RanchView.new()
+## add_child(ranch)
+## ranch.setup(look, town_data, state, terrain)
+## ranch.set_night(true)
+## [/codeblock]
+
+## One walking animal.
+class Critter:
+	extends RefCounted
+	var node: MeshInstance3D
+	var home: String = ""
+	var pos: Vector2 = Vector2.ZERO
+	var target: Vector2 = Vector2.ZERO
+	var heading: float = 0.0
+	var resting: bool = true
+	var timer: float = 0.0
+	var phase: float = 0.0
+	var lift: float = 0.0
+	var speed: float = 0.4
+
+var _look: WorldLook
+var _town: TownData
+var _state: GameState
+var _terrain: LakeTerrain
+var _material: StandardMaterial3D
+var _meshes: Dictionary = {}
+var _critters: Array[Critter] = []
+var _areas: Dictionary = {}
+var _rng := RandomNumberGenerator.new()
+var _night: bool = false
+var _signature: String = ""
+var _products: MultiMeshInstance3D
+var _product_mesh: Dictionary = {}
+
+
+## Builds the meshes and the animals from the state.
+func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerrain) -> void:
+	_look = look
+	_town = town
+	_state = state
+	_terrain = terrain
+	_rng.seed = look.integer("estate", "hen_seed")
+	_material = MeshBuilder.make_material(look.num("props", "roughness"))
+	_meshes["galinha"] = [EstateMeshes.hen(look, true), EstateMeshes.hen(look, false)]
+	_meshes["ovelha"] = [_sheep()]
+	_meshes["vaca"] = [_cow()]
+	var pen: Rect2i = EstateMeshes.cell_rect(look, "pen")
+	var coop_end: float = float(pen.position.y) + 0.3 + look.num("estate", "coop_depth") + 0.35
+	var margin: float = look.num("estate", "hen_margin")
+	_areas["galinheiro"] = Rect2(float(pen.position.x) + margin, coop_end, float(pen.size.x) - margin * 2.0, float(pen.end.y) - margin - coop_end)
+	var pasture: Rect2i = TownPlan.lot_rect(look, "pasto")
+	_areas["pasto"] = Rect2(float(pasture.position.x) + 1.2, float(pasture.position.y) + 3.4, float(pasture.size.x) - 3.4, float(pasture.size.y) - 4.6)
+	var products := MultiMesh.new()
+	products.transform_format = MultiMesh.TRANSFORM_3D
+	products.use_colors = true
+	var mb := MeshBuilder.new()
+	mb.add_ellipsoid(Vector3(0.0, 0.08, 0.0), Vector3(0.07, 0.09, 0.07), Color.WHITE, Color.WHITE, 6, 4, true)
+	products.mesh = mb.build()
+	_products = MultiMeshInstance3D.new()
+	_products.multimesh = products
+	_products.material_override = _material
+	add_child(_products)
+	state.town_changed.connect(refresh)
+	refresh()
+
+
+## Where the player stands to feed and collect at [param home_id] (meters, x z).
+func anchor(home_id: String) -> Vector2:
+	if home_id == "galinheiro":
+		var pen: Rect2i = EstateMeshes.cell_rect(_look, "pen")
+		return Vector2(float(pen.position.x) + float(pen.size.x) * 0.5, float(pen.end.y) + 0.5)
+	return TownPlan.lot_door(_look, "pasto")
+
+
+## At night the animals lie down and stop walking.
+func set_night(on: bool) -> void:
+	_night = on
+
+
+## Recreates the animals when the herd changed and redraws the products.
+func refresh() -> void:
+	var signature: String = ""
+	for a: Dictionary in _state.animals:
+		signature += str(a["kind"]) + ","
+	signature += "|" + str(_state.is_built("pasto"))
+	if signature != _signature:
+		_signature = signature
+		for c: Critter in _critters:
+			c.node.queue_free()
+		_critters.clear()
+		for i in _state.animals.size():
+			var kind: String = str(_state.animals[i]["kind"])
+			var home: String = str(_town.animal(kind).get("home", ""))
+			if not _areas.has(home) or (home == "pasto" and not _state.is_built("pasto")):
+				continue
+			_add_critter(kind, home, i)
+	_draw_products()
+
+
+func _process(delta: float) -> void:
+	for c: Critter in _critters:
+		_update(c, delta)
+
+
+func _add_critter(kind: String, home: String, index: int) -> void:
+	var c := Critter.new()
+	var options: Array = _meshes[kind]
+	c.node = MeshInstance3D.new()
+	c.node.mesh = options[index % options.size()]
+	c.node.material_override = _material
+	add_child(c.node)
+	c.home = home
+	c.pos = _random_point(home)
+	c.target = c.pos
+	c.heading = _rng.randf() * TAU
+	c.phase = _rng.randf() * TAU
+	c.lift = 0.25 if kind == "galinha" else 0.0
+	c.speed = 0.45 if kind == "galinha" else 0.35
+	c.timer = _rng.randf_range(0.5, 2.5)
+	_critters.append(c)
+	_place(c, 0.0, 0.0)
+
+
+func _random_point(home: String) -> Vector2:
+	var area: Rect2 = _areas[home]
+	return Vector2(_rng.randf_range(area.position.x, area.end.x), _rng.randf_range(area.position.y, area.end.y))
+
+
+func _update(c: Critter, delta: float) -> void:
+	c.phase += delta
+	if _night:
+		_place(c, 0.0, -0.08)
+		return
+	c.timer -= delta
+	var tilt: float = 0.0
+	var bob: float = 0.0
+	if c.resting:
+		tilt = -0.35 * maxf(0.0, sin(c.phase * 3.0))
+		if c.timer <= 0.0:
+			c.resting = false
+			c.target = _random_point(c.home)
+			c.timer = _rng.randf_range(1.0, 3.0)
+	else:
+		var to_target: Vector2 = c.target - c.pos
+		var dist: float = to_target.length()
+		if dist < 0.05 or c.timer <= 0.0:
+			c.resting = true
+			c.timer = _rng.randf_range(1.5, 4.0)
+		else:
+			c.heading = lerp_angle(c.heading, atan2(-to_target.y, to_target.x), minf(1.0, 5.0 * delta))
+			c.pos += to_target / dist * minf(c.speed * delta, dist)
+			bob = absf(sin(c.phase * 10.0)) * 0.03
+	_place(c, tilt, bob)
+
+
+func _place(c: Critter, tilt: float, bob: float) -> void:
+	c.node.position = Vector3(c.pos.x, _terrain.ground_height_at(c.pos.x, c.pos.y) + c.lift + bob, c.pos.y)
+	c.node.rotation = Vector3(0.0, c.heading, tilt)
+
+
+func _draw_products() -> void:
+	var transforms: Array[Transform3D] = []
+	var colors: Array[Color] = []
+	for home: String in ["galinheiro", "pasto"]:
+		var products: Dictionary = _state.pending.get(home, {})
+		var spot: Vector2 = anchor(home) + (Vector2(0.0, -1.2) if home == "galinheiro" else Vector2(-1.0, 0.6))
+		var n: int = 0
+		for id: Variant in products:
+			var color: Color = Color.html(str(_town.good(str(id)).get("color", "#ffffff")))
+			var big: bool = str(id) != "ovo"
+			for k in mini(int(products[id]), 8):
+				var offset := Vector2(float(n % 4) * 0.22, float(n / 4) * 0.22)
+				transforms.append(Transform3D(Basis.from_scale(Vector3.ONE * (2.2 if big else 1.0)), Vector3(spot.x + offset.x, 0.05, spot.y + offset.y)))
+				colors.append(color)
+				n += 1
+	var multi: MultiMesh = _products.multimesh
+	multi.instance_count = transforms.size()
+	for i in transforms.size():
+		multi.set_instance_transform(i, transforms[i])
+		multi.set_instance_color(i, colors[i])
+
+
+func _sheep() -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var wool: Color = Color.html(str(_town.good("la").get("color", "#ffffff")))
+	var dark := Color(0.2, 0.18, 0.18)
+	mb.add_ellipsoid(Vector3(0.0, 0.5, 0.0), Vector3(0.45, 0.32, 0.3), wool.darkened(0.1), wool, 8, 5, true)
+	mb.add_ellipsoid(Vector3(0.45, 0.62, 0.0), Vector3(0.15, 0.14, 0.13), dark, dark, 6, 4, true)
+	for p: Vector2 in [Vector2(-0.25, -0.15), Vector2(-0.25, 0.15), Vector2(0.25, -0.15), Vector2(0.25, 0.15)]:
+		mb.add_box(Vector3(p.x, 0.15, p.y), Vector3(0.08, 0.3, 0.08), dark)
+	return mb.build()
+
+
+func _cow() -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var white := Color(0.96, 0.94, 0.9)
+	var spot := Color(0.25, 0.2, 0.18)
+	mb.add_box(Vector3(0.0, 0.75, 0.0), Vector3(1.1, 0.55, 0.55), white)
+	mb.add_box(Vector3(-0.15, 0.85, 0.28), Vector3(0.35, 0.3, 0.02), spot)
+	mb.add_box(Vector3(0.25, 0.7, -0.28), Vector3(0.3, 0.25, 0.02), spot)
+	mb.add_box(Vector3(0.68, 0.9, 0.0), Vector3(0.32, 0.32, 0.36), white)
+	mb.add_box(Vector3(0.86, 0.82, 0.0), Vector3(0.08, 0.18, 0.3), Color(0.95, 0.7, 0.7))
+	for side: float in [-1.0, 1.0]:
+		mb.add_box(Vector3(0.66, 1.1, side * 0.2), Vector3(0.05, 0.12, 0.05), Color(0.9, 0.85, 0.7))
+	for p: Vector2 in [Vector2(-0.4, -0.18), Vector2(-0.4, 0.18), Vector2(0.4, -0.18), Vector2(0.4, 0.18)]:
+		mb.add_box(Vector3(p.x, 0.25, p.y), Vector3(0.14, 0.5, 0.14), white.darkened(0.1))
+	return mb.build()

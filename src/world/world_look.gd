@@ -60,6 +60,16 @@ func text(group: String, key: String) -> String:
 	return str(_value(group, key))
 
 
+## The raw JSON value at [param group].[param key] (arrays and objects of the town layout).
+func raw(group: String, key: String) -> Variant:
+	return _value(group, key)
+
+
+## True when [param group] has [param key].
+func has(group: String, key: String) -> bool:
+	return _data.has(group) and (_data[group] as Dictionary).has(key)
+
+
 func _value(group: String, key: String) -> Variant:
 	var entries: Dictionary = _data[group]
 	return entries[key]

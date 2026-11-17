@@ -1,13 +1,13 @@
 # Story 005: Cenário II: rio, cachoeiras, píer em L, ilhota e modelos melhores
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: L
 > **Build step**: core
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -72,7 +72,7 @@
 **Story Type**: Visual/Feel
 **Required evidence**: uma captura de tela guardada em `production/qa/evidence/story-005-cenario-rio-pier-e-modelos/` + sign-off em `production/qa/evidence/story-005-cenario-rio-pier-e-modelos-evidence.md` (não é dispensado no `qa.level: minimal`).
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-005-cenario-rio-pier-e-modelos-evidence.md` (sign-off pending)
 
 ---
 

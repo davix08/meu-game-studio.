@@ -29,6 +29,8 @@ func step(dt: float) -> void:
 	_state.minutes += game_minutes
 	if _state.luck_left > 0.0:
 		_state.luck_left = maxf(0.0, _state.luck_left - game_minutes)
+	if _state.garden_bait_left > 0.0:
+		_state.garden_bait_left = maxf(0.0, _state.garden_bait_left - game_minutes)
 	if _state.minutes >= _data.tune("day_end"):
 		sleep_new_day(true)
 

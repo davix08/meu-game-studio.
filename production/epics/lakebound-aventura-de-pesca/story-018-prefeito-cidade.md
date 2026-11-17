@@ -1,13 +1,13 @@
 # Story 018: Papel de prefeito da cidade (versão simples)
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Feature
 > **Type**: UI
 > **Estimate**: M
 > **Build step**: thin — papel de prefeito da cidade
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -68,7 +68,7 @@
 **Story Type**: UI
 **Required evidence**: uma captura de tela guardada de cada tela tocada, em `production/qa/evidence/story-018-prefeito-cidade/`.
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-018-prefeito-cidade-evidence.md` (sign-off pending)
 
 ---
 

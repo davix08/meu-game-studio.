@@ -1,13 +1,13 @@
 # Story 009: Mapa maior com a vila ao redor do lago (versão simples)
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: L
 > **Build step**: thin — mapa maior com a vila ao redor do lago
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -71,7 +71,7 @@
 **Story Type**: Visual/Feel
 **Required evidence**: uma captura de tela guardada em `production/qa/evidence/story-009-mapa-maior-vila/` + sign-off em `production/qa/evidence/story-009-mapa-maior-vila-evidence.md`.
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-009-mapa-maior-vila-evidence.md` (sign-off pending)
 
 ---
 

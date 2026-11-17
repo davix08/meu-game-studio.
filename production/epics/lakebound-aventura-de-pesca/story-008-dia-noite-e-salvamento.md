@@ -1,13 +1,13 @@
 # Story 008: Dia e noite em 3D e salvamento automático ligado
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: M
 > **Build step**: core
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -70,7 +70,7 @@
 **Story Type**: Visual/Feel
 **Required evidence**: capturas de tela guardadas (dia, noite, tela inicial) em `production/qa/evidence/story-008-dia-noite-e-salvamento/` + sign-off em `production/qa/evidence/story-008-dia-noite-e-salvamento-evidence.md` (não é dispensado no `qa.level: minimal`).
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-008-dia-noite-e-salvamento-evidence.md` (sign-off pending)
 
 ---
 

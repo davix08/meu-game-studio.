@@ -1,13 +1,13 @@
 # Story 016: Pasto com animais (versão simples)
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Feature
 > **Type**: Integration
 > **Estimate**: L
 > **Build step**: thin — pasto com animais (cuidar e produzir)
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -68,7 +68,7 @@
 **Story Type**: Integration
 **Required evidence**: testes dispensados no `qa.level: minimal`; capturas de tela e uma anotação de playtest.
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-016-pasto-animais-evidence.md` (sign-off pending)
 
 ---
 

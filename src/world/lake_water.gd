@@ -5,7 +5,8 @@ extends MeshInstance3D
 ## channel, 0 at the shore, 1 at the deepest bed); [code]water.gdshader[/code] turns it into
 ## color, transparency, ripples, glints and shore foam. Draw calls: 1.
 ##
-## Story 002 (design/game-brief.md, MVP feature 9).
+## Story 002 (design/game-brief.md, MVP feature 9). Story 005: the green channel of the vertex
+## color marks river water, where the shader draws the current.
 
 const SHADER_PATH: String = "res://src/world/water.gdshader"
 
@@ -30,7 +31,8 @@ func build(terrain: LakeTerrain, look: WorldLook) -> void:
 			var depth: float = (level - terrain.vertex_height(i, j)) / (level - deep_h)
 			vertices[n] = Vector3(float(i) * LakeTerrain.STEP, level, float(j) * LakeTerrain.STEP)
 			normals[n] = Vector3.UP
-			colors[n] = Color(clampf(depth, 0.0, 1.0), 0.0, 0.0, 1.0)
+			var flow: float = 1.0 if terrain.get_grid().is_river(mini(i >> 1, WorldGrid.WIDTH - 1), mini(j >> 1, WorldGrid.HEIGHT - 1)) else 0.0
+			colors[n] = Color(clampf(depth, 0.0, 1.0), flow, 0.0, 1.0)
 			wet[n] = 1 if depth > 0.0 else 0
 	var indices: PackedInt32Array = PackedInt32Array()
 	for j in rows - 1:
@@ -59,9 +61,10 @@ func build(terrain: LakeTerrain, look: WorldLook) -> void:
 
 	var material := ShaderMaterial.new()
 	material.shader = load(SHADER_PATH) as Shader
+	material.set_shader_parameter("flow_dir", Vector2(look.num("water", "flow_dir_x"), look.num("water", "flow_dir_z")).normalized())
 	for key: String in ["shallow_color", "deep_color", "foam_color", "glint_color"]:
 		material.set_shader_parameter(key, look.color("water", key))
-	for key: String in ["alpha_shallow", "alpha_deep", "wave_height", "wave_speed", "wave_scale", "foam_width", "glint_strength"]:
+	for key: String in ["alpha_shallow", "alpha_deep", "wave_height", "wave_speed", "wave_scale", "foam_width", "glint_strength", "flow_speed", "flow_scale", "flow_strength"]:
 		material.set_shader_parameter(key, look.num("water", key))
 	material_override = material
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

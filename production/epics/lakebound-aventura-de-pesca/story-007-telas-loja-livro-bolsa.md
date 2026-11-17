@@ -1,13 +1,13 @@
 # Story 007: Telas em 3D: loja, Livro, bolsa e subida de nível
 
 > **Epic**: Lakebound — Aventura de Pesca (migração para 3D no Godot)
-> **Status**: Ready
+> **Status**: In Review (built 2026-11-17; awaiting phone playtest and /story-done)
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: L
 > **Build step**: core
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-17
 
 ## Context
 
@@ -72,7 +72,7 @@
 **Story Type**: UI
 **Required evidence**: uma captura de tela guardada de cada tela tocada, em `production/qa/evidence/story-007-telas-loja-livro-bolsa/`.
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created: `production/qa/evidence/story-007-telas-loja-livro-bolsa-evidence.md` (sign-off pending)
 
 ---
 
