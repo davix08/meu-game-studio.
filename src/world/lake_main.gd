@@ -58,6 +58,10 @@ var _ranch: RanchView
 var _npcs: NpcView
 var _cycle: DayNight
 var _gathering: Gathering
+var _net: NetSession
+var _beacon: LanBeacon
+var _others: RemotePlayers
+var _snapshot := PlayerSnapshot.new()
 var _gather_view: GatherView
 var _spots: Array[Spot] = []
 var _spot: Spot
@@ -125,6 +129,14 @@ func _ready() -> void:
 	_clock = GameClock.new(_data, _state)
 	_economy = Economy.new(_data, _state)
 	_gathering = Gathering.new(_data, _state)
+	_net = NetSession.new()
+	_net.name = "Net" # Same node path on every peer, for the RPCs.
+	add_child(_net)
+	_beacon = LanBeacon.new()
+	add_child(_beacon)
+	_others = RemotePlayers.new()
+	add_child(_others)
+	_others.setup(_look, _world.grid, _world.terrain, _data.tune("walk_speed") / WorldGrid.PIXELS_PER_BLOCK, _data.tune("run_speed") / WorldGrid.PIXELS_PER_BLOCK)
 	_gather_view = GatherView.new()
 	add_child(_gather_view)
 	_gather_view.setup(_data, _gathering, _world.terrain)
@@ -176,6 +188,8 @@ func _build_interface() -> void:
 	ctx.energy = _energy
 	ctx.clock = _clock
 	ctx.gathering = _gathering
+	ctx.net = _net
+	ctx.beacon = _beacon
 	_top = TopBar.new()
 	root.add_child(_top)
 	_top.setup(_look, _data, _state, _clock, _progression)
@@ -204,6 +218,12 @@ func _connect_events() -> void:
 	_state.fish_caught.connect(_on_fish_caught)
 	_state.town_changed.connect(_mark_save)
 	_gathering.materials_changed.connect(_on_materials_changed)
+	_net.player_joined.connect(_on_player_joined)
+	_net.player_left.connect(_on_player_left)
+	_net.remote_state.connect(_others.apply)
+	_net.remote_catch.connect(_on_remote_catch)
+	_net.session_started.connect(_on_session_started)
+	_net.session_ended.connect(_on_session_ended)
 	_state.day_started.connect(_on_day_started)
 	_economy.fish_sold.connect(_on_fish_sold)
 	_machine.fish_bit.connect(_on_fish_bit)
@@ -214,9 +234,62 @@ func _open_settings() -> void:
 	_screens.open_settings()
 
 
-func _on_fish_caught(_fish: GameState.Catch, _is_new: bool, _is_record: bool) -> void:
+func _on_fish_caught(fish: GameState.Catch, _is_new: bool, _is_record: bool) -> void:
 	_sfx.play(&"catch")
 	_save_soon = true
+	_net.send_catch(fish.id, fish.weight, fish.length)
+
+
+# --- Coop (design/gdd/coop-lan.md) ---
+
+func _on_player_joined(peer_id: int, slot: int) -> void:
+	_others.add_player(peer_id, slot)
+	_screens.toast(Texts.fmt("coop_joined", [slot + 1]))
+	_advertise()
+
+
+func _on_player_left(peer_id: int) -> void:
+	_others.remove_player(peer_id)
+	_advertise()
+
+
+func _on_remote_catch(peer_id: int, species_id: String, weight: float, length: float) -> void:
+	if not _data.has_species(species_id):
+		return
+	var slot: int = _net.slots.get(peer_id, 0)
+	var kg: String = String.num(weight, int(_data.fixed("weight_decimals"))).replace(".", ",")
+	_screens.toast(Texts.fmt("coop_caught", [slot + 1, _data.species_by_id(species_id).name, kg, Texts.length_text(length, _data.fixed("meters_from_cm"))]))
+
+
+func _on_session_started() -> void:
+	_screens.toast(Texts.get_text("coop_hosting") if _net.is_host() else Texts.get_text("coop_connected"))
+	_advertise()
+	_screens.refresh_if_open()
+
+
+func _on_session_ended(reason: String) -> void:
+	_others.clear()
+	_beacon.stop()
+	if reason != "left":
+		_screens.toast(Texts.get_text("coop_end_" + reason))
+	_screens.refresh_if_open()
+
+
+func _advertise() -> void:
+	if _net.is_host():
+		_beacon.advertise(Texts.fmt("coop_room_name", [LanBeacon.local_ip()]), _net.player_count())
+
+
+func _send_presence(delta: float) -> void:
+	if not _net.is_active():
+		return
+	_snapshot.pos = _fisherman.ground_pos
+	_snapshot.yaw = _fisherman.rotation.y
+	_snapshot.pose = _fisherman.pose
+	_snapshot.cast_progress = _fisherman.cast_progress
+	_snapshot.has_rod = _state.has_rod()
+	_snapshot.rod_color = _data.rod_by_id(_state.rod).color if _state.has_rod() else ""
+	_net.send_state(_snapshot, delta)
 
 
 func _on_fish_sold(_count: int, _coins: int) -> void:
@@ -293,6 +366,7 @@ func _process(delta: float) -> void:
 	if e_down and not _e_was_down and _started and not _screens.is_open():
 		_use_spot()
 	_e_was_down = e_down
+	_send_presence(delta)
 
 
 func _physics_process(delta: float) -> void:

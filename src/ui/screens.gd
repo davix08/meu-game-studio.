@@ -163,6 +163,12 @@ func _restore_scroll(value: int) -> void:
 		_scroll.scroll_vertical = value
 
 
+## Rebuilds the open screen (e.g. after a coop event); does nothing when none is open.
+func refresh_if_open() -> void:
+	if is_open():
+		_refresh()
+
+
 func _refresh() -> void:
 	if _rebuild.is_valid():
 		_rebuild.call()
@@ -353,8 +359,65 @@ func open_settings() -> void:
 		_click()
 		_refresh()
 	body.add_child(UiKit.button(_look, "%s: %s" % [Texts.get_text("show_fps"), Texts.get_text("on") if s.show_fps else Texts.get_text("off")], _act5))
+	body.add_child(UiKit.button(_look, Texts.get_text("coop"), open_coop))
 	body.add_child(UiKit.button(_look, Texts.get_text("continue"), _close_clicked))
 	body.add_child(UiKit.button(_look, Texts.get_text("new_game"), _confirm_new.bind(open_settings)))
+
+
+# --- Coop (design/gdd/coop-lan.md) ---
+
+## Jogar junto: host a room, join one found on the Wi-Fi, or type the host's IP.
+func open_coop() -> void:
+	var net: NetSession = _ctx.net
+	var beacon: LanBeacon = _ctx.beacon
+	var body: VBoxContainer = _sheet(Texts.get_text("coop"), open_coop)
+	body.add_child(UiKit.label(Texts.get_text("coop_intro"), 0, _look.color("ui", "muted")))
+	var ip: String = LanBeacon.local_ip()
+	body.add_child(UiKit.label(Texts.fmt("coop_my_ip", [ip if ip != "" else Texts.get_text("coop_no_wifi")])))
+	if net.is_active():
+		var role: String = Texts.get_text("coop_role_host") if net.is_host() else Texts.get_text("coop_role_guest")
+		body.add_child(UiKit.label(Texts.fmt("coop_status", [role, net.player_count(), NetSession.MAX_PLAYERS]), 26, _look.color("ui", "good")))
+		var _leave: Callable = func() -> void:
+			net.leave()
+			_click()
+			_refresh()
+		body.add_child(UiKit.button(_look, Texts.get_text("coop_leave"), _leave))
+		return
+	var _host: Callable = func() -> void:
+		var err: Error = net.host()
+		_result(err == OK, Texts.get_text("coop_hosting") if err == OK else Texts.get_text("coop_end_failed"))
+	body.add_child(UiKit.button(_look, Texts.get_text("coop_host"), _host))
+	body.add_child(UiKit.label(Texts.get_text("coop_rooms"), 26))
+	if not beacon.rooms_changed.is_connected(refresh_if_open):
+		beacon.rooms_changed.connect(refresh_if_open)
+	if beacon.rooms.is_empty():
+		beacon.listen()
+		body.add_child(UiKit.label(Texts.get_text("coop_searching"), 0, _look.color("ui", "muted")))
+	for room_ip: String in beacon.rooms:
+		var room: Dictionary = beacon.rooms[room_ip]
+		var port: int = int(room["port"])
+		var _join: Callable = func() -> void:
+			beacon.stop()
+			_click()
+			net.join(room_ip, port)
+			toast(Texts.get_text("coop_connecting"))
+		var full: bool = int(room["players"]) >= NetSession.MAX_PLAYERS
+		body.add_child(UiKit.row(_look, [UiKit.label("%s\n%d/%d" % [str(room["name"]), int(room["players"]), NetSession.MAX_PLAYERS]), UiKit.button(_look, Texts.get_text("coop_full") if full else Texts.get_text("coop_join"), _join, not full)]))
+	body.add_child(UiKit.label(Texts.get_text("coop_by_ip"), 26))
+	var field := LineEdit.new()
+	field.placeholder_text = "192.168.0.10"
+	field.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_URL
+	field.custom_minimum_size = Vector2(0.0, 56.0)
+	var _join_ip: Callable = func() -> void:
+		var address: String = field.text.strip_edges()
+		if not address.is_valid_ip_address():
+			_result(false, Texts.get_text("coop_bad_ip"))
+			return
+		beacon.stop()
+		_click()
+		net.join(address)
+		toast(Texts.get_text("coop_connecting"))
+	body.add_child(UiKit.row(_look, [field, UiKit.button(_look, Texts.get_text("coop_join"), _join_ip)]))
 
 
 func _confirm_new(back: Callable) -> void:

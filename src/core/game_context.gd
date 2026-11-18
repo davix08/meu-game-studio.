@@ -29,3 +29,7 @@ var energy: Energy
 var clock: GameClock
 ## Gathering spots and the bench.
 var gathering: Gathering
+## Same-Wi-Fi coop session.
+var net: NetSession
+## Coop room finder.
+var beacon: LanBeacon
