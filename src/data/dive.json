@@ -1,0 +1,35 @@
+{
+	"spot": {
+		"x": 46.0,
+		"y": 30.3,
+		"reach": 1.6,
+		"buoy_x": 47.6,
+		"buoy_y": 31.6
+	},
+	"arena": {
+		"w": 22,
+		"h": 14
+	},
+	"species": [
+		"acara",
+		"perca",
+		"camarao",
+		"caranguejo",
+		"baiacu",
+		"carpa",
+		"lagosta",
+		"polvo",
+		"moreia",
+		"nautilo"
+	],
+	"fish_count": 7,
+	"oxygen_seconds": 45,
+	"energy_cost": 15,
+	"harpoon_range": 4.5,
+	"harpoon_hit_radius": 0.7,
+	"harpoon_reload": 0.8,
+	"swim_speed": 3.2,
+	"fish_speed_min": 0.6,
+	"fish_speed_max": 1.6,
+	"loss_fraction": 0.5
+}

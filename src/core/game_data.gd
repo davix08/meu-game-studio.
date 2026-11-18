@@ -162,6 +162,8 @@ var baits: Array[Bait] = []
 var items: Array[Item] = []
 ## Level names; index 0 is level 1. Its size is the maximum level.
 var level_names: PackedStringArray = PackedStringArray()
+## The first dive spot and its rules (dive.json, design/gdd/diving.md).
+var dive: Dictionary = {}
 ## Lines, in lines.json order.
 var lines: Array[Line] = []
 ## Hooks, in hooks.json order.
@@ -216,6 +218,7 @@ static func load_from_dir(dir_path: String = DEFAULT_DIR) -> GameData:
 	ok = ok and data._load_baits(_read_json(dir_path.path_join("baits.json")))
 	ok = ok and data._load_items(_read_json(dir_path.path_join("items.json")))
 	ok = ok and data._load_levels(_read_json(dir_path.path_join("levels.json")))
+	ok = ok and data._load_dive(_read_json(dir_path.path_join("dive.json")))
 	ok = ok and data._load_lines(_read_json(dir_path.path_join("lines.json")))
 	ok = ok and data._load_hooks(_read_json(dir_path.path_join("hooks.json")))
 	ok = ok and data._load_materials(_read_json(dir_path.path_join("materials.json")))
@@ -639,4 +642,18 @@ func _load_hooks(json: Variant) -> bool:
 		hook.zone = float(e["zone"])
 		hooks.append(hook)
 		_hooks_by_id[hook.id] = hook
+	return true
+
+
+func _load_dive(json: Variant) -> bool:
+	var keys: Array[String] = ["spot", "arena", "species", "fish_count", "oxygen_seconds", "energy_cost",
+			"harpoon_range", "harpoon_hit_radius", "harpoon_reload", "swim_speed", "fish_speed_min",
+			"fish_speed_max", "loss_fraction"]
+	if not _has_keys(json, keys, "dive.json"):
+		return false
+	dive = json
+	for id: Variant in dive["species"]:
+		if not _species_by_id.has(str(id)):
+			push_error("GameData: dive.json species %s is unknown" % str(id))
+			return false
 	return true

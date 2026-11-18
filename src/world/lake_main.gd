@@ -61,6 +61,10 @@ var _gathering: Gathering
 var _net: NetSession
 var _beacon: LanBeacon
 var _others: RemotePlayers
+var _dive: Dive
+var _dive_view: DiveView
+var _dive_hud: DiveHud
+var _diving: bool = false
 var _snapshot := PlayerSnapshot.new()
 var _gather_view: GatherView
 var _spots: Array[Spot] = []
@@ -123,6 +127,11 @@ func _ready() -> void:
 	_life.setup(_look, _data, _world.grid, rng, _water_y)
 	_world.query.set_water_life(_life)
 	var roller := FishRoller.new(_data, _state, rng)
+	_dive = Dive.new(_data, _state, roller, rng)
+	_dive.ended.connect(_on_dive_ended)
+	_dive_view = DiveView.new()
+	add_child(_dive_view)
+	_dive_view.setup(_look, _data, _look.num("terrain", "water_level"))
 	_progression = Progression.new(_data, _state)
 	_machine = FishingMachine.new(_data, _state, rng, _world.query, roller, _progression)
 	_energy = Energy.new(_data, _state, _machine)
@@ -197,6 +206,11 @@ func _build_interface() -> void:
 	root.add_child(_fishing_hud)
 	_fishing_hud.setup(_look, _data, _state)
 	_fishing_hud.bind(_machine)
+	_dive_hud = DiveHud.new()
+	root.add_child(_dive_hud)
+	_dive_hud.setup(_look)
+	_dive_hud.shoot_pressed.connect(_dive_shoot)
+	_dive_hud.surface_pressed.connect(func() -> void: _dive.surface())
 	_actions = ActionBar.new()
 	root.add_child(_actions)
 	_actions.setup(_look)
@@ -238,6 +252,76 @@ func _on_fish_caught(fish: GameState.Catch, _is_new: bool, _is_record: bool) -> 
 	_sfx.play(&"catch")
 	_save_soon = true
 	_net.send_catch(fish.id, fish.weight, fish.length)
+
+
+# --- Diving (design/gdd/diving.md) ---
+
+func _start_dive() -> void:
+	match _dive.start():
+		Dive.StartResult.NO_ENERGY:
+			_sfx.play(&"error")
+			_screens.toast(Texts.get_text("dive_no_energy"))
+		Dive.StartResult.BAG_FULL:
+			_sfx.play(&"error")
+			_screens.toast(Texts.get_text("dive_bag_full"))
+		Dive.StartResult.OK:
+			_sfx.play(&"cast")
+			_diving = true
+			_actions.visible = false
+			_fishing_hud.visible = false
+			_dive_hud.visible = true
+			_dive_view.begin(_dive)
+
+
+func _dive_process(delta: float) -> void:
+	var dir: Vector2 = _stick.value
+	var keys: Vector2 = _keyboard_direction()
+	if keys != Vector2.ZERO:
+		dir = keys
+	if _screens.is_open():
+		dir = Vector2.ZERO
+	_dive.step(delta, dir.rotated(-_input_yaw))
+	if not _diving:
+		return # Out of air during this step: already back on the surface.
+	_dive_view.sync(delta)
+	_dive_hud.show_dive(_dive, delta)
+	var space: bool = Input.is_physical_key_pressed(KEY_SPACE)
+	if space and not _key_was_down:
+		_dive_shoot()
+	_key_was_down = space
+	_send_presence(delta)
+
+
+func _dive_shoot() -> void:
+	if not _dive.can_shoot():
+		return
+	var hit: Dive.DiveFish = _dive.shoot()
+	_sfx.play(&"catch" if hit != null else &"click")
+	_screens.toast(Texts.fmt("dive_hit", [_data.species_by_id(hit.fish.id).name]) if hit != null else Texts.get_text("dive_miss"))
+
+
+func _on_dive_ended(reason: Dive.EndReason, kept: Array[GameState.Catch]) -> void:
+	var speared: int = _dive.haul.size()
+	_diving = false
+	_dive_view.finish()
+	_camera.make_current()
+	_dive_hud.visible = false
+	_actions.visible = true
+	_fishing_hud.visible = true
+	for fish: GameState.Catch in kept:
+		_state.bag.append(fish)
+		var flags: Array[bool] = _state.record_catch(fish)
+		_state.fish_caught.emit(fish, flags[0], flags[1])
+	_progression.check_level_up()
+	var lost_air: int = speared - Dive.kept_count(reason, speared, float(_data.dive["loss_fraction"]))
+	var overflow: int = speared - lost_air - kept.size()
+	var text: String = Texts.fmt("dive_surfaced", [kept.size()])
+	if reason == Dive.EndReason.OUT_OF_AIR:
+		text = Texts.fmt("dive_out_of_air", [lost_air, speared]) if lost_air > 0 else Texts.fmt("dive_out_of_air_safe", [kept.size()])
+	if overflow > 0:
+		text += " " + Texts.fmt("dive_bag_overflow", [overflow])
+	_screens.toast(text)
+	_mark_save()
 
 
 # --- Coop (design/gdd/coop-lan.md) ---
@@ -344,6 +428,9 @@ func _process(delta: float) -> void:
 	if _fisherman == null:
 		return
 	_cycle.update(_state.minutes)
+	if _diving:
+		_dive_process(delta)
+		return
 	var dir: Vector2 = _stick.value
 	var run: bool = dir.length() >= _run_threshold
 	var keys: Vector2 = _keyboard_direction()
@@ -548,6 +635,8 @@ func _build_spots() -> void:
 		elif id == "campos":
 			_add_spot(TownPlan.lot_door(_look, id) + Vector2(1.0, 0.0), reach, _label_site.bind(id, name), _screens.toast.bind(Texts.get_text("not_built")))
 	_add_spot(_bench_point(), reach, _label_fixed.bind("act_bench"), _open_bench)
+	var dive_spot := Vector2(float(_data.dive["spot"]["x"]), float(_data.dive["spot"]["y"]))
+	_add_spot(dive_spot, float(_data.dive["spot"]["reach"]), _label_fixed.bind("act_dive"), _start_dive)
 	for n: GameData.GatherNode in _data.gather_nodes:
 		_add_spot(n.pos, _look.num("town", "door_reach"), _label_gather.bind(n), _gather.bind(n))
 	for i in _farm.plot_count:

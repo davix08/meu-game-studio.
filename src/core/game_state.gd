@@ -209,6 +209,22 @@ func init_town(town: TownData) -> void:
 	drinks = int(town.num("restaurant", "drinks_per_day"))
 
 
+## Records [param fish] in the guide (count, heaviest, longest) and the lifetime stats.
+## Returns [is_new, is_record]. Does not touch the bag or emit [signal fish_caught]:
+## the caller (fishing or diving) does, so each can decide where the fish goes.
+func record_catch(fish: Catch) -> Array[bool]:
+	var prev: BookEntry = book.get(fish.id, null)
+	var is_new: bool = prev == null
+	var is_record: bool = prev != null and fish.weight > prev.best
+	var entry := BookEntry.new()
+	entry.count = (0 if is_new else prev.count) + 1
+	entry.best = fish.weight if is_new else maxf(prev.best, fish.weight)
+	entry.longest = fish.length if is_new else maxf(prev.longest, fish.length)
+	book[fish.id] = entry
+	stats_caught += 1
+	return [is_new, is_record]
+
+
 ## True when a rod is equipped (a new game starts without one: craft it at the bench).
 func has_rod() -> bool:
 	return rod != ""

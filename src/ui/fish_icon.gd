@@ -27,10 +27,15 @@ func _init() -> void:
 
 
 ## A fish of species [param id]; [param rarity_color] rings it; [param known] false = silhouette.
+## The body color of species [param id] (stable per id), shared by the icons and the dive fish.
+static func body_color(id: String) -> Color:
+	var h: float = float(absi(hash(id)) % 1000) / 1000.0
+	return Color.from_hsv(h, 0.45, 0.85)
+
+
 func setup_fish(id: String, rarity_color: Color, known: bool) -> void:
 	_kind = Kind.FISH
-	var h: float = float(absi(hash(id)) % 1000) / 1000.0
-	_body = Color.from_hsv(h, 0.45, 0.85)
+	_body = body_color(id)
 	_ring = rarity_color
 	_known = known
 	queue_redraw()

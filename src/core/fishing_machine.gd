@@ -305,17 +305,9 @@ func _fight_step(dt: float, hold: bool) -> void:
 func _finish_catch() -> void:
 	var fish: GameState.Catch = landed
 	_state.bag.append(fish)
-	var prev: GameState.BookEntry = _state.book.get(fish.id, null)
-	var is_new: bool = prev == null
-	var is_record: bool = prev != null and fish.weight > prev.best
-	var entry := GameState.BookEntry.new()
-	entry.count = (0 if is_new else prev.count) + 1
-	entry.best = fish.weight if is_new else maxf(prev.best, fish.weight)
-	entry.longest = fish.length if is_new else maxf(prev.longest, fish.length)
-	_state.book[fish.id] = entry
-	_state.stats_caught += 1
+	var flags: Array[bool] = _state.record_catch(fish)
 	_reset()
-	_state.fish_caught.emit(fish, is_new, is_record)
+	_state.fish_caught.emit(fish, flags[0], flags[1])
 	_progression.check_level_up()
 
 
