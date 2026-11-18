@@ -1,0 +1,569 @@
+PROJETO COMPLETO — JOGO DE PESCARIA 2D PARA ANDROID Documento de visão,
+especificação e desenvolvimento para Claude Code
+
+============================================================ 1.
+INSTRUÇÃO PRINCIPAL
+============================================================
+
+Crie um jogo 2D de pescaria e exploração para Android, utilizando Godot
+4 e GDScript.
+
+IMPORTANTE: - Este é um PROJETO NOVO. Comece do zero. - Não presuma que
+já existe um protótipo, código, cenas, assets ou estrutura de projeto. -
+Crie toda a estrutura necessária, incluindo projeto Godot, pastas,
+cenas, scripts, recursos e configurações. - Desenvolva sistemas reais e
+funcionais. Não substitua funcionalidades por botões decorativos, telas
+falsas ou implementações temporárias apresentadas como concluídas. -
+Trabalhe de forma modular, organizada e expansível. - Teste cada etapa
+antes de avançar. - Priorize uma primeira versão jogável e estável antes
+de adicionar grande quantidade de conteúdo. - Não tente implementar todo
+o jogo de uma só vez. Siga as etapas de desenvolvimento deste
+documento. - Quando houver decisões técnicas não especificadas, escolha
+a solução mais simples, robusta e adequada para um jogo mobile 2D.
+
+O objetivo é criar um jogo original. As referências a Stardew Valley e
+Dave the Diver servem apenas para orientar o tipo de experiência e as
+mecânicas. Não copie personagens, mapas, sprites, nomes, interface,
+músicas ou outros elementos protegidos desses jogos.
+
+============================================================ 2. CONCEITO
+GERAL ============================================================
+
+Gênero: aventura, pescaria, exploração, simulação e gerenciamento.
+Plataforma principal: Android. Orientação: horizontal (Landscape).
+Tecnologia: Godot 4, GDScript. Câmera: Top-Down 2D. Estilo visual: Pixel
+Art moderna, detalhada e consistente.
+
+O jogador começa como um pescador iniciante, em uma pequena doca, sem
+vara de pesca e com poucos recursos.
+
+A jornada deve permitir que o jogador: - Explore livremente o cenário. -
+Colete materiais naturais. - Fabrique sua primeira vara de pesca. -
+Pesque diferentes espécies. - Venda peixes e consiga dinheiro. - Compre
+e melhore equipamentos. - Desenvolva uma propriedade própria. - Cultive
+alimentos e crie animais. - Construa e personalize sua casa. - Adquira
+barcos. - Explore novas regiões. - Desbloqueie mergulho e exploração
+subaquática. - Capture peixes com arpão. - Encontre minérios, tesouros e
+recursos raros. - Evolua seu personagem e sua estrutura de pesca.
+
+O jogo deve oferecer liberdade de progressão, objetivos de curto e longo
+prazo e sensação constante de evolução.
+
+============================================================ 3. DIREÇÃO
+ARTÍSTICA E VISUAL
+============================================================
+
+Utilize Pixel Art moderna, com boa definição, riqueza de detalhes e
+identidade visual própria.
+
+Diretrizes: - Evitar visual excessivamente simples, grosseiro ou
+limitado a poucos pixels. - Evitar aparência vetorial ou de ilustração
+lisa. - Manter proporções, paleta de cores, iluminação e nível de
+detalhe consistentes. - Criar cenários visualmente agradáveis, com
+elementos de fundo e detalhes ambientais. - Usar animações suaves e
+legíveis. - Criar efeitos para água, ondas, chuva, partículas, pesca,
+coleta e interações. - Os personagens, peixes, construções, ferramentas
+e objetos devem seguir a mesma direção artística. - Otimizar sprites,
+animações e efeitos para desempenho em celulares Android.
+
+Todos os elementos visuais devem ser originais ou utilizar recursos com
+licença adequada.
+
+============================================================ 4.
+CONTROLES PARA CELULAR
+============================================================
+
+O jogo deve ser projetado desde o início para telas touchscreen em
+orientação horizontal.
+
+Layout desejado: - Analógico virtual esquerdo: movimentação do
+personagem em todas as direções. - Analógico virtual direito:
+direcionamento de ferramentas, arpão ou ações que precisem de mira. -
+Botão de corrida próximo ao controle de movimentação. - Inventário
+rápido na parte inferior da tela, posicionado entre os analógicos. -
+Botão contextual de interação, exibido em posição confortável para o
+polegar. - Menu compacto no canto superior direito.
+
+O menu principal durante a partida deve conter: - Inventário. - Guia de
+peixes. - Configurações.
+
+Requisitos dos controles: - Resposta imediata ao toque. - Analógicos com
+zona morta configurável. - Suporte a movimentação diagonal sem
+velocidade maior que a movimentação reta. - Botões com tamanho adequado
+para telas pequenas. - Interface adaptável a diferentes resoluções e
+proporções de tela. - Não bloquear desnecessariamente a visão do
+cenário. - Permitir configurar sensibilidade e tamanho dos controles, se
+viável.
+
+============================================================ 5.
+PERSONAGEM, MOVIMENTAÇÃO E CÂMERA
+============================================================
+
+O personagem deve ser controlável e explorável desde a primeira beta.
+
+Implementar: - Movimentação em oito direções. - Animações de parado,
+caminhada e corrida. - Animações direcionais. - Velocidade de caminhada
+e corrida configuráveis. - Colisões com árvores, pedras, construções,
+cercas e obstáculos. - Detecção de objetos próximos para interação. -
+Câmera acompanhando o personagem suavemente. - Limites de câmera para
+não mostrar áreas fora do mapa. - Sistema organizado para adicionar
+roupas, equipamentos e animações posteriormente.
+
+A primeira beta deve permitir caminhar livremente pelo cenário inicial,
+mesmo que os sistemas de pesca e mergulho ainda não estejam prontos.
+
+============================================================ 6. CENÁRIO
+INICIAL ============================================================
+
+Criar uma pequena área inicial contendo: - Doca de madeira. - Área de
+terra acessível. - Água com animação ou efeito visual. - Vegetação. -
+Árvores. - Pedras. - Arbustos. - Materiais coletáveis. - Caminhos e
+áreas exploráveis. - Alguns obstáculos com colisão. - Elementos
+decorativos para dar vida ao ambiente.
+
+O mapa inicial deve ser pequeno, mas parecer um lugar real e explorável.
+A arquitetura deve permitir expandir o mapa posteriormente.
+
+============================================================ 7.
+INVENTÁRIO E ITENS
+============================================================
+
+Criar um sistema funcional de inventário.
+
+Categorias: - Ferramentas. - Varas e equipamentos de pesca. - Iscas. -
+Peixes. - Materiais naturais. - Minérios. - Tesouros. - Alimentos. -
+Itens de construção. - Itens de agricultura. - Itens de decoração. -
+Equipamentos de mergulho.
+
+Cada item deve possuir, conforme aplicável: - Identificador único. -
+Nome. - Ícone. - Descrição. - Categoria. - Quantidade acumulável. -
+Valor de venda. - Informações de uso. - Requisitos para fabricação ou
+utilização.
+
+Implementar: - Adicionar e remover itens. - Empilhar itens iguais. -
+Dividir pilhas, se adequado. - Selecionar item. - Utilizar itens. -
+Vender itens. - Armazenar itens em baús e depósitos. - Salvar e carregar
+o inventário.
+
+O inventário rápido deve permitir selecionar itens sem abrir o menu
+completo.
+
+============================================================ 8. GUIA E
+ENCICLOPÉDIA DE PEIXES
+============================================================
+
+Criar uma enciclopédia que registre as espécies descobertas.
+
+Antes de capturar uma espécie: - Exibir a espécie como silhueta ou
+imagem em preto e branco. - Ocultar informações ainda desconhecidas.
+
+Após capturar: - Exibir a imagem colorida. - Registrar nome e
+informações descobertas. - Mostrar habitat, região, raridade e horários,
+quando aplicável. - Registrar maior tamanho e maior peso capturados. -
+Registrar quantidade total capturada. - Registrar recordes pessoais.
+
+A enciclopédia deve ser expandida conforme novas regiões e espécies
+forem adicionadas.
+
+============================================================ 9. COLETA
+DE RECURSOS NATURAIS
+============================================================
+
+No início, o jogador ainda não possui vara de pesca. Ele deverá explorar
+a área e coletar materiais.
+
+Recursos iniciais: - Galhos. - Fibras vegetais. - Minhocas. - Outros
+materiais simples que façam sentido no ambiente.
+
+Funcionamento: - O jogador se aproxima do recurso. - Um botão contextual
+de interação aparece. - Ao interagir, o recurso é coletado. - O objeto
+desaparece ou muda de estado. - O item é adicionado ao inventário. -
+Exibir feedback visual e sonoro. - O recurso pode reaparecer após
+determinado tempo, se adequado.
+
+A coleta deve ser simples, intuitiva e funcional.
+
+============================================================ 10.
+FABRICAÇÃO DA PRIMEIRA VARA
+============================================================
+
+O primeiro objetivo de progressão é fabricar uma vara artesanal.
+
+Receita inicial sugerida: - 1 galho resistente. - 3 fibras vegetais. -
+Linha improvisada, produzida com material coletado ou disponibilizada
+por uma receita inicial.
+
+O jogador deve: - Reunir os materiais. - Abrir a interface de
+fabricação. - Visualizar a receita e os requisitos. - Fabricar a vara
+quando tiver os materiais. - Receber a vara no inventário. - Equipar a
+vara e começar a pescar.
+
+A primeira vara deve ser simples, ter desempenho limitado e servir como
+ponto de partida para melhorias.
+
+============================================================ 11. SISTEMA
+DE PESCA CONVENCIONAL
+============================================================
+
+Criar um sistema de pesca divertido, responsivo e com profundidade
+suficiente para manter o interesse.
+
+Fluxo básico: 1. O jogador equipa a vara. 2. Aproxima-se de um ponto de
+pesca. 3. Direciona e lança a linha. 4. Aguarda a aproximação ou mordida
+do peixe. 5. Recebe um sinal visual e/ou sonoro. 6. Inicia um minijogo
+de captura. 7. Controla a tensão da linha e a resistência do peixe. 8.
+Consegue capturar ou perde o peixe.
+
+Elementos do sistema: - Distância do lançamento. - Precisão do
+lançamento. - Tempo até a mordida. - Resistência por espécie. - Tensão
+da linha. - Risco de romper a linha. - Dificuldade variável. -
+Influência dos equipamentos. - Influência da isca. - Peso e tamanho do
+peixe. - Recompensa de experiência.
+
+As iscas devem ser opcionais e estratégicas. Algumas espécies podem ser
+atraídas por iscas específicas, e iscas melhores podem aumentar a chance
+de encontrar peixes maiores, raros ou específicos. Não tornar a pesca
+básica impossível sem isca.
+
+Criar espécies com comportamentos, tamanhos, pesos, raridades e valores
+diferentes.
+
+============================================================ 12. LOJA,
+MERCADO E MELHORIAS
+============================================================
+
+Criar lojas e sistemas de compra e venda.
+
+O jogador poderá vender peixes, tesouros e materiais permitidos,
+recebendo dinheiro.
+
+Itens compráveis e melhorias: - Varas. - Molinetes e carretilhas,
+conforme o sistema adotado. - Linhas. - Anzóis. - Iscas. - Barcos e
+peças de barcos. - Roupas e acessórios. - Equipamentos de mergulho. -
+Tanques de oxigênio maiores. - Arpões e melhorias. - Ferramentas. -
+Materiais e itens de construção.
+
+As melhorias devem produzir diferenças reais de funcionamento, como: -
+Maior distância de lançamento. - Maior resistência da linha. - Melhor
+controle durante a captura. - Maior capacidade de armazenamento. - Maior
+autonomia de oxigênio. - Maior dano ou eficiência do arpão. - Acesso a
+regiões antes inacessíveis.
+
+============================================================ 13.
+PROPRIEDADE, CASA E AGRICULTURA
+============================================================
+
+O jogador deverá desbloquear ou adquirir uma propriedade própria.
+
+A propriedade deve permitir: - Plantar vegetais e outros cultivos. -
+Regar e cuidar das plantas. - Acompanhar crescimento e colheita. -
+Utilizar sementes. - Criar animais. - Ter animais de estimação. -
+Construir e melhorar instalações. - Decorar áreas internas e externas. -
+Organizar baús e depósitos. - Expandir a propriedade conforme a
+progressão.
+
+A casa deve permitir personalização de móveis, objetos e decoração.
+
+Criar um lago particular para peixes: - Permitir colocar ou criar peixes
+no lago. - Incluir espécies especiais ou raras. - Permitir que o lago
+gere recompensas ou recursos de acordo com regras equilibradas. -
+Oferecer melhorias e personalização.
+
+A agricultura e os animais devem funcionar como sistemas reais, e não
+apenas como decoração.
+
+============================================================ 14.
+MERGULHO E EXPLORAÇÃO SUBAQUÁTICA
+============================================================
+
+O mergulho será desbloqueado após determinado nível ou marco de
+progressão.
+
+Pontos de mergulho: - Criar placas ou pontos identificáveis nas áreas
+acessíveis. - O jogador interage com o ponto. - O jogo verifica se o
+nível e os equipamentos necessários foram desbloqueados. - O jogador
+equipa ou confirma o equipamento. - O jogo realiza a transição para o
+ambiente subaquático.
+
+Equipamento do personagem: - Roupa de mergulho. - Tanque de oxigênio. -
+Arpão. - Faca. - Outros equipamentos que possam ser desbloqueados.
+
+No ambiente subaquático: - Movimentação livre em todas as direções. -
+Indicador de oxigênio restante. - Limite de tempo de mergulho conforme a
+capacidade do tanque. - Peixes com diferentes comportamentos. -
+Vegetação e elementos marinhos. - Minérios e rochas quebráveis. -
+Tesouros escondidos. - Áreas secretas e pontos de interesse.
+
+Funções das ferramentas: - Arpão: capturar peixes. - Faca: defesa e
+combate contra criaturas, além de permitir determinadas interações. -
+Ferramentas adicionais: mineração e coleta de recursos.
+
+O jogador deve precisar retornar à superfície antes de acabar o
+oxigênio. Caso o oxigênio chegue a níveis críticos, apresentar avisos
+claros e permitir retorno seguro. Definir consequências equilibradas
+para não tornar a experiência injusta.
+
+Criar diferentes ambientes subaquáticos, com espécies e recursos
+próprios.
+
+============================================================ 15. DOCA E
+CONSTRUÇÕES ============================================================
+
+A doca será um ponto central de atividades e progressão.
+
+Construções que poderão existir ao longo do jogo: - Loja de
+equipamentos. - Mercado de peixes. - Oficina. - Aquário. -
+Laboratório. - Armazém. - Restaurante. - Casa do jogador. - Estaleiro ou
+oficina de barcos.
+
+As construções podem ser desbloqueadas gradualmente. Cada uma deve ter
+função própria e interface coerente.
+
+============================================================ 16. BARCOS
+E TRANSPORTE
+============================================================
+
+Permitir adquirir e utilizar diferentes embarcações ao longo da
+progressão.
+
+Tipos possíveis: - Barco a remo. - Barco com motor. - Lancha. - Barco
+pesqueiro. - Barco de exploração. - Submarino.
+
+Cada embarcação deve ter atributos próprios: - Velocidade. - Capacidade
+de carga. - Autonomia ou combustível, se utilizado. - Resistência. -
+Regiões acessíveis. - Equipamentos instaláveis.
+
+Os controles devem funcionar por touchscreen. O jogador deve conseguir
+pilotar de forma intuitiva, sem comandos excessivamente complexos.
+
+============================================================ 17. CLIMA E
+CICLO DE DIA E NOITE
+============================================================
+
+Implementar ciclo de dia e noite, com mudanças visuais no cenário.
+
+Condições climáticas possíveis: - Sol. - Nublado. - Chuva. - Tempestade,
+em regiões ou situações apropriadas. - Outras condições específicas de
+cada região.
+
+O clima e o horário podem influenciar: - Aparição de espécies. -
+Comportamento dos peixes. - Disponibilidade de recursos. -
+Visibilidade. - Atividades de NPCs. - Ambiente visual e sonoro.
+
+Não tornar essas regras excessivamente punitivas.
+
+============================================================ 18. NPCs,
+MISSÕES E COMPETIÇÕES
+============================================================
+
+Criar personagens não jogáveis com identidade e funções próprias.
+
+Possibilidades: - Comerciantes. - Pescadores. - Moradores. -
+Especialistas em equipamentos. - Pesquisadores. - Personagens que
+oferecem missões.
+
+Missões possíveis: - Capturar determinada espécie. - Encontrar um peixe
+de tamanho específico. - Coletar materiais. - Entregar recursos. -
+Explorar uma região. - Encontrar tesouros. - Melhorar equipamentos.
+
+Adicionar competições e desafios de pesca, com regras e recompensas
+claras.
+
+============================================================ 19.
+ECONOMIA E PROGRESSÃO
+============================================================
+
+Criar economia equilibrada com dinheiro, experiência e níveis.
+
+O jogador ganha experiência por atividades como: - Pescar. - Capturar
+novas espécies. - Explorar. - Coletar recursos. - Completar missões. -
+Descobrir locais. - Realizar atividades de mergulho.
+
+A progressão deve desbloquear gradualmente: - Equipamentos. - Regiões. -
+Barcos. - Construções. - Atividades. - Melhorias. - Sistemas avançados.
+
+Evitar que a evolução dependa de repetição excessiva de uma única
+atividade. Incentivar o jogador a experimentar diferentes sistemas.
+
+============================================================ 20. REGIÕES
+E EXPLORAÇÃO
+============================================================
+
+Criar o mundo de forma expansível, com regiões que tenham identidade
+própria.
+
+Regiões planejadas: - Lago inicial. - Rio. - Ilhas tropicais. - Oceano
+aberto. - Oceano profundo. - Região congelada. - Ruínas submersas.
+
+Cada região deve possuir: - Cenário próprio. - Espécies de peixes
+específicas. - Recursos e materiais. - Pontos de interesse. - Requisitos
+de acesso, quando aplicável. - Desafios e recompensas.
+
+A primeira versão não precisa conter todas as regiões. A arquitetura
+deve permitir adicioná-las posteriormente.
+
+============================================================ 21.
+SALVAMENTO E CARREGAMENTO
+============================================================
+
+Implementar salvamento local no dispositivo.
+
+Salvar, no mínimo: - Posição ou local seguro do jogador. - Dinheiro. -
+Nível e experiência. - Inventário. - Equipamentos. - Itens
+armazenados. - Peixes descobertos e recordes. - Propriedade e
+construções. - Plantações e estado dos cultivos. - Animais. - Barcos. -
+Regiões desbloqueadas. - Missões e progresso. - Configurações do
+jogador.
+
+Criar sistema confiável de salvar e carregar, com tratamento de dados
+ausentes ou inválidos. Evitar perda de progresso.
+
+Implementar salvamento automático em momentos apropriados e, se
+possível, opção de salvar manualmente.
+
+============================================================ 22.
+ARQUITETURA E ORGANIZAÇÃO DO PROJETO
+============================================================
+
+Organizar o projeto em módulos independentes e reutilizáveis.
+
+Estrutura sugerida:
+
+res:// assets/ characters/ environments/ items/ fish/ ui/ effects/
+audio/ scenes/ player/ world/ dock/ fishing/ underwater/ property/
+buildings/ boats/ ui/ scripts/ player/ world/ systems/ inventory/
+fishing/ crafting/ economy/ progression/ underwater/ property/ save/ ui/
+data/ items/ fish/ recipes/ regions/ quests/ autoload/ shaders/ fonts/
+
+A estrutura pode ser adaptada conforme a necessidade técnica, mas deve
+manter separação clara entre: - Dados. - Lógica de jogo. - Interface. -
+Cenas. - Recursos visuais. - Sistemas globais.
+
+Evitar concentrar toda a lógica em um único script. Utilizar nomes
+claros, comentários úteis e padrões consistentes.
+
+============================================================ 23. ETAPAS
+DE DESENVOLVIMENTO
+============================================================
+
+Desenvolver o jogo por etapas. Cada etapa deve ser testável e funcional
+antes de avançar.
+
+ETAPA 1 — FUNDAÇÃO E PRIMEIRA BETA EXPLORÁVEL
+
+Criar: - Projeto Godot 4 do zero. - Configuração de tela horizontal para
+Android. - Estrutura de pastas. - Cena principal. - Personagem
+controlável. - Movimentação em oito direções. - Analógico virtual
+esquerdo. - Analógico virtual direito preparado para ferramentas e
+mira. - Botão de corrida. - Animações de caminhada, corrida e parado. -
+Câmera seguindo o personagem. - Colisões. - Primeiro mapa explorável. -
+Doca inicial. - Água. - Vegetação. - Árvores, pedras e obstáculos. -
+Botão contextual de interação. - Menu compacto. - Inventário inicial. -
+Barra de inventário rápido. - Guia de peixes, ainda que inicialmente
+vazio ou com espécies de demonstração. - Configurações básicas.
+
+OBJETIVO DA ETAPA 1: Entregar uma primeira beta na qual seja possível
+abrir o jogo no computador e, preferencialmente, em um dispositivo
+Android, controlar o personagem e caminhar livremente pelo cenário. A
+movimentação, câmera, colisões e controles touchscreen devem estar
+realmente funcionando.
+
+Não é necessário que todos os sistemas avançados estejam implementados
+nesta etapa. Priorizar uma base estável e visualmente agradável.
+
+ETAPA 2 — COLETA, CRAFTING E PRIMEIRA PESCARIA
+
+Implementar: - Coleta de galhos, fibras e minhocas. - Inventário
+funcional. - Receitas e fabricação. - Primeira vara artesanal. - Equipar
+e desequipar vara. - Sistema de lançamento. - Mordida e captura. -
+Minijogo de pesca. - Primeiras espécies de peixes. - Venda de peixes. -
+Dinheiro e experiência. - Salvamento e carregamento.
+
+ETAPA 3 — LOJAS E EQUIPAMENTOS
+
+Implementar: - Loja. - Compra e venda. - Novas varas. - Linhas e
+anzóis. - Iscas. - Melhorias de equipamento. - Progressão de níveis e
+desbloqueios.
+
+ETAPA 4 — PROPRIEDADE
+
+Implementar: - Propriedade do jogador. - Casa. - Agricultura. - Plantio
+e colheita. - Animais. - Decoração. - Armazenamento. - Lago particular.
+
+ETAPA 5 — MERGULHO
+
+Implementar: - Pontos de mergulho. - Requisitos de nível e
+equipamento. - Transição para cenário subaquático. - Controles
+subaquáticos. - Oxigênio. - Arpão. - Faca. - Peixes subaquáticos. -
+Mineração. - Tesouros. - Retorno à superfície.
+
+ETAPA 6 — EXPLORAÇÃO E EXPANSÃO
+
+Implementar: - Novas regiões. - Barcos. - NPCs. - Missões. - Novas
+espécies. - Novos recursos. - Novas construções. - Expansão do mundo.
+
+ETAPA 7 — CONTEÚDO AVANÇADO E POLIMENTO
+
+Implementar e aprimorar: - Competições. - Eventos. - Clima avançado. -
+Ciclo de dia e noite. - Balanceamento da economia. - Mais itens e
+equipamentos. - Efeitos visuais e sonoros. - Animações. - Otimização
+para Android. - Correção de bugs. - Testes de desempenho. - Preparação
+de versão final e APK.
+
+============================================================ 24. REGRAS
+DE QUALIDADE E TESTES
+============================================================
+
+Durante o desenvolvimento: - Não marcar uma funcionalidade como
+concluída sem implementá-la e testá-la. - Executar o projeto após
+mudanças importantes. - Corrigir erros de sintaxe e referências
+quebradas. - Verificar colisões e controles. - Testar diferentes
+resoluções e proporções de tela. - Monitorar desempenho em dispositivos
+Android. - Evitar sistemas desnecessariamente complexos. - Manter o
+projeto executável ao final de cada etapa. - Não apagar funcionalidades
+já concluídas sem necessidade. - Não substituir sistemas funcionais por
+versões simplificadas sem explicar a mudança. - Se uma funcionalidade
+depender de assets ainda não disponíveis, criar uma solução provisória
+coerente e informar claramente que é provisória. - Não inventar que
+testes foram realizados se não foram.
+
+============================================================ 25. ENTREGA
+E COMUNICAÇÃO AO FINAL DE CADA ETAPA
+============================================================
+
+Ao concluir cada etapa, apresentar um relatório contendo:
+
+1.  O que foi implementado.
+2.  Quais arquivos e cenas foram criados ou modificados.
+3.  Quais funcionalidades estão realmente funcionando.
+4.  O que ainda não foi implementado.
+5.  Problemas encontrados e como foram resolvidos.
+6.  Como executar o projeto.
+7.  Como testar os controles e funcionalidades.
+8.  Como testar em um dispositivo Android.
+9.  Próxima etapa recomendada.
+
+Manter o projeto organizado e executável.
+
+Quando chegar o momento apropriado, configurar a exportação para Android
+e gerar um APK de teste. Não afirmar que o APK foi gerado sem confirmar
+que a exportação foi concluída com sucesso.
+
+============================================================ 26.
+ORIENTAÇÃO FINAL AO CLAUDE CODE
+============================================================
+
+Comece criando o projeto do zero, seguindo a ETAPA 1.
+
+Não tente desenvolver todo o jogo de uma vez. Primeiro entregue uma base
+sólida, com personagem movimentável, controles touchscreen, câmera,
+colisões e cenário inicial explorável.
+
+A primeira beta precisa permitir que o jogador caminhe livremente pelo
+cenário. Esse requisito é prioritário.
+
+Depois de concluir e testar a Etapa 1, apresente o relatório de entrega
+e aguarde a orientação para continuar ou corrigir algo antes de avançar.
+
+O resultado final deve ser um jogo original, expansível, bem organizado,
+agradável visualmente e otimizado para Android.
