@@ -364,6 +364,36 @@ func open_settings() -> void:
 	body.add_child(UiKit.button(_look, Texts.get_text("new_game"), _confirm_new.bind(open_settings)))
 
 
+# --- Decoration (design/gdd/decoration.md) ---
+
+## The pieces for decoration slot [param slot_id]: place, swap or remove.
+func open_decor(slot_id: String) -> void:
+	var s: GameState = _ctx.state
+	var decor: Decor = _ctx.decor
+	var body: VBoxContainer = _sheet(Texts.get_text("decor"), open_decor.bind(slot_id))
+	body.add_child(UiKit.label(Texts.get_text("decor_intro"), 0, _look.color("ui", "muted")))
+	var here: GameData.ShopEntry = _ctx.data.decor_by_id(s.decor.get(slot_id, ""))
+	body.add_child(UiKit.label(Texts.fmt("decor_here", [here.name]) if here != null else Texts.get_text("decor_empty"), 26))
+	if here != null:
+		var gain: int = decor.refund(slot_id)
+		var _remove: Callable = func() -> void:
+			decor.remove(slot_id)
+			_result(true, Texts.fmt("decor_removed", [gain]))
+		body.add_child(UiKit.button(_look, Texts.fmt("decor_remove", [gain]), _remove))
+	for item: GameData.ShopEntry in _ctx.data.decor_items:
+		var blocked: Decor.Result = decor.place_blocker(slot_id, item.id)
+		var text: String = Texts.fmt("decor_place", [item.price])
+		if blocked == Decor.Result.SAME:
+			text = Texts.get_text("decor_same")
+		elif blocked == Decor.Result.LOCKED_BY_LEVEL:
+			text = Texts.fmt("need_level", [item.level])
+		var item_id: String = item.id
+		var _place: Callable = func() -> void:
+			var r: Decor.Result = decor.place(slot_id, item_id)
+			_result(r == Decor.Result.OK, Texts.get_text("decor_placed") if r == Decor.Result.OK else Texts.get_text("no_coins"))
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, item.color), UiKit.label(item.name), UiKit.button(_look, text, _place, blocked == Decor.Result.OK)]))
+
+
 # --- Coop (design/gdd/coop-lan.md) ---
 
 ## Jogar junto: host a room, join one found on the Wi-Fi, or type the host's IP.

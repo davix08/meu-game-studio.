@@ -48,6 +48,7 @@ static func to_dict(state: GameState) -> Dictionary:
 		"energy": state.energy,
 		"bag": bag,
 		"book": book,
+		"decor": state.decor.duplicate(),
 		"materials": state.materials.duplicate(),
 		"gathered": state.gathered.duplicate(),
 		"lines_owned": Array(state.lines_owned),
@@ -204,6 +205,12 @@ static func apply(state: GameState, data: GameData, save: Dictionary) -> void:
 		_apply_bag(state, data, save["bag"])
 	if save.get("book") is Dictionary:
 		_apply_book(state, data, save["book"])
+	if save.get("decor") is Dictionary:
+		state.decor.clear()
+		var placed: Dictionary = save["decor"]
+		for slot: Variant in placed:
+			if data.decor_slots.has(str(slot)) and data.decor_by_id(str(placed[slot])) != null:
+				state.decor[str(slot)] = str(placed[slot])
 	if save.get("materials") is Dictionary:
 		state.materials.clear()
 		var mats: Dictionary = save["materials"]

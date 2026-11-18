@@ -29,6 +29,8 @@ var energy: Energy
 var clock: GameClock
 ## Gathering spots and the bench.
 var gathering: Gathering
+## House and yard decorations.
+var decor: Decor
 ## Same-Wi-Fi coop session.
 var net: NetSession
 ## Coop room finder.

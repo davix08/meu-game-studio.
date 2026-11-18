@@ -62,6 +62,8 @@ var _net: NetSession
 var _beacon: LanBeacon
 var _others: RemotePlayers
 var _dive: Dive
+var _decor: Decor
+var _decor_view: DecorView
 var _dive_view: DiveView
 var _dive_hud: DiveHud
 var _diving: bool = false
@@ -138,6 +140,11 @@ func _ready() -> void:
 	_clock = GameClock.new(_data, _state)
 	_economy = Economy.new(_data, _state)
 	_gathering = Gathering.new(_data, _state)
+	_decor = Decor.new(_data, _state)
+	_decor_view = DecorView.new()
+	add_child(_decor_view)
+	_decor_view.setup(_data, _state, _decor, _world.terrain)
+	_decor.changed.connect(func(_slot: String) -> void: _mark_save())
 	_net = NetSession.new()
 	_net.name = "Net" # Same node path on every peer, for the RPCs.
 	add_child(_net)
@@ -197,6 +204,7 @@ func _build_interface() -> void:
 	ctx.energy = _energy
 	ctx.clock = _clock
 	ctx.gathering = _gathering
+	ctx.decor = _decor
 	ctx.net = _net
 	ctx.beacon = _beacon
 	_top = TopBar.new()
@@ -403,6 +411,7 @@ func _begin(fresh: bool) -> void:
 		_town.ensure_plots(_farm.plot_count)
 		_state.town_changed.emit()
 	_town.ensure_requests()
+	_decor_view.refresh()
 	_dress()
 	_sfx.set_enabled(_state.sound_on)
 	_sync_position()
@@ -635,6 +644,8 @@ func _build_spots() -> void:
 		elif id == "campos":
 			_add_spot(TownPlan.lot_door(_look, id) + Vector2(1.0, 0.0), reach, _label_site.bind(id, name), _screens.toast.bind(Texts.get_text("not_built")))
 	_add_spot(_bench_point(), reach, _label_fixed.bind("act_bench"), _open_bench)
+	for slot_id: String in _data.decor_slots:
+		_add_spot(_data.decor_slots[slot_id], 0.9, _label_decor.bind(slot_id), _open_decor.bind(slot_id))
 	var dive_spot := Vector2(float(_data.dive["spot"]["x"]), float(_data.dive["spot"]["y"]))
 	_add_spot(dive_spot, float(_data.dive["spot"]["reach"]), _label_fixed.bind("act_dive"), _start_dive)
 	for n: GameData.GatherNode in _data.gather_nodes:
@@ -667,6 +678,15 @@ func _gather(n: GameData.GatherNode) -> void:
 	else:
 		_sfx.play(&"error")
 		_screens.toast(Texts.get_text("gather_gone"))
+
+
+func _label_decor(slot_id: String) -> String:
+	return Texts.get_text("act_decor_change" if _state.decor.has(slot_id) else "act_decor")
+
+
+func _open_decor(slot_id: String) -> void:
+	_sfx.play(&"click")
+	_screens.open_decor(slot_id)
 
 
 func _open_bench() -> void:

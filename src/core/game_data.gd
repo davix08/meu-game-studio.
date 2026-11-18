@@ -162,6 +162,12 @@ var baits: Array[Bait] = []
 var items: Array[Item] = []
 ## Level names; index 0 is level 1. Its size is the maximum level.
 var level_names: PackedStringArray = PackedStringArray()
+## Decorations (decor.json): one shop entry per piece.
+var decor_items: Array[ShopEntry] = []
+## Decoration slots: id -> position in blocks.
+var decor_slots: Dictionary[String, Vector2] = {}
+## Share of a piece's price returned when it is removed.
+var decor_refund: float = 0.5
 ## The first dive spot and its rules (dive.json, design/gdd/diving.md).
 var dive: Dictionary = {}
 ## Lines, in lines.json order.
@@ -218,6 +224,7 @@ static func load_from_dir(dir_path: String = DEFAULT_DIR) -> GameData:
 	ok = ok and data._load_baits(_read_json(dir_path.path_join("baits.json")))
 	ok = ok and data._load_items(_read_json(dir_path.path_join("items.json")))
 	ok = ok and data._load_levels(_read_json(dir_path.path_join("levels.json")))
+	ok = ok and data._load_decor(_read_json(dir_path.path_join("decor.json")))
 	ok = ok and data._load_dive(_read_json(dir_path.path_join("dive.json")))
 	ok = ok and data._load_lines(_read_json(dir_path.path_join("lines.json")))
 	ok = ok and data._load_hooks(_read_json(dir_path.path_join("hooks.json")))
@@ -315,6 +322,14 @@ func hook_by_id(id: String) -> Hook:
 ## True when [param id] is a known hook.
 func has_hook(id: String) -> bool:
 	return _hooks_by_id.has(id)
+
+
+## The decoration with [param id], or null.
+func decor_by_id(id: String) -> ShopEntry:
+	for e: ShopEntry in decor_items:
+		if e.id == id:
+			return e
+	return null
 
 
 ## The material with [param id]. The id must exist.
@@ -656,4 +671,21 @@ func _load_dive(json: Variant) -> bool:
 		if not _species_by_id.has(str(id)):
 			push_error("GameData: dive.json species %s is unknown" % str(id))
 			return false
+	return true
+
+
+func _load_decor(json: Variant) -> bool:
+	if not _has_keys(json, ["refund_fraction", "items", "slots"], "decor.json"):
+		return false
+	decor_refund = float(json["refund_fraction"])
+	for entry: Variant in json["items"]:
+		if not _has_keys(entry, ["id", "name", "price", "level", "col"], "decor.json items"):
+			return false
+		var e := ShopEntry.new()
+		_fill_shop_entry(e, entry)
+		decor_items.append(e)
+	for entry: Variant in json["slots"]:
+		if not _has_keys(entry, ["id", "x", "y"], "decor.json slots"):
+			return false
+		decor_slots[str(entry["id"])] = Vector2(float(entry["x"]), float(entry["y"]))
 	return true

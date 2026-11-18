@@ -1,0 +1,86 @@
+{
+	"refund_fraction": 0.5,
+	"items": [
+		{
+			"id": "vaso",
+			"name": "Vaso de flores",
+			"price": 40,
+			"level": 1,
+			"col": "#e05a7a"
+		},
+		{
+			"id": "arbusto",
+			"name": "Arbusto podado",
+			"price": 60,
+			"level": 1,
+			"col": "#4aa04a"
+		},
+		{
+			"id": "lanterna",
+			"name": "Lanterna",
+			"price": 90,
+			"level": 1,
+			"col": "#ffd27a"
+		},
+		{
+			"id": "banco",
+			"name": "Banco de madeira",
+			"price": 120,
+			"level": 2,
+			"col": "#a8743a"
+		},
+		{
+			"id": "bandeira",
+			"name": "Bandeira",
+			"price": 150,
+			"level": 2,
+			"col": "#3a7ac8"
+		},
+		{
+			"id": "estatua",
+			"name": "Estátua de peixe",
+			"price": 400,
+			"level": 3,
+			"col": "#c8c8c0"
+		},
+		{
+			"id": "trofeu",
+			"name": "Troféu do maior peixe",
+			"price": 250,
+			"level": 2,
+			"col": "#ffd23a"
+		}
+	],
+	"slots": [
+		{
+			"id": "casa_1",
+			"x": 29.5,
+			"y": 23.5
+		},
+		{
+			"id": "casa_2",
+			"x": 31.0,
+			"y": 25.6
+		},
+		{
+			"id": "casa_3",
+			"x": 34.5,
+			"y": 26.5
+		},
+		{
+			"id": "quintal_1",
+			"x": 38.5,
+			"y": 26.5
+		},
+		{
+			"id": "quintal_2",
+			"x": 24.5,
+			"y": 24.5
+		},
+		{
+			"id": "quintal_3",
+			"x": 23.5,
+			"y": 27.5
+		}
+	]
+}

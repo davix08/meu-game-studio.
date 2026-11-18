@@ -124,6 +124,8 @@ var lines_owned: PackedStringArray = PackedStringArray()
 var hook: String = ""
 ## Ids of owned hooks.
 var hooks_owned: PackedStringArray = PackedStringArray()
+## Decorations placed: slot id -> decoration id.
+var decor: Dictionary[String, String] = {}
 ## Materials (galho, fibra, minhoca, linha): id -> count.
 var materials: Dictionary[String, int] = {}
 ## Gathered spots waiting to come back: node id -> total_minutes() when it returns.
