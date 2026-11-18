@@ -373,7 +373,7 @@
 		"start_level": 1,
 		"start_day": 1,
 		"start_snacks": 1,
-		"start_rod": "bambu",
+		"start_rod": "",
 		"start_bait": "simples",
 		"first_catch_species": "sardinha",
 		"night_start_hour": 18,

@@ -1,0 +1,74 @@
+{
+	"respawn_minutes": {
+		"galho": 720,
+		"fibra": 480,
+		"minhoca": 360
+	},
+	"amount": {
+		"galho": 1,
+		"fibra": 2,
+		"minhoca": 1
+	},
+	"nodes": [
+		{
+			"id": "galho_1",
+			"kind": "galho",
+			"x": 36.5,
+			"y": 26.5
+		},
+		{
+			"id": "galho_2",
+			"kind": "galho",
+			"x": 30.5,
+			"y": 27.5
+		},
+		{
+			"id": "galho_3",
+			"kind": "galho",
+			"x": 35.5,
+			"y": 22.5
+		},
+		{
+			"id": "fibra_1",
+			"kind": "fibra",
+			"x": 35.5,
+			"y": 28.0
+		},
+		{
+			"id": "fibra_2",
+			"kind": "fibra",
+			"x": 29.5,
+			"y": 27.5
+		},
+		{
+			"id": "fibra_3",
+			"kind": "fibra",
+			"x": 38.5,
+			"y": 24.5
+		},
+		{
+			"id": "fibra_4",
+			"kind": "fibra",
+			"x": 27.5,
+			"y": 23.0
+		},
+		{
+			"id": "minhoca_1",
+			"kind": "minhoca",
+			"x": 31.5,
+			"y": 27.5
+		},
+		{
+			"id": "minhoca_2",
+			"kind": "minhoca",
+			"x": 39.5,
+			"y": 27.5
+		},
+		{
+			"id": "minhoca_3",
+			"kind": "minhoca",
+			"x": 24.5,
+			"y": 27.5
+		}
+	]
+}

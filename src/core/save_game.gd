@@ -48,6 +48,8 @@ static func to_dict(state: GameState) -> Dictionary:
 		"energy": state.energy,
 		"bag": bag,
 		"book": book,
+		"materials": state.materials.duplicate(),
+		"gathered": state.gathered.duplicate(),
 		"rods_owned": Array(state.rods_owned),
 		"rod": state.rod,
 		"baits_owned": Array(state.baits_owned),
@@ -198,6 +200,18 @@ static func apply(state: GameState, data: GameData, save: Dictionary) -> void:
 		_apply_bag(state, data, save["bag"])
 	if save.get("book") is Dictionary:
 		_apply_book(state, data, save["book"])
+	if save.get("materials") is Dictionary:
+		state.materials.clear()
+		var mats: Dictionary = save["materials"]
+		for id: Variant in mats:
+			if data.has_material(str(id)) and _is_number(mats[id]):
+				state.materials[str(id)] = maxi(0, int(mats[id]))
+	if save.get("gathered") is Dictionary:
+		state.gathered.clear()
+		var gone: Dictionary = save["gathered"]
+		for id: Variant in gone:
+			if _is_number(gone[id]):
+				state.gathered[str(id)] = float(gone[id])
 	if save.get("rods_owned") is Array:
 		state.rods_owned = _known_ids(save["rods_owned"], data.has_rod, state.rods_owned)
 	if save.get("baits_owned") is Array:

@@ -82,6 +82,7 @@ var _rod_material: StandardMaterial3D
 var _catch_material: StandardMaterial3D
 var _catch_mesh: MeshInstance3D
 var _rod_tip_seg: Node3D
+var _rod_holder: Node3D
 var _rod_tip: Node3D
 var _pose_k: Dictionary[String, float] = {}
 var _look_ref: WorldLook
@@ -340,6 +341,11 @@ func get_rod_tip() -> Vector3:
 	return _rod_tip.global_position
 
 
+## Shows or hides the held rod (hidden before the first rod is crafted).
+func set_rod_visible(on: bool) -> void:
+	_rod_holder.visible = on
+
+
 ## Colors the held rod (the equipped rod's color).
 func set_rod_color(color: Color) -> void:
 	_rod_color = color
@@ -376,6 +382,7 @@ func _build_rod(look: WorldLook) -> void:
 	holder.position = Vector3(0.0, -(look.num("player", "sleeve_length") + look.num("player", "forearm_length")), 0.0)
 	holder.rotation.x = PI * 0.5
 	_arm_right.add_child(holder)
+	_rod_holder = holder
 	_add_box(holder, Vector3(thick, base_len, thick), Vector3(0.0, base_len * 0.5, 0.0))
 	_rod_tip_seg = Node3D.new()
 	_rod_tip_seg.position = Vector3(0.0, base_len, 0.0)

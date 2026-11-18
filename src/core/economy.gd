@@ -60,6 +60,8 @@ func buy_gear(kind: GearKind, id: String) -> Result:
 	var entry: GameData.ShopEntry
 	if kind == GearKind.ROD:
 		entry = _data.rod_by_id(id)
+		if (entry as GameData.Rod).craft_only:
+			return Result.LOCKED_BY_LEVEL # Made at the bench, never sold.
 	else:
 		entry = _data.bait_by_id(id)
 	var blocked: Result = _purchase_blocker(entry)

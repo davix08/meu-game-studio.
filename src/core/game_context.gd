@@ -27,3 +27,5 @@ var progression: Progression
 var energy: Energy
 ## Clock.
 var clock: GameClock
+## Gathering spots and the bench.
+var gathering: Gathering

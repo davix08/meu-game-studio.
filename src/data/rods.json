@@ -1,8 +1,19 @@
 [
 	{
+		"id": "artesanal",
+		"name": "Vara artesanal",
+		"price": 0,
+		"level": 1,
+		"range": 44,
+		"zone": -0.03,
+		"power": 0.85,
+		"col": "#8a6a3a",
+		"craft_only": true
+	},
+	{
 		"id": "bambu",
 		"name": "Vara de bambu",
-		"price": 0,
+		"price": 60,
 		"level": 1,
 		"range": 52,
 		"zone": 0,

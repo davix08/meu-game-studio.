@@ -57,6 +57,8 @@ var _farm: FarmView
 var _ranch: RanchView
 var _npcs: NpcView
 var _cycle: DayNight
+var _gathering: Gathering
+var _gather_view: GatherView
 var _spots: Array[Spot] = []
 var _spot: Spot
 var _water_plane: Plane
@@ -122,6 +124,10 @@ func _ready() -> void:
 	_energy = Energy.new(_data, _state, _machine)
 	_clock = GameClock.new(_data, _state)
 	_economy = Economy.new(_data, _state)
+	_gathering = Gathering.new(_data, _state)
+	_gather_view = GatherView.new()
+	add_child(_gather_view)
+	_gather_view.setup(_data, _gathering, _world.terrain)
 	var view := FishingView.new()
 	add_child(view)
 	view.setup(_look, _data, _machine, _fisherman, _life, _water_y)
@@ -169,6 +175,7 @@ func _build_interface() -> void:
 	ctx.progression = _progression
 	ctx.energy = _energy
 	ctx.clock = _clock
+	ctx.gathering = _gathering
 	_top = TopBar.new()
 	root.add_child(_top)
 	_top.setup(_look, _data, _state, _clock, _progression)
@@ -196,6 +203,7 @@ func _build_interface() -> void:
 func _connect_events() -> void:
 	_state.fish_caught.connect(_on_fish_caught)
 	_state.town_changed.connect(_mark_save)
+	_gathering.materials_changed.connect(_on_materials_changed)
 	_state.day_started.connect(_on_day_started)
 	_economy.fish_sold.connect(_on_fish_sold)
 	_machine.fish_bit.connect(_on_fish_bit)
@@ -217,6 +225,11 @@ func _on_fish_sold(_count: int, _coins: int) -> void:
 
 func _on_fish_bit(_species: GameData.Species) -> void:
 	_sfx.play(&"bite")
+
+
+func _on_materials_changed() -> void:
+	_dress()
+	_mark_save()
 
 
 func _mark_save() -> void:
@@ -249,7 +262,9 @@ func _new_game() -> void:
 
 func _dress() -> void:
 	_fisherman.set_outfit(Screens.outfit_colors(_town_data, _state))
-	_fisherman.set_rod_color(Color.html(_data.rod_by_id(_state.rod).color))
+	_fisherman.set_rod_visible(_state.has_rod())
+	if _state.has_rod():
+		_fisherman.set_rod_color(Color.html(_data.rod_by_id(_state.rod).color))
 
 
 func _process(delta: float) -> void:
@@ -399,7 +414,7 @@ func _cast_forward() -> void:
 ## Asks the machine to cast to [param world_point] (meters, on the water plane).
 func _try_cast(world_point: Vector3) -> void:
 	_sync_position()
-	_fisherman.set_rod_color(Color.html(_data.rod_by_id(_state.rod).color))
+	_dress()
 	var result: FishingMachine.CastResult = _machine.cast_at(LakeWorldQuery.to_query_pos(Vector3(world_point.x, 0.0, world_point.z)))
 	if result == FishingMachine.CastResult.CAST:
 		_fisherman.face_toward(world_point)
@@ -458,6 +473,9 @@ func _build_spots() -> void:
 					_add_spot(TownPlan.lot_door(_look, id), reach, _label_talk.bind(str(nb["name"])), _screens.open_neighbor.bind(str(nb["id"])))
 		elif id == "campos":
 			_add_spot(TownPlan.lot_door(_look, id) + Vector2(1.0, 0.0), reach, _label_site.bind(id, name), _screens.toast.bind(Texts.get_text("not_built")))
+	_add_spot(_bench_point(), reach, _label_fixed.bind("act_bench"), _open_bench)
+	for n: GameData.GatherNode in _data.gather_nodes:
+		_add_spot(n.pos, _look.num("town", "door_reach"), _label_gather.bind(n), _gather.bind(n))
 	for i in _farm.plot_count:
 		_add_spot(_farm.anchor(i), 1.1, _plot_label.bind(i), _use_plot.bind(i))
 	for home: String in ["galinheiro", "pasto"]:
@@ -472,6 +490,31 @@ func _add_spot(pos: Vector2, radius: float, label: Callable, action: Callable) -
 	spot.label = label
 	spot.action = action
 	_spots.append(spot)
+
+
+func _label_gather(n: GameData.GatherNode) -> String:
+	return Texts.fmt("act_gather", [_data.material_by_id(n.kind).name]) if _gathering.is_available(n.id) else ""
+
+
+func _gather(n: GameData.GatherNode) -> void:
+	if _gathering.gather(n.id) == Gathering.Result.OK:
+		_sfx.play(&"coin")
+		_screens.toast(Texts.fmt("gathered", [_data.gather_amount[n.kind], _data.material_by_id(n.kind).name]))
+		_mark_save()
+	else:
+		_sfx.play(&"error")
+		_screens.toast(Texts.get_text("gather_gone"))
+
+
+func _open_bench() -> void:
+	_sfx.play(&"click")
+	_screens.open_bench()
+
+
+## The dock bench (world_look.json estate bench_*), where the player crafts.
+func _bench_point() -> Vector2:
+	var bench: Rect2i = EstateMeshes.cell_rect(_look, "bench")
+	return Vector2(float(bench.position.x) + float(bench.size.x) * 0.5, float(bench.end.y) + 0.5)
 
 
 func _label_fixed(key: String) -> String:

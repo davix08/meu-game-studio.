@@ -135,6 +135,8 @@ func _draw() -> void:
 		FishingMachine.Phase.IDLE:
 			if _state.stats_caught == 0 and not card_open:
 				var key: String = "hint_no_energy" if _state.energy < _data.tune("cast_cost") else "hint_start"
+				if not _state.has_rod():
+					key = "hint_no_rod"
 				_text(cx, _n("hint_y"), _t(key), int(_n("hint_font")), _c("ui_cream"))
 	if card_open:
 		_draw_card()

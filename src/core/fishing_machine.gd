@@ -42,6 +42,7 @@ enum CastResult {
 	NO_ENERGY, ## Energy below cast_cost.
 	OUT_OF_RANGE, ## The target is beyond the rod's range.
 	NOT_WATER, ## The target is not water.
+	NO_ROD, ## No rod yet: gather materials and craft one at the bench.
 }
 
 ## Why a cast ended without a catch.
@@ -121,6 +122,8 @@ func is_idle() -> bool:
 
 ## Why a cast is impossible right now, or [constant CastResult.CAST] when it is possible.
 func cast_blocker() -> CastResult:
+	if not _state.has_rod():
+		return CastResult.NO_ROD
 	if _state.map != GameState.MAP_OUTDOOR:
 		return CastResult.INDOORS
 	if phase != Phase.IDLE:

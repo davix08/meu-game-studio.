@@ -153,7 +153,7 @@ func rod_level() -> int:
 ## Cost of the next level of the equipped rod, or -1 at the maximum.
 func rod_upgrade_cost() -> int:
 	var level: int = rod_level()
-	if level >= int(_town.num("workshop", "max_level")):
+	if not _state.has_rod() or level >= int(_town.num("workshop", "max_level")):
 		return -1
 	var costs: Array = _town.list("workshop", "level_costs")
 	return int(costs[level]) + int(float(_data.rod_by_id(_state.rod).price) * _town.num("workshop", "rod_price_factor"))

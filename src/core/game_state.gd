@@ -116,6 +116,10 @@ var storage_upgrades: int = 0
 var rod_levels: Dictionary[String, int] = {}
 ## Countable goods: crops, eggs, milk, wool, seeds, feed (good id -> count).
 var goods: Dictionary[String, int] = {}
+## Materials (galho, fibra, minhoca, linha): id -> count.
+var materials: Dictionary[String, int] = {}
+## Gathered spots waiting to come back: node id -> total_minutes() when it returns.
+var gathered: Dictionary[String, float] = {}
 ## Neighbor requests: neighbor id -> {"species", "count", "ready_day", "done"} (Story 012).
 var requests: Dictionary = {}
 ## Farm plots in plot order: {"crop": "" or crop id, "days": int, "watered": bool} (Story 015).
@@ -169,7 +173,7 @@ static func create_new(data: GameData) -> GameState:
 	state.minutes = data.tune("day_start")
 	state.energy = data.fixed("energy_max")
 	state.rod = data.fixed_text("start_rod")
-	state.rods_owned = PackedStringArray([state.rod])
+	state.rods_owned = PackedStringArray([state.rod]) if state.has_rod() else PackedStringArray()
 	state.bait = data.fixed_text("start_bait")
 	state.baits_owned = PackedStringArray([state.bait])
 	state.snacks = int(data.fixed("start_snacks"))
@@ -191,6 +195,21 @@ func init_town(town: TownData) -> void:
 		outfit[slot] = str(first["id"])
 	food_score = town.num("city", "food_start")
 	drinks = int(town.num("restaurant", "drinks_per_day"))
+
+
+## True when a rod is equipped (a new game starts without one: craft it at the bench).
+func has_rod() -> bool:
+	return rod != ""
+
+
+## Absolute game time in minutes (days included), for respawn timers.
+func total_minutes() -> float:
+	return float(day - 1) * 1440.0 + minutes
+
+
+## Count of a material.
+func material_count(id: String) -> int:
+	return materials.get(id, 0)
 
 
 ## Count of a good.

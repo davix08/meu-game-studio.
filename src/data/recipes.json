@@ -1,0 +1,32 @@
+[
+	{
+		"id": "linha",
+		"needs": {
+			"fibra": 2
+		},
+		"gives": {
+			"material": "linha",
+			"amount": 1
+		}
+	},
+	{
+		"id": "vara_artesanal",
+		"needs": {
+			"galho": 1,
+			"fibra": 3,
+			"linha": 1
+		},
+		"gives": {
+			"rod": "artesanal"
+		}
+	},
+	{
+		"id": "isca_minhoca",
+		"needs": {
+			"minhoca": 4
+		},
+		"gives": {
+			"bait": "minhoca"
+		}
+	}
+]

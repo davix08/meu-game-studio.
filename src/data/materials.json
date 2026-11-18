@@ -1,0 +1,22 @@
+[
+	{
+		"id": "galho",
+		"name": "Galho resistente",
+		"col": "#8a6a3a"
+	},
+	{
+		"id": "fibra",
+		"name": "Fibra vegetal",
+		"col": "#9ac05a"
+	},
+	{
+		"id": "minhoca",
+		"name": "Minhoca",
+		"col": "#e07a8a"
+	},
+	{
+		"id": "linha",
+		"name": "Linha improvisada",
+		"col": "#e8e0c8"
+	}
+]

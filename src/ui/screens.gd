@@ -265,6 +265,9 @@ func open_bag() -> void:
 		var n: int = s.good_count(str(good["id"]))
 		if n > 0:
 			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(good["color"])), UiKit.label("%s × %d" % [str(good["name"]), n])]))
+	for m: GameData.CraftMaterial in _ctx.data.materials:
+		if s.material_count(m.id) > 0:
+			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, m.color), UiKit.label("%s × %d" % [m.name, s.material_count(m.id)])]))
 	body.add_child(UiKit.label(Texts.fmt("bag_total", [s.bag_value()]), 26, _look.color("ui", "good")))
 	var _act1: Callable = func() -> void:
 		var r: Economy.Result = _ctx.economy.eat_snack()
@@ -282,6 +285,55 @@ func open_bag() -> void:
 				var r: Town.Result = _ctx.town.use_crop_bait(id)
 				_result(r == Town.Result.OK, Texts.get_text("crop_bait_ok") if r == Town.Result.OK else _town_text(r))
 			body.add_child(UiKit.button(_look, Texts.fmt("use_crop_bait", [str(crop["name"]), s.good_count(id)]), _act3, s.good_count(id) > 0))
+
+
+# --- Bench (design/gdd/gathering-crafting.md) ---
+
+## The bench: materials on hand and each recipe with its needs and a Fazer button.
+func open_bench() -> void:
+	var s: GameState = _ctx.state
+	var body: VBoxContainer = _sheet(Texts.get_text("craft"), open_bench)
+	body.add_child(UiKit.label(Texts.get_text("craft_intro"), 0, _look.color("ui", "muted")))
+	body.add_child(UiKit.label(Texts.get_text("craft_materials"), 26))
+	var parts: PackedStringArray = PackedStringArray()
+	for m: GameData.CraftMaterial in _ctx.data.materials:
+		parts.append("%s × %d" % [m.name, s.material_count(m.id)])
+	body.add_child(UiKit.label("  ·  ".join(parts)))
+	for r: GameData.Recipe in _ctx.data.recipes:
+		var needs: PackedStringArray = PackedStringArray()
+		for id: String in r.needs:
+			needs.append("%d %s (%d)" % [r.needs[id], _ctx.data.material_by_id(id).name, s.material_count(id)])
+		var title: String = Texts.get_text("recipe_" + r.id)
+		var text: String = "%s\n%s" % [title, Texts.fmt("craft_needs", [", ".join(needs)])]
+		var blocked: Gathering.Result = _ctx.gathering.craft_blocker(r.id)
+		var label: String = Texts.get_text("craft_make")
+		if blocked == Gathering.Result.OWNED:
+			label = Texts.get_text("craft_owned")
+		elif blocked == Gathering.Result.MISSING:
+			label = Texts.get_text("craft_missing")
+		var recipe_id: String = r.id
+		var _make: Callable = func() -> void:
+			var result: Gathering.Result = _ctx.gathering.craft(recipe_id)
+			_result(result == Gathering.Result.OK, Texts.fmt("craft_done", [title]) if result == Gathering.Result.OK else Texts.get_text("craft_missing"))
+		var color: String = _recipe_color(r)
+		body.add_child(UiKit.row(_look, [_item_icon(_recipe_icon(r), color), UiKit.label(text), UiKit.button(_look, label, _make, blocked == Gathering.Result.OK)]))
+
+
+func _recipe_icon(r: GameData.Recipe) -> FishIcon.Kind:
+	if r.gives_kind == "rod":
+		return FishIcon.Kind.ROD
+	if r.gives_kind == "bait":
+		return FishIcon.Kind.BAIT
+	return FishIcon.Kind.GOOD
+
+
+func _recipe_color(r: GameData.Recipe) -> String:
+	match r.gives_kind:
+		"rod":
+			return _ctx.data.rod_by_id(r.gives_id).color
+		"bait":
+			return _ctx.data.bait_by_id(r.gives_id).color
+	return _ctx.data.material_by_id(r.gives_id).color
 
 
 # --- Settings (Story 006) ---
@@ -328,6 +380,8 @@ func open_shop(tab: int = ShopTab.SELL) -> void:
 			_shop_sell(body)
 		ShopTab.RODS:
 			for rod: GameData.Rod in _ctx.data.rods:
+				if rod.craft_only and not _ctx.state.rods_owned.has(rod.id):
+					continue
 				var stats: String = "%s\n%s" % [rod.name, Texts.fmt("workshop_stats", [int(rod.cast_range), int(rod.zone * 100.0), int(rod.power * 100.0)])]
 				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.ROD, rod.color), UiKit.label(stats), _gear_button(Economy.GearKind.ROD, rod, _ctx.state.rods_owned.has(rod.id), _ctx.state.rod == rod.id)]))
 		ShopTab.BAITS:
@@ -508,6 +562,9 @@ func open_warehouse() -> void:
 func open_workshop() -> void:
 	var t: Town = _ctx.town
 	var body: VBoxContainer = _sheet(Texts.get_text("workshop"), open_workshop)
+	if not _ctx.state.has_rod():
+		body.add_child(UiKit.label(Texts.get_text("cast_no_rod"), 26))
+		return
 	var rod: GameData.Rod = _ctx.data.rod_for(_ctx.state)
 	var max_level: int = int(_ctx.town_data.num("workshop", "max_level"))
 	body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.ROD, rod.color), UiKit.label(Texts.fmt("workshop_rod", [rod.name, t.rod_level(), max_level]), 28)]))
