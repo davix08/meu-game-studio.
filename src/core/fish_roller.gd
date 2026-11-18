@@ -86,8 +86,28 @@ func roll_catch(sp: GameData.Species) -> GameState.Catch:
 	var fish := GameState.Catch.new()
 	fish.id = sp.id
 	fish.weight = round(w * scale) / scale
+	fish.length = fish_length(sp, fish.weight)
 	fish.value = fish_value(sp, w)
 	return fish
+
+
+## Length in cm of a [param sp] fish weighing [param weight] kg. No random draw:
+## heavier is never shorter. Cube-root growth between the species' kg and cm ranges,
+## clamped to [cm_min, cm_max] (design/gdd/fish-catch.md, Formulas).
+func fish_length(sp: GameData.Species, weight: float) -> float:
+	return length_for(sp, weight, _data.tune("length_curve"), int(_data.fixed("length_decimals")))
+
+
+## Pure form of [method fish_length], for callers without a roller (save loading, tests).
+static func length_for(sp: GameData.Species, weight: float, curve: float, decimals: int) -> float:
+	var lo: float = pow(maxf(sp.kg_min, 0.0), 1.0 / 3.0)
+	var hi: float = pow(maxf(sp.kg_max, 0.0), 1.0 / 3.0)
+	var t: float = 0.0
+	if hi > lo:
+		t = clampf((pow(maxf(weight, 0.0), 1.0 / 3.0) - lo) / (hi - lo), 0.0, 1.0)
+	var cm: float = sp.cm_min + (sp.cm_max - sp.cm_min) * pow(t, curve)
+	var scale: float = pow(10.0, decimals)
+	return round(cm * scale) / scale
 
 
 ## Sale value of a [param sp] fish weighing [param weight] kg (heavier is worth more, at least 1).

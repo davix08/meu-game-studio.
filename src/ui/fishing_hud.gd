@@ -225,16 +225,20 @@ func _draw_card() -> void:
 	_text(0.0, top + _n("card_title_y"), _t(title_key), int(_n("card_title_font")), _c("card_new_color") if _card_new else _c("ui_cream"))
 	_text(0.0, top + _n("card_name_y"), species.name, int(_n("card_name_font")), _c("ui_white"))
 	_text(0.0, top + _n("card_rarity_y"), _data.rarity_names[species.rarity].to_upper(), int(_n("card_rarity_font")), rarity_color)
-	_text(0.0, top + _n("card_stats_y"), _t("card_stats") % [_weight_text(_card_fish.weight), _card_fish.value], int(_n("card_stats_font")), _c("ui_cream"))
+	_text(0.0, top + _n("card_stats_y"), _t("card_stats") % [_weight_text(_card_fish.weight), _length_text(_card_fish.length), _card_fish.value], int(_n("card_stats_font")), _c("ui_cream"))
 	var entry: GameState.BookEntry = _state.book[_card_fish.id]
-	_text(0.0, top + _n("card_book_y"), _t("card_book") % [entry.count, _weight_text(entry.best)], int(_n("card_book_font")), _c("ui_muted"))
+	_text(0.0, top + _n("card_book_y"), _t("card_book") % [entry.count, _weight_text(entry.best), _length_text(entry.longest)], int(_n("card_book_font")), _c("ui_muted"))
 	if _card_time > _n("card_continue_delay"):
 		_text(0.0, top + _n("card_continue_y"), _t("card_continue"), int(_n("card_continue_font")), _c("card_continue_color"))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+func _length_text(cm: float) -> String:
+	return Texts.length_text(cm, _data.fixed("meters_from_cm"))
+
+
 func _weight_text(kg: float) -> String:
-	return _t("weight_fmt") % String.num(kg, int(_data.fixed("weight_decimals")))
+	return _t("weight_fmt") % String.num(kg, int(_data.fixed("weight_decimals"))).replace(".", ",")
 
 
 func _on_fishing_ended(reason: FishingMachine.EndReason) -> void:

@@ -33,6 +33,10 @@ class Species:
 	var kg_min: float = 0.0
 	## Heaviest possible weight in kg.
 	var kg_max: float = 0.0
+	## Length in cm of the lightest fish (design/gdd/fish-catch.md).
+	var cm_min: float = 0.0
+	## Length in cm of the heaviest fish.
+	var cm_max: float = 0.0
 	## Base sale value in coins.
 	var base_value: int = 0
 	## Capture difficulty 0..1.
@@ -318,19 +322,25 @@ func _load_species(json: Variant) -> bool:
 		return false
 	var list: Array = json
 	for entry: Variant in list:
-		if not _has_keys(entry, ["id", "name", "r", "kg", "v", "d", "time"], "species.json"):
+		if not _has_keys(entry, ["id", "name", "r", "kg", "cm", "v", "d", "time"], "species.json"):
 			return false
 		var e: Dictionary = entry
 		if not (e["kg"] is Array and (e["kg"] as Array).size() == 2):
 			push_error("GameData: species.json entry %s needs kg [min, max]" % str(e["id"]))
 			return false
+		if not (e["cm"] is Array and (e["cm"] as Array).size() == 2):
+			push_error("GameData: species.json entry %s needs cm [min, max]" % str(e["id"]))
+			return false
 		var kg: Array = e["kg"]
+		var cm: Array = e["cm"]
 		var sp := Species.new()
 		sp.id = str(e["id"])
 		sp.name = str(e["name"])
 		sp.rarity = int(e["r"])
 		sp.kg_min = float(kg[0])
 		sp.kg_max = float(kg[1])
+		sp.cm_min = float(cm[0])
+		sp.cm_max = float(cm[1])
 		sp.base_value = int(e["v"])
 		sp.difficulty = float(e["d"])
 		sp.time = str(e["time"])

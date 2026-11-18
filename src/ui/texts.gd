@@ -25,3 +25,11 @@ static func get_text(key: String) -> String:
 ## The text of [param key] formatted with [param args] (the % operator).
 static func fmt(key: String, args: Array) -> String:
 	return get_text(key) % args
+
+
+## A fish length for display: "38 cm" below [param meters_from] cm, "1,8 m" from there
+## (decimal comma, pt-BR). Example: [code]Texts.length_text(41.0, 100.0)[/code] -> "41 cm".
+static func length_text(cm: float, meters_from: float) -> String:
+	if cm < meters_from:
+		return fmt("length_cm_fmt", [String.num(cm, 0)])
+	return fmt("length_m_fmt", [String.num(cm / 100.0, 1).replace(".", ",")])

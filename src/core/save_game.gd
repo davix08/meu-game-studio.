@@ -38,7 +38,7 @@ static func to_dict(state: GameState) -> Dictionary:
 	var book: Dictionary = {}
 	for id: String in state.book:
 		var entry: GameState.BookEntry = state.book[id]
-		book[id] = {"count": entry.count, "best": entry.best}
+		book[id] = {"count": entry.count, "best": entry.best, "longest": entry.longest}
 	return {
 		"version": FORMAT_VERSION,
 		"coins": state.coins,
@@ -89,7 +89,7 @@ static func to_dict(state: GameState) -> Dictionary:
 static func _fish_list(fish_list: Array[GameState.Catch]) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for fish: GameState.Catch in fish_list:
-		out.append({"id": fish.id, "weight": fish.weight, "value": fish.value})
+		out.append({"id": fish.id, "weight": fish.weight, "length": fish.length, "value": fish.value})
 	return out
 
 
@@ -299,6 +299,9 @@ static func _apply_bag(state: GameState, data: GameData, bag: Array) -> void:
 		fish.id = str(e["id"])
 		fish.weight = float(e["weight"])
 		fish.value = int(e["value"])
+		var sp: GameData.Species = data.species_by_id(fish.id)
+		# Saves from before fish sizes existed have no length: derive it from the weight.
+		fish.length = float(e["length"]) if _is_number(e.get("length")) else _length(data, sp, fish.weight)
 		state.bag.append(fish)
 
 
@@ -313,6 +316,8 @@ static func _apply_book(state: GameState, data: GameData, book: Dictionary) -> v
 		var entry := GameState.BookEntry.new()
 		entry.count = int(_number(e, "count", 1))
 		entry.best = _number(e, "best", 0.0)
+		var longest: Variant = e.get("longest")
+		entry.longest = float(longest) if _is_number(longest) else _length(data, data.species_by_id(str(id)), entry.best)
 		state.book[str(id)] = entry
 
 
@@ -335,3 +340,7 @@ static func _number(save: Dictionary, key: String, fallback: float) -> float:
 	if value != null:
 		push_warning("SaveGame: field \"%s\" is not a number; kept the default" % key)
 	return fallback
+
+
+static func _length(data: GameData, sp: GameData.Species, weight: float) -> float:
+	return FishRoller.length_for(sp, weight, data.tune("length_curve"), int(data.fixed("length_decimals")))

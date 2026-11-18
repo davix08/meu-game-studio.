@@ -236,12 +236,16 @@ func _item_icon(kind: FishIcon.Kind, color_text: String) -> FishIcon:
 
 
 func _kg(kg: float) -> String:
-	return Texts.fmt("weight_fmt", [String.num(kg, int(_ctx.data.fixed("weight_decimals")))])
+	return Texts.fmt("weight_fmt", [String.num(kg, int(_ctx.data.fixed("weight_decimals"))).replace(".", ",")])
 
 
 func _fish_line(fish: GameState.Catch) -> String:
 	var sp: GameData.Species = _ctx.data.species_by_id(fish.id)
-	return "%s · %s · %d" % [sp.name, _kg(fish.weight), fish.value]
+	return "%s · %s · %s · %d" % [sp.name, _kg(fish.weight), _cm(fish.length), fish.value]
+
+
+func _cm(cm: float) -> String:
+	return Texts.length_text(cm, _ctx.data.fixed("meters_from_cm"))
 
 
 # --- Bag (Story 006/007) ---
@@ -416,7 +420,7 @@ func open_book() -> void:
 		var text: String = Texts.get_text("book_unknown")
 		if known:
 			var entry: GameState.BookEntry = s.book[sp.id]
-			text = "%s\n%s · %s · %d×" % [sp.name, _ctx.data.rarity_names[sp.rarity], _kg(entry.best), entry.count]
+			text = "%s\n%s · %s · %s · %d×" % [sp.name, _ctx.data.rarity_names[sp.rarity], _kg(entry.best), _cm(entry.longest), entry.count]
 		else:
 			text += "\n" + _ctx.data.rarity_names[sp.rarity]
 		var label: Label = UiKit.label(text, _look.integer("ui", "small_size"), Color.html(_ctx.data.rarity_colors[sp.rarity]).darkened(0.35) if known else _look.color("ui", "muted"))

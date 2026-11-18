@@ -43,6 +43,8 @@ class Catch:
 	var id: String = ""
 	## Weight in kg, rounded to the configured decimals.
 	var weight: float = 0.0
+	## Length in cm, derived from the weight (FishRoller.fish_length).
+	var length: float = 0.0
 	## Sale value in coins.
 	var value: int = 0
 
@@ -54,6 +56,8 @@ class BookEntry:
 	var count: int = 0
 	## Heaviest catch in kg.
 	var best: float = 0.0
+	## Longest catch in cm.
+	var longest: float = 0.0
 
 
 ## Coins.

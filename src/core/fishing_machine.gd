@@ -282,6 +282,7 @@ func _finish_catch() -> void:
 	var entry := GameState.BookEntry.new()
 	entry.count = (0 if is_new else prev.count) + 1
 	entry.best = fish.weight if is_new else maxf(prev.best, fish.weight)
+	entry.longest = fish.length if is_new else maxf(prev.longest, fish.length)
 	_state.book[fish.id] = entry
 	_state.stats_caught += 1
 	_reset()

@@ -1,6 +1,12 @@
 {
 	"seed": 1,
 	"tune": {
+		"length_curve": {
+			"value": 1,
+			"min": 0.5,
+			"max": 3,
+			"step": 0.1
+		},
 		"volume": {
 			"value": 0.5,
 			"min": 0,
@@ -374,6 +380,8 @@
 		"night_end_hour": 6,
 		"luck_min_rarity": 2,
 		"weight_decimals": 2,
+		"length_decimals": 0,
+		"meters_from_cm": 100,
 		"value_base_mult": 0.7,
 		"value_weight_mult": 0.6,
 		"nibble_first_min": 0.35,
