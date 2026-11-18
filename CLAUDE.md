@@ -5,11 +5,11 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 ## Technology Stack
 
-- **Engine**: [CHOOSE: Web / Godot 4 / Unity / Unreal Engine 5]
-- **Language**: [CHOOSE: TypeScript / GDScript / C# / C++ / Blueprint]
+- **Engine**: Godot 4.7
+- **Language**: GDScript
 - **Version Control**: Git with trunk-based development
-- **Build System**: [SPECIFY after choosing engine]
-- **Asset Pipeline**: [SPECIFY after choosing engine]
+- **Build System**: SCons (engine), Godot Export Templates
+- **Asset Pipeline**: Godot Import System + custom resource pipeline
 
 > **Note**: Engine-specialist agents exist for Godot, Unity, and Unreal with
 > dedicated sub-specialists. Use the set matching your engine.
@@ -19,6 +19,8 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 @.claude/docs/directory-structure.md
 
 ## Engine Version Reference
+
+@docs/engine-reference/godot/VERSION.md
 
 <!-- ENGINE-REFERENCE-IMPORT: the line under this comment is engine-specific,
      and there is none until an engine is set. /setup-engine, the grow's record
