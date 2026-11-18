@@ -1,0 +1,56 @@
+[
+	{
+		"id": "simples",
+		"name": "Isca simples",
+		"price": 0,
+		"level": 1,
+		"wait": 1,
+		"rare": 0,
+		"col": "#c8b090"
+	},
+	{
+		"id": "minhoca",
+		"name": "Minhoca gorda",
+		"price": 80,
+		"level": 1,
+		"wait": 0.85,
+		"rare": 0.1,
+		"col": "#e07a8a"
+	},
+	{
+		"id": "cheirosa",
+		"name": "Isca cheirosa",
+		"price": 400,
+		"level": 2,
+		"wait": 0.7,
+		"rare": 0.2,
+		"col": "#a8c04a"
+	},
+	{
+		"id": "brilhante",
+		"name": "Isca brilhante",
+		"price": 1500,
+		"level": 3,
+		"wait": 0.6,
+		"rare": 0.35,
+		"col": "#7ae8ff"
+	},
+	{
+		"id": "camaraoreal",
+		"name": "Camarão real",
+		"price": 5000,
+		"level": 4,
+		"wait": 0.5,
+		"rare": 0.5,
+		"col": "#ff8a5a"
+	},
+	{
+		"id": "dourada",
+		"name": "Isca dourada",
+		"price": 15000,
+		"level": 5,
+		"wait": 0.4,
+		"rare": 0.8,
+		"col": "#ffd23a"
+	}
+]

@@ -1,0 +1,265 @@
+class_name TownMeshes
+extends RefCounted
+## Vertex-colored models of the town buildings (Stories 010-018), one mesh per lot, in the cozy
+## modern-farm style of the estate: stone base, painted walls, tiled gable roof, glowing windows.
+## Each lot has a "site" model used while it is not built: stakes, rope, a sign post and a
+## small pile of planks. Colors and sizes come from the "town" group of world_look.json.
+##
+## Usage:
+## [codeblock]
+## var glass := MeshBuilder.new()
+## var mesh: ArrayMesh = TownMeshes.building(look, "armazem", glass)
+## var site: ArrayMesh = TownMeshes.site(look, "armazem")
+## [/codeblock]
+
+const GROUP: String = "town"
+const WALL_H: float = 2.5
+const ROOF_RISE: float = 1.3
+
+
+## The built model of lot [param id]; window glass goes to [param glass] (it glows at night).
+static func building(look: WorldLook, id: String, glass: MeshBuilder) -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var r: Rect2i = TownPlan.lot_rect(look, id)
+	var south: bool = TownPlan.lot_side(look, id) != TownPlan.Side.NORTH
+	match id:
+		"prefeitura":
+			_townhall(mb, glass, look, r)
+		"armazem":
+			_warehouse(mb, glass, look, r)
+		"roupas":
+			_clothes(mb, glass, look, r)
+		"restaurante":
+			_restaurant(mb, glass, look, r)
+		"oficina":
+			_workshop(mb, glass, look, r)
+		"casa_1":
+			_home(mb, glass, look, r, south, _c(look, "wall_blue"), _c(look, "roof_brown"))
+		"casa_2":
+			_home(mb, glass, look, r, south, _c(look, "wall_green"), _c(look, "roof_tile_a"))
+		"casa_3":
+			_home(mb, glass, look, r, south, _c(look, "wall_yellow"), _c(look, "roof_blue"))
+		"campos":
+			_fence_ring(mb, look, r, true)
+		"pasto":
+			_pasture(mb, look, r)
+	return mb.build()
+
+
+## The building-site model of lot [param id] (shown until the mayor builds it).
+static func site(look: WorldLook, id: String) -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var r: Rect2i = TownPlan.lot_rect(look, id)
+	var stake: Color = _c(look, "site_fence")
+	var x0: float = float(r.position.x) + 0.2
+	var z0: float = float(r.position.y) + 0.2
+	var x1: float = float(r.end.x) - 0.2
+	var z1: float = float(r.end.y) - 0.2
+	var corners: Array[Vector2] = [Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1)]
+	for i in 4:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[(i + 1) % 4]
+		var n: int = maxi(1, int(a.distance_to(b) / 1.2))
+		for k in n + 1:
+			var p: Vector2 = a.lerp(b, float(k) / float(n))
+			mb.add_box(Vector3(p.x, 0.35, p.y), Vector3(0.08, 0.7, 0.08), stake)
+		EstateMeshes._beam(mb, Vector3(a.x, 0.55, a.y), Vector3(b.x, 0.55, b.y), 0.03, _c(look, "flag_red"))
+	var d: Vector2 = TownPlan.lot_door(look, id)
+	mb.add_box(Vector3(d.x + 0.9, 0.6, d.y), Vector3(0.1, 1.2, 0.1), look.color("colors", "wood_dark"))
+	mb.add_box(Vector3(d.x + 0.9, 1.1, d.y), Vector3(0.9, 0.5, 0.08), _c(look, "sign_color"))
+	var cx: float = (x0 + x1) * 0.5
+	var cz: float = (z0 + z1) * 0.5
+	for k in 4:
+		mb.add_box(Vector3(cx, 0.08 + float(k) * 0.12, cz + float(k % 2) * 0.05), Vector3(1.6, 0.1, 0.35), _c(look, "plank") if k % 2 == 0 else _c(look, "plank_light"))
+	return mb.build()
+
+
+## Top of the chimney of lot [param id] (for smoke), or Vector3.INF when it has none.
+static func chimney_top(look: WorldLook, id: String) -> Vector3:
+	var r: Rect2i = TownPlan.lot_rect(look, id)
+	if id == "restaurante" or id == "oficina":
+		return Vector3(float(r.end.x) - 1.0, WALL_H + ROOF_RISE + 0.9, float(r.position.y) + 1.3)
+	return Vector3.INF
+
+
+# --- shared parts ---
+
+## Base, walls, door, windows and roof. [param south]: the door faces south (+z), else north.
+static func _body(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i, south: bool, wall: Color, roof: Color, door: Color, wall_h: float) -> void:
+	var x0: float = float(r.position.x) + 0.25
+	var z0: float = float(r.position.y) + 0.35
+	var x1: float = float(r.end.x) - 0.25
+	var z1: float = float(r.end.y) - 0.35
+	var lift: float = look.num("estate", "ground_lift")
+	var trim: Color = look.color("colors", "wall_trim")
+	EstateMeshes._box(mb, x0 - 0.08, -0.3, z0 - 0.08, x1 + 0.08, lift + 0.12, z1 + 0.08, look.color("colors", "stone"))
+	EstateMeshes._box(mb, x0, lift, z0, x1, wall_h, z1, wall)
+	for px: float in [x0, x1]:
+		for pz: float in [z0, z1]:
+			EstateMeshes._box(mb, px - 0.07, lift, pz - 0.07, px + 0.07, wall_h, pz + 0.07, trim)
+	var zf: float = z1 if south else z0
+	var s: float = 1.0 if south else -1.0
+	var xc: float = (x0 + x1) * 0.5
+	mb.add_box(Vector3(xc, lift + 0.6, zf + s * 0.04), Vector3(0.9, 1.25, 0.08), door)
+	mb.add_box(Vector3(xc, lift + 1.27, zf + s * 0.05), Vector3(1.1, 0.1, 0.1), trim)
+	mb.add_box(Vector3(xc, lift + 0.05, zf + s * 0.3), Vector3(1.2, 0.1, 0.5), look.color("colors", "stone"))
+	mb.add_box(Vector3(xc + 0.3, lift + 0.6, zf + s * 0.09), Vector3(0.07, 0.07, 0.04), look.color("estate", "hub"))
+	var wy: float = lift + (wall_h - lift) * 0.58
+	for wx: float in [lerpf(x0, x1, 0.2), lerpf(x0, x1, 0.8)]:
+		_pane(mb, glass, look, Vector3(wx, wy, zf), Vector3(0.75, 0.7, 0.0), trim)
+	for side_x: float in [x0, x1]:
+		_pane(mb, glass, look, Vector3(side_x, wy, (z0 + z1) * 0.5), Vector3(0.0, 0.7, 0.75), trim)
+	EstateMeshes._gable(mb, x0, x1, z0, z1, wall_h, ROOF_RISE, 0.35, look.integer("estate", "roof_bands"), roof, roof.darkened(0.15), roof.darkened(0.35), wall, trim)
+
+
+## A window crossing a wall (seen from both sides): frame plus glow-able glass. [param size] has
+## the window width on x or z (the other one 0) and the height on y.
+static func _pane(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, c: Vector3, size: Vector3, trim: Color) -> void:
+	var frame := Vector3(size.x + 0.16 if size.x > 0.0 else 0.1, size.y + 0.16, size.z + 0.16 if size.z > 0.0 else 0.1)
+	mb.add_box(c, frame, trim)
+	glass.add_box(c, Vector3(size.x if size.x > 0.0 else 0.14, size.y, size.z if size.z > 0.0 else 0.14), look.color("colors", "window"))
+
+
+static func _chimney(mb: MeshBuilder, look: WorldLook, top: Vector3) -> void:
+	EstateMeshes._box(mb, top.x - 0.3, WALL_H, top.z - 0.3, top.x + 0.3, top.y, top.z + 0.3, _c(look, "brick"))
+	EstateMeshes._box(mb, top.x - 0.36, top.y - 0.12, top.z - 0.36, top.x + 0.36, top.y, top.z + 0.36, look.color("colors", "stone"))
+
+
+static func _fence_ring(mb: MeshBuilder, look: WorldLook, r: Rect2i, gate: bool) -> void:
+	var wood: Color = look.color("colors", "wood_b")
+	var post: Color = look.color("colors", "wood_dark")
+	var x0: float = float(r.position.x) + 0.5
+	var z0: float = float(r.position.y) + 0.5
+	var x1: float = float(r.end.x) - 0.5
+	var z1: float = float(r.end.y) - 0.5
+	var door: Vector2 = TownPlan.lot_door(look, "campos" if gate else "pasto")
+	var corners: Array[Vector2] = [Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1)]
+	for i in 4:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[(i + 1) % 4]
+		var n: int = int(a.distance_to(b))
+		for k in n:
+			var p0: Vector2 = a.lerp(b, float(k) / float(n))
+			var p1: Vector2 = a.lerp(b, float(k + 1) / float(n))
+			var mid: Vector2 = (p0 + p1) * 0.5
+			if gate and absf(mid.y - door.y) < 0.8 and absf(mid.x - (door.x - 0.5)) < 0.8:
+				continue
+			mb.add_box(Vector3(p0.x, 0.4, p0.y), Vector3(0.12, 0.8, 0.12), post)
+			EstateMeshes._beam(mb, Vector3(p0.x, 0.55, p0.y), Vector3(p1.x, 0.55, p1.y), 0.07, wood)
+			EstateMeshes._beam(mb, Vector3(p0.x, 0.3, p0.y), Vector3(p1.x, 0.3, p1.y), 0.07, wood)
+
+
+# --- lots ---
+
+static func _townhall(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_body(mb, glass, look, r, true, _c(look, "wall_cream"), _c(look, "roof_slate"), look.color("colors", "door"), WALL_H + 0.4)
+	var xc: float = float(r.position.x) + float(r.size.x) * 0.5
+	var zf: float = float(r.end.y) - 0.35
+	for k in 2:
+		mb.add_box(Vector3(xc + (float(k) * 2.0 - 1.0) * 1.0, 1.4, zf + 0.25), Vector3(0.22, 2.8, 0.22), _c(look, "wall_cream").darkened(0.08))
+	mb.add_box(Vector3(xc, 2.85, zf + 0.25), Vector3(2.6, 0.2, 0.7), _c(look, "roof_slate"))
+	mb.add_box(Vector3(xc, 3.4, zf - 0.02), Vector3(0.7, 0.7, 0.1), look.color("colors", "wall_trim"))
+	glass.add_box(Vector3(xc, 3.4, zf + 0.04), Vector3(0.5, 0.5, 0.06), look.color("colors", "window"))
+	var pole := Vector3(float(r.position.x) + 0.6, 0.0, float(r.end.y) + 0.2)
+	mb.add_box(pole + Vector3(0.0, 2.3, 0.0), Vector3(0.08, 4.6, 0.08), _c(look, "metal"))
+	mb.add_box(pole + Vector3(0.55, 4.15, 0.0), Vector3(1.0, 0.25, 0.04), _c(look, "flag_red"))
+	mb.add_box(pole + Vector3(0.55, 3.9, 0.0), Vector3(1.0, 0.25, 0.04), _c(look, "flag_white"))
+	mb.add_box(pole + Vector3(0.55, 3.65, 0.0), Vector3(1.0, 0.25, 0.04), _c(look, "flag_red"))
+
+
+static func _warehouse(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_body(mb, glass, look, r, true, _c(look, "plank"), look.color("colors", "roof_a"), look.color("colors", "wood_dark"), WALL_H + 0.3)
+	var xc: float = float(r.position.x) + float(r.size.x) * 0.5
+	var zf: float = float(r.end.y) - 0.35
+	mb.add_box(Vector3(xc, 0.95, zf + 0.06), Vector3(2.0, 1.9, 0.06), look.color("colors", "wood_dark"))
+	EstateMeshes._beam(mb, Vector3(xc - 0.95, 0.1, zf + 0.1), Vector3(xc + 0.95, 1.8, zf + 0.1), 0.1, _c(look, "plank_light"))
+	EstateMeshes._beam(mb, Vector3(xc + 0.95, 0.1, zf + 0.1), Vector3(xc - 0.95, 1.8, zf + 0.1), 0.1, _c(look, "plank_light"))
+	for k in 3:
+		var x: float = float(r.end.x) - 0.6 - float(k % 2) * 0.55
+		mb.add_box(Vector3(x, 0.25 + float(k / 2) * 0.5, zf + 0.7), Vector3(0.5, 0.5, 0.5), _c(look, "plank_light"))
+
+
+static func _clothes(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_body(mb, glass, look, r, true, _c(look, "wall_pink"), _c(look, "roof_green"), look.color("estate", "shop_door"), WALL_H)
+	var x0: float = float(r.position.x) + 0.25
+	var zf: float = float(r.end.y) - 0.35
+	glass.add_box(Vector3(x0 + 0.95, 1.2, zf + 0.02), Vector3(1.2, 1.2, 0.14), look.color("colors", "window"))
+	for k in 2:
+		var mx: float = x0 + 0.6 + float(k) * 0.7
+		mb.add_box(Vector3(mx, 0.9, zf - 0.2), Vector3(0.28, 0.6, 0.18), _c(look, "cloth_a") if k == 0 else _c(look, "cloth_b"))
+		mb.add_ellipsoid(Vector3(mx, 1.32, zf - 0.2), Vector3(0.12, 0.12, 0.12), look.color("colors", "wall"), look.color("colors", "wall"), 6, 4, true)
+	var lx: float = float(r.end.x) + 0.2
+	var za: float = float(r.position.y) + 0.6
+	var zb: float = float(r.end.y) - 0.6
+	for z: float in [za, zb]:
+		mb.add_box(Vector3(lx, 0.9, z), Vector3(0.08, 1.8, 0.08), look.color("colors", "wood_dark"))
+	EstateMeshes._beam(mb, Vector3(lx, 1.7, za), Vector3(lx, 1.7, zb), 0.02, look.color("colors", "wall"))
+	var cloths: Array[Color] = [_c(look, "cloth_a"), _c(look, "cloth_b"), _c(look, "cloth_c")]
+	for k in 3:
+		mb.add_box(Vector3(lx, 1.4, lerpf(za, zb, 0.25 + 0.25 * float(k))), Vector3(0.04, 0.55, 0.5), cloths[k])
+
+
+static func _restaurant(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_body(mb, glass, look, r, true, _c(look, "wall_cream"), look.color("colors", "roof_a"), look.color("colors", "door"), WALL_H + 0.2)
+	EstateMeshes._box(mb, float(r.position.x) + 0.2, 0.0, float(r.end.y) - 0.42, float(r.end.x) - 0.2, 0.9, float(r.end.y) - 0.28, _c(look, "brick"))
+	_chimney(mb, look, chimney_top(look, "restaurante"))
+	var zf: float = float(r.end.y) + 0.6
+	for k in 2:
+		var tx: float = float(r.position.x) + 1.2 + float(k) * (float(r.size.x) - 2.4)
+		mb.add_box(Vector3(tx, 0.7, zf), Vector3(1.1, 0.08, 0.7), _c(look, "table"))
+		mb.add_box(Vector3(tx, 0.35, zf), Vector3(0.12, 0.7, 0.12), look.color("colors", "wood_dark"))
+		for side: float in [-1.0, 1.0]:
+			mb.add_box(Vector3(tx, 0.4, zf + side * 0.6), Vector3(1.1, 0.07, 0.28), _c(look, "plank"))
+	for k in 3:
+		var bx: float = float(r.end.x) + 0.15
+		var bz: float = float(r.position.y) + 0.8 + float(k) * 0.75
+		mb.add_cone(Vector3(bx, 0.0, bz), 0.3, 0.3, 0.8, _c(look, "barrel"), _c(look, "barrel").lightened(0.15), 10, true)
+		mb.add_cone(Vector3(bx, 0.2, bz), 0.32, 0.32, 0.06, look.color("estate", "barrel_band"), look.color("estate", "barrel_band"), 10)
+		mb.add_cone(Vector3(bx, 0.6, bz), 0.32, 0.32, 0.06, look.color("estate", "barrel_band"), look.color("estate", "barrel_band"), 10)
+
+
+static func _workshop(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_body(mb, glass, look, r, true, _c(look, "plank_light"), _c(look, "roof_slate"), look.color("colors", "wood_dark"), WALL_H)
+	_chimney(mb, look, chimney_top(look, "oficina"))
+	var zf: float = float(r.end.y) + 0.35
+	var x0: float = float(r.position.x) + 0.4
+	mb.add_box(Vector3(x0 + 0.7, 0.8, zf), Vector3(1.4, 0.1, 0.6), _c(look, "table"))
+	for dx: float in [0.1, 1.3]:
+		mb.add_box(Vector3(x0 + dx, 0.4, zf), Vector3(0.1, 0.8, 0.5), look.color("colors", "wood_dark"))
+	mb.add_box(Vector3(float(r.end.x) - 1.0, 0.25, zf), Vector3(0.35, 0.5, 0.35), look.color("colors", "wood_dark"))
+	mb.add_box(Vector3(float(r.end.x) - 1.0, 0.6, zf), Vector3(0.6, 0.2, 0.28), _c(look, "anvil"))
+	mb.add_box(Vector3(x0 + 0.4, 0.9, zf), Vector3(0.9, 0.04, 0.04), _c(look, "metal"))
+	mb.add_ellipsoid(Vector3(float(r.end.x) - 0.5, 0.45, float(r.end.y) - 0.15), Vector3(0.25, 0.25, 0.25), _c(look, "fire"), _c(look, "fire").lightened(0.3), 6, 4, true)
+
+
+static func _home(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i, south: bool, wall: Color, roof: Color) -> void:
+	_body(mb, glass, look, r, south, wall, roof, look.color("colors", "door"), WALL_H)
+	var door: Vector2 = Vector2(float(r.position.x) + float(r.size.x) * 0.5, float(r.end.y) if south else float(r.position.y))
+	var s: float = 1.0 if south else -1.0
+	var box := Vector3(door.x + 1.4, 0.0, door.y + s * 0.6)
+	mb.add_box(box + Vector3(0.0, 0.5, 0.0), Vector3(0.08, 1.0, 0.08), look.color("colors", "wood_dark"))
+	mb.add_box(box + Vector3(0.0, 1.05, 0.0), Vector3(0.24, 0.22, 0.38), _c(look, "mailbox"))
+	var flowers: Array[Color] = look.color_list("estate", "flowerbox_palette")
+	for k in 4:
+		var fx: float = door.x - 1.6 + float(k) * 0.3
+		mb.add_ellipsoid(Vector3(fx, 0.2, door.y + s * 0.15), Vector3(0.12, 0.12, 0.12), look.color("colors", "bush_dark"), look.color("colors", "bush_light"), 6, 4, true)
+		mb.add_ellipsoid(Vector3(fx, 0.32, door.y + s * 0.15), Vector3(0.05, 0.05, 0.05), flowers[k % flowers.size()], flowers[k % flowers.size()], 5, 3, true)
+
+
+static func _pasture(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_fence_ring(mb, look, r, false)
+	var door: Vector2 = TownPlan.lot_door(look, "pasto")
+	var tx: float = float(r.end.x) - 1.0
+	mb.add_box(Vector3(tx, 0.25, door.y - 1.0), Vector3(0.6, 0.35, 1.4), _c(look, "trough"))
+	mb.add_box(Vector3(tx, 0.4, door.y - 1.0), Vector3(0.45, 0.06, 1.2), _c(look, "hay"))
+	mb.add_cone(Vector3(tx, 0.0, door.y + 1.0), 0.45, 0.45, 0.45, _c(look, "trough"), _c(look, "trough"), 10)
+	mb.add_cone(Vector3(tx, 0.4, door.y + 1.0), 0.4, 0.4, 0.04, _c(look, "water_blue"), _c(look, "water_blue"), 10, true)
+	var bx0: float = float(r.position.x) + 1.0
+	var bz0: float = float(r.position.y) + 1.0
+	EstateMeshes._box(mb, bx0, 0.0, bz0, bx0 + 3.0, 1.8, bz0 + 2.0, look.color("colors", "wood_a"))
+	EstateMeshes._gable(mb, bx0, bx0 + 3.0, bz0, bz0 + 2.0, 1.8, 0.8, 0.25, 6, look.color("colors", "roof_a"), look.color("colors", "roof_b"), look.color("colors", "roof_ridge"), look.color("colors", "wood_a"), look.color("colors", "wood_dark"))
+	EstateMeshes._box(mb, bx0 + 1.0, 0.0, bz0 + 1.98, bx0 + 2.0, 1.3, bz0 + 2.04, look.color("colors", "wood_dark"))
+
+
+static func _c(look: WorldLook, key: String) -> Color:
+	return look.color(GROUP, key)

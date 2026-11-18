@@ -1,0 +1,422 @@
+[
+	{
+		"id": "sardinha",
+		"name": "Sardinha",
+		"r": 0,
+		"kg": [
+			0.05,
+			0.2
+		],
+		"v": 8,
+		"d": 0.05,
+		"time": "any"
+	},
+	{
+		"id": "tilapia",
+		"name": "Tilápia",
+		"r": 0,
+		"kg": [
+			0.3,
+			2.5
+		],
+		"v": 12,
+		"d": 0.12,
+		"time": "any"
+	},
+	{
+		"id": "cavala",
+		"name": "Cavala",
+		"r": 0,
+		"kg": [
+			0.3,
+			1.8
+		],
+		"v": 14,
+		"d": 0.18,
+		"time": "any"
+	},
+	{
+		"id": "acara",
+		"name": "Acará-azul",
+		"r": 0,
+		"kg": [
+			0.1,
+			0.6
+		],
+		"v": 10,
+		"d": 0.1,
+		"time": "any"
+	},
+	{
+		"id": "piaba",
+		"name": "Piaba-azul",
+		"r": 0,
+		"kg": [
+			0.02,
+			0.1
+		],
+		"v": 6,
+		"d": 0.04,
+		"time": "any"
+	},
+	{
+		"id": "perca",
+		"name": "Perca-verde",
+		"r": 0,
+		"kg": [
+			0.2,
+			1.4
+		],
+		"v": 13,
+		"d": 0.16,
+		"time": "any"
+	},
+	{
+		"id": "camarao",
+		"name": "Camarão",
+		"r": 0,
+		"kg": [
+			0.01,
+			0.05
+		],
+		"v": 7,
+		"d": 0.08,
+		"time": "any"
+	},
+	{
+		"id": "tucunare",
+		"name": "Tucunaré",
+		"r": 1,
+		"kg": [
+			1,
+			6
+		],
+		"v": 45,
+		"d": 0.4,
+		"time": "day"
+	},
+	{
+		"id": "carpa",
+		"name": "Carpa",
+		"r": 1,
+		"kg": [
+			1,
+			12
+		],
+		"v": 35,
+		"d": 0.3,
+		"time": "any"
+	},
+	{
+		"id": "salmao",
+		"name": "Salmão",
+		"r": 1,
+		"kg": [
+			2,
+			8
+		],
+		"v": 55,
+		"d": 0.42,
+		"time": "any"
+	},
+	{
+		"id": "palhaco",
+		"name": "Peixe-palhaço",
+		"r": 1,
+		"kg": [
+			0.05,
+			0.25
+		],
+		"v": 40,
+		"d": 0.28,
+		"time": "day"
+	},
+	{
+		"id": "baiacu",
+		"name": "Baiacu",
+		"r": 1,
+		"kg": [
+			0.2,
+			1.5
+		],
+		"v": 38,
+		"d": 0.32,
+		"time": "any"
+	},
+	{
+		"id": "cirurgiao",
+		"name": "Cirurgião-azul",
+		"r": 1,
+		"kg": [
+			0.2,
+			0.8
+		],
+		"v": 42,
+		"d": 0.3,
+		"time": "day"
+	},
+	{
+		"id": "caranguejo",
+		"name": "Caranguejo",
+		"r": 1,
+		"kg": [
+			0.2,
+			1.2
+		],
+		"v": 36,
+		"d": 0.26,
+		"time": "any"
+	},
+	{
+		"id": "dourado",
+		"name": "Peixe-dourado",
+		"r": 1,
+		"kg": [
+			0.05,
+			0.4
+		],
+		"v": 50,
+		"d": 0.24,
+		"time": "any"
+	},
+	{
+		"id": "koi",
+		"name": "Koi",
+		"r": 2,
+		"kg": [
+			2,
+			10
+		],
+		"v": 150,
+		"d": 0.45,
+		"time": "any"
+	},
+	{
+		"id": "leao",
+		"name": "Peixe-leão",
+		"r": 2,
+		"kg": [
+			0.3,
+			1.2
+		],
+		"v": 170,
+		"d": 0.55,
+		"time": "any"
+	},
+	{
+		"id": "cavalo",
+		"name": "Cavalo-marinho",
+		"r": 2,
+		"kg": [
+			0.01,
+			0.08
+		],
+		"v": 160,
+		"d": 0.5,
+		"time": "any"
+	},
+	{
+		"id": "choco",
+		"name": "Choco",
+		"r": 2,
+		"kg": [
+			0.5,
+			4
+		],
+		"v": 140,
+		"d": 0.52,
+		"time": "night"
+	},
+	{
+		"id": "polvo",
+		"name": "Polvo",
+		"r": 2,
+		"kg": [
+			1,
+			10
+		],
+		"v": 180,
+		"d": 0.6,
+		"time": "any"
+	},
+	{
+		"id": "lagosta",
+		"name": "Lagosta",
+		"r": 2,
+		"kg": [
+			0.5,
+			5
+		],
+		"v": 200,
+		"d": 0.58,
+		"time": "night"
+	},
+	{
+		"id": "fantasma",
+		"name": "Peixe-fantasma",
+		"r": 2,
+		"kg": [
+			0.2,
+			2
+		],
+		"v": 210,
+		"d": 0.62,
+		"time": "night"
+	},
+	{
+		"id": "tubaraoazul",
+		"name": "Tubarão-azul",
+		"r": 2,
+		"kg": [
+			20,
+			120
+		],
+		"v": 220,
+		"d": 0.66,
+		"time": "any"
+	},
+	{
+		"id": "espada",
+		"name": "Peixe-espada",
+		"r": 3,
+		"kg": [
+			20,
+			150
+		],
+		"v": 550,
+		"d": 0.75,
+		"time": "any"
+	},
+	{
+		"id": "jamanta",
+		"name": "Arraia-jamanta",
+		"r": 3,
+		"kg": [
+			100,
+			900
+		],
+		"v": 600,
+		"d": 0.72,
+		"time": "any"
+	},
+	{
+		"id": "atum",
+		"name": "Atum-amarelo",
+		"r": 3,
+		"kg": [
+			15,
+			180
+		],
+		"v": 480,
+		"d": 0.74,
+		"time": "day"
+	},
+	{
+		"id": "martelo",
+		"name": "Tubarão-martelo",
+		"r": 3,
+		"kg": [
+			50,
+			400
+		],
+		"v": 650,
+		"d": 0.78,
+		"time": "any"
+	},
+	{
+		"id": "celacanto",
+		"name": "Celacanto",
+		"r": 3,
+		"kg": [
+			30,
+			90
+		],
+		"v": 700,
+		"d": 0.7,
+		"time": "night"
+	},
+	{
+		"id": "nautilo",
+		"name": "Náutilo",
+		"r": 3,
+		"kg": [
+			0.5,
+			2
+		],
+		"v": 520,
+		"d": 0.66,
+		"time": "night"
+	},
+	{
+		"id": "moreia",
+		"name": "Moreia-verde",
+		"r": 3,
+		"kg": [
+			5,
+			30
+		],
+		"v": 450,
+		"d": 0.76,
+		"time": "night"
+	},
+	{
+		"id": "lua",
+		"name": "Peixe-lua",
+		"r": 4,
+		"kg": [
+			200,
+			1500
+		],
+		"v": 2500,
+		"d": 0.85,
+		"time": "day"
+	},
+	{
+		"id": "lula",
+		"name": "Lula-gigante",
+		"r": 4,
+		"kg": [
+			50,
+			275
+		],
+		"v": 3200,
+		"d": 0.92,
+		"time": "night"
+	},
+	{
+		"id": "baleia",
+		"name": "Tubarão-baleia",
+		"r": 4,
+		"kg": [
+			2000,
+			20000
+		],
+		"v": 4000,
+		"d": 0.95,
+		"time": "any"
+	},
+	{
+		"id": "arowana",
+		"name": "Arowana-dourada",
+		"r": 4,
+		"kg": [
+			2,
+			7
+		],
+		"v": 3000,
+		"d": 0.88,
+		"time": "any"
+	},
+	{
+		"id": "remo",
+		"name": "Peixe-remo",
+		"r": 4,
+		"kg": [
+			50,
+			270
+		],
+		"v": 3500,
+		"d": 0.9,
+		"time": "any"
+	}
+]
