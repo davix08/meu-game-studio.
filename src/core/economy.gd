@@ -26,7 +26,7 @@ enum Result {
 }
 
 ## Which gear list a purchase targets.
-enum GearKind { ROD, BAIT }
+enum GearKind { ROD, BAIT, LINE, HOOK }
 
 var _data: GameData
 var _state: GameState
@@ -53,28 +53,51 @@ func sell_all() -> Result:
 
 ## Buys a rod or bait and equips it; an owned one is just equipped.
 func buy_gear(kind: GearKind, id: String) -> Result:
-	var owned: PackedStringArray = _state.rods_owned if kind == GearKind.ROD else _state.baits_owned
+	var owned: PackedStringArray = _owned(kind)
 	if owned.has(id):
 		_equip(kind, id)
 		return Result.EQUIPPED
-	var entry: GameData.ShopEntry
-	if kind == GearKind.ROD:
-		entry = _data.rod_by_id(id)
-		if (entry as GameData.Rod).craft_only:
-			return Result.LOCKED_BY_LEVEL # Made at the bench, never sold.
-	else:
-		entry = _data.bait_by_id(id)
+	var entry: GameData.ShopEntry = _entry(kind, id)
+	if (entry is GameData.Rod and (entry as GameData.Rod).craft_only) or (entry is GameData.Line and (entry as GameData.Line).craft_only):
+		return Result.LOCKED_BY_LEVEL # Made at the bench, never sold.
 	var blocked: Result = _purchase_blocker(entry)
 	if blocked != Result.OK:
 		return blocked
 	_state.coins -= entry.price
 	owned.append(id)
-	if kind == GearKind.ROD:
-		_state.rods_owned = owned
-	else:
-		_state.baits_owned = owned
+	match kind:
+		GearKind.ROD:
+			_state.rods_owned = owned
+		GearKind.BAIT:
+			_state.baits_owned = owned
+		GearKind.LINE:
+			_state.lines_owned = owned
+		GearKind.HOOK:
+			_state.hooks_owned = owned
 	_equip(kind, id)
 	return Result.OK
+
+
+func _owned(kind: GearKind) -> PackedStringArray:
+	match kind:
+		GearKind.ROD:
+			return _state.rods_owned
+		GearKind.LINE:
+			return _state.lines_owned
+		GearKind.HOOK:
+			return _state.hooks_owned
+	return _state.baits_owned
+
+
+func _entry(kind: GearKind, id: String) -> GameData.ShopEntry:
+	match kind:
+		GearKind.ROD:
+			return _data.rod_by_id(id)
+		GearKind.LINE:
+			return _data.line_by_id(id)
+		GearKind.HOOK:
+			return _data.hook_by_id(id)
+	return _data.bait_by_id(id)
 
 
 ## Buys one consumable item (a snack or a luck bait).
@@ -121,7 +144,12 @@ func _purchase_blocker(entry: GameData.ShopEntry) -> Result:
 
 
 func _equip(kind: GearKind, id: String) -> void:
-	if kind == GearKind.ROD:
-		_state.rod = id
-	else:
-		_state.bait = id
+	match kind:
+		GearKind.ROD:
+			_state.rod = id
+		GearKind.LINE:
+			_state.line = id
+		GearKind.HOOK:
+			_state.hook = id
+		_:
+			_state.bait = id

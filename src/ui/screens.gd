@@ -27,7 +27,7 @@ signal outfit_changed
 ## A screen opened or closed.
 signal open_changed(open: bool)
 
-enum ShopTab { SELL, RODS, BAITS, ITEMS, FARM }
+enum ShopTab { SELL, RODS, BAITS, ITEMS, FARM, LINES }
 
 var _look: WorldLook
 var _ctx: GameContext
@@ -373,7 +373,7 @@ func _confirm_new(back: Callable) -> void:
 ## The fish shop on [param tab].
 func open_shop(tab: int = ShopTab.SELL) -> void:
 	var body: VBoxContainer = _sheet(Texts.get_text("shop"), func() -> void: open_shop(tab))
-	var names: Array[String] = [Texts.get_text("tab_sell"), Texts.get_text("tab_rods"), Texts.get_text("tab_baits"), Texts.get_text("tab_items"), Texts.get_text("tab_farm")]
+	var names: Array[String] = [Texts.get_text("tab_sell"), Texts.get_text("tab_rods"), Texts.get_text("tab_baits"), Texts.get_text("tab_items"), Texts.get_text("tab_farm"), Texts.get_text("tab_lines")]
 	_tabs(body, names, tab, func(i: int) -> void: open_shop(i))
 	match tab:
 		ShopTab.SELL:
@@ -387,6 +387,15 @@ func open_shop(tab: int = ShopTab.SELL) -> void:
 		ShopTab.BAITS:
 			for bait: GameData.Bait in _ctx.data.baits:
 				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.BAIT, bait.color), UiKit.label(bait.name), _gear_button(Economy.GearKind.BAIT, bait, _ctx.state.baits_owned.has(bait.id), _ctx.state.bait == bait.id)]))
+		ShopTab.LINES:
+			for line: GameData.Line in _ctx.data.lines:
+				if line.craft_only and not _ctx.state.lines_owned.has(line.id):
+					continue
+				var text: String = "%s\n%s" % [line.name, Texts.fmt("line_stats", [_kg(line.max_kg)])]
+				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.BAIT, line.color), UiKit.label(text), _gear_button(Economy.GearKind.LINE, line, _ctx.state.lines_owned.has(line.id), _ctx.state.line == line.id)]))
+			for hook: GameData.Hook in _ctx.data.hooks:
+				var text: String = "%s\n%s" % [hook.name, Texts.fmt("hook_stats", [String.num(hook.react, 2).replace(".", ","), int(hook.zone * 100.0)])]
+				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, hook.color), UiKit.label(text), _gear_button(Economy.GearKind.HOOK, hook, _ctx.state.hooks_owned.has(hook.id), _ctx.state.hook == hook.id)]))
 		ShopTab.ITEMS:
 			for item: GameData.Item in _ctx.data.items:
 				var owned: int = _ctx.state.snacks if item.effect == "snack" else _ctx.state.luck_baits

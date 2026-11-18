@@ -50,6 +50,10 @@ static func to_dict(state: GameState) -> Dictionary:
 		"book": book,
 		"materials": state.materials.duplicate(),
 		"gathered": state.gathered.duplicate(),
+		"lines_owned": Array(state.lines_owned),
+		"line": state.line,
+		"hooks_owned": Array(state.hooks_owned),
+		"hook": state.hook,
 		"rods_owned": Array(state.rods_owned),
 		"rod": state.rod,
 		"baits_owned": Array(state.baits_owned),
@@ -219,6 +223,21 @@ static func apply(state: GameState, data: GameData, save: Dictionary) -> void:
 	var rod: String = str(save.get("rod", ""))
 	if state.rods_owned.has(rod):
 		state.rod = rod
+	if save.get("lines_owned") is Array:
+		state.lines_owned = _known_ids(save["lines_owned"], data.has_line, state.lines_owned)
+	elif state.has_rod():
+		# Saves from before lines existed: the player keeps fishing with a nylon line.
+		state.lines_owned = PackedStringArray([data.fixed_text("legacy_line")])
+	var line: String = str(save.get("line", ""))
+	if state.lines_owned.has(line):
+		state.line = line
+	elif state.line == "" and not state.lines_owned.is_empty():
+		state.line = state.lines_owned[0]
+	if save.get("hooks_owned") is Array:
+		state.hooks_owned = _known_ids(save["hooks_owned"], data.has_hook, state.hooks_owned)
+	var hook: String = str(save.get("hook", ""))
+	if state.hooks_owned.has(hook):
+		state.hook = hook
 	var bait: String = str(save.get("bait", ""))
 	if state.baits_owned.has(bait):
 		state.bait = bait

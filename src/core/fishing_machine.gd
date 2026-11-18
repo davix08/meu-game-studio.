@@ -50,6 +50,7 @@ enum EndReason {
 	PULLED_EARLY, ## PUXAR during the wait.
 	TOO_SLOW, ## The bite's reaction window ran out.
 	LINE_SLACK, ## Progress fell to zero in the fight.
+	LINE_BROKE, ## Progress fell to zero on a fish heavier than the line holds.
 	CANCELLED, ## The player reeled in (cancel()).
 	DAY_ENDED, ## Sleep started a new day.
 }
@@ -90,6 +91,10 @@ var progress: float = 0.0
 var in_zone: bool = false
 ## The landed fish (valid in CAUGHT).
 var landed: GameState.Catch = null
+## The hooked fish, rolled at the bite (weight known before the fight; valid from BITE on).
+var hooked: GameState.Catch = null
+## The hooked fish is heavier than the equipped line's max_kg.
+var overweight: bool = false
 
 var _data: GameData
 var _state: GameState
@@ -156,6 +161,25 @@ func cast_at(at: Vector3) -> CastResult:
 	return CastResult.CAST
 
 
+## Heaviest fish (kg) the equipped line holds at full strength (infinite with no line).
+func line_max_kg() -> float:
+	return _data.line_by_id(_state.line).max_kg if _data.has_line(_state.line) else INF
+
+
+## Catch-progress multiplier for a fish of [param weight] kg on the equipped line:
+## 1 up to max_kg, then (max_kg / weight)^line_exponent, never below line_min_mult
+## (design/gdd/gear-upgrades.md, Formulas).
+func line_mult(weight: float) -> float:
+	var cap: float = line_max_kg()
+	if weight <= cap:
+		return 1.0
+	return maxf(_data.tune("line_min_mult"), pow(cap / weight, _data.tune("line_exponent")))
+
+
+func _hook() -> GameData.Hook:
+	return _data.hook_by_id(_state.hook) if _data.has_hook(_state.hook) else GameData.Hook.new()
+
+
 ## Reels in: ends any cast in progress with [constant EndReason.CANCELLED].
 func cancel() -> void:
 	if phase != Phase.IDLE:
@@ -211,14 +235,16 @@ func _wait_step(dt: float, press: bool) -> void:
 		nibble_left -= dt
 	if phase_time >= wait_time:
 		species = _roller.roll_species(on_deep, on_school)
-		react_window = _data.tune("react_window") - species.difficulty * _data.tune("react_hard")
+		hooked = _roller.roll_catch(species)
+		overweight = hooked.weight > line_max_kg()
+		react_window = _data.tune("react_window") - species.difficulty * _data.tune("react_hard") + _hook().react
 		_set_phase(Phase.BITE)
 		fish_bit.emit(species)
 
 
 func _start_fight() -> void:
 	var d: float = species.difficulty
-	zone_width = maxf(_data.tune("zone_min"), _data.tune("zone_base") + _data.rod_for(_state).zone - d * _data.tune("zone_shrink"))
+	zone_width = maxf(_data.tune("zone_min"), _data.tune("zone_base") + _data.rod_for(_state).zone + _hook().zone - d * _data.tune("zone_shrink"))
 	zone_center = _data.fixed("zone_start")
 	_zone_target = zone_center
 	_zone_timer = _data.fixed("zone_first_move")
@@ -265,15 +291,15 @@ func _fight_step(dt: float, hold: bool) -> void:
 	# Progress: grows inside the zone, drains outside.
 	in_zone = absf(indicator - zone_center) <= half
 	if in_zone:
-		progress += _data.tune("progress_gain") * rod.power * (1.0 - d * _data.fixed("gain_hard_penalty")) * dt
+		progress += _data.tune("progress_gain") * rod.power * (1.0 - d * _data.fixed("gain_hard_penalty")) * line_mult(hooked.weight) * dt
 	else:
 		progress -= (_data.tune("progress_loss") + _data.tune("progress_loss_hard") * d) * dt
 	if progress >= 1.0:
-		landed = _roller.roll_catch(species)
+		landed = hooked
 		_set_phase(Phase.CAUGHT)
 		fish_landed.emit(landed)
 	elif progress <= 0.0:
-		_end(EndReason.LINE_SLACK)
+		_end(EndReason.LINE_BROKE if overweight else EndReason.LINE_SLACK)
 
 
 func _finish_catch() -> void:
@@ -301,6 +327,8 @@ func _end(reason: EndReason) -> void:
 func _reset() -> void:
 	species = null
 	landed = null
+	hooked = null
+	overweight = false
 	_set_phase(Phase.IDLE)
 
 

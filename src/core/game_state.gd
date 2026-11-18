@@ -116,6 +116,14 @@ var storage_upgrades: int = 0
 var rod_levels: Dictionary[String, int] = {}
 ## Countable goods: crops, eggs, milk, wool, seeds, feed (good id -> count).
 var goods: Dictionary[String, int] = {}
+## Equipped line id ("" until the first rod is crafted).
+var line: String = ""
+## Ids of owned lines.
+var lines_owned: PackedStringArray = PackedStringArray()
+## Equipped hook id.
+var hook: String = ""
+## Ids of owned hooks.
+var hooks_owned: PackedStringArray = PackedStringArray()
 ## Materials (galho, fibra, minhoca, linha): id -> count.
 var materials: Dictionary[String, int] = {}
 ## Gathered spots waiting to come back: node id -> total_minutes() when it returns.
@@ -174,6 +182,10 @@ static func create_new(data: GameData) -> GameState:
 	state.energy = data.fixed("energy_max")
 	state.rod = data.fixed_text("start_rod")
 	state.rods_owned = PackedStringArray([state.rod]) if state.has_rod() else PackedStringArray()
+	state.line = data.fixed_text("start_line")
+	state.lines_owned = PackedStringArray([state.line]) if state.line != "" else PackedStringArray()
+	state.hook = data.fixed_text("start_hook")
+	state.hooks_owned = PackedStringArray([state.hook])
 	state.bait = data.fixed_text("start_bait")
 	state.baits_owned = PackedStringArray([state.bait])
 	state.snacks = int(data.fixed("start_snacks"))

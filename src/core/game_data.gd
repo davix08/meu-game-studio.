@@ -73,6 +73,24 @@ class Rod:
 	var craft_only: bool = false
 
 
+## A fishing line (lines.json): fish heavier than max_kg are harder to land and snap it.
+class Line:
+	extends ShopEntry
+	## Heaviest fish (kg) it holds at full strength.
+	var max_kg: float = 1.0
+	## Made at the bench with the artisan rod, never sold.
+	var craft_only: bool = false
+
+
+## A hook (hooks.json): more time to strike and a wider green zone.
+class Hook:
+	extends ShopEntry
+	## Seconds added to the bite's reaction window.
+	var react: float = 0.0
+	## Added to the green zone width.
+	var zone: float = 0.0
+
+
 ## A gatherable or crafted material (materials.json).
 class CraftMaterial:
 	extends RefCounted
@@ -144,6 +162,12 @@ var baits: Array[Bait] = []
 var items: Array[Item] = []
 ## Level names; index 0 is level 1. Its size is the maximum level.
 var level_names: PackedStringArray = PackedStringArray()
+## Lines, in lines.json order.
+var lines: Array[Line] = []
+## Hooks, in hooks.json order.
+var hooks: Array[Hook] = []
+var _lines_by_id: Dictionary[String, Line] = {}
+var _hooks_by_id: Dictionary[String, Hook] = {}
 ## Materials, in materials.json order.
 var materials: Array[CraftMaterial] = []
 ## Recipes, in recipes.json order.
@@ -192,6 +216,8 @@ static func load_from_dir(dir_path: String = DEFAULT_DIR) -> GameData:
 	ok = ok and data._load_baits(_read_json(dir_path.path_join("baits.json")))
 	ok = ok and data._load_items(_read_json(dir_path.path_join("items.json")))
 	ok = ok and data._load_levels(_read_json(dir_path.path_join("levels.json")))
+	ok = ok and data._load_lines(_read_json(dir_path.path_join("lines.json")))
+	ok = ok and data._load_hooks(_read_json(dir_path.path_join("hooks.json")))
 	ok = ok and data._load_materials(_read_json(dir_path.path_join("materials.json")))
 	ok = ok and data._load_recipes(_read_json(dir_path.path_join("recipes.json")))
 	ok = ok and data._load_gathering(_read_json(dir_path.path_join("gathering.json")))
@@ -268,6 +294,26 @@ func has_species(id: String) -> bool:
 
 
 ## True when [param id] names a rod (used when loading saves).
+## The line with [param id]. The id must exist.
+func line_by_id(id: String) -> Line:
+	return _lines_by_id[id]
+
+
+## True when [param id] is a known line.
+func has_line(id: String) -> bool:
+	return _lines_by_id.has(id)
+
+
+## The hook with [param id]. The id must exist.
+func hook_by_id(id: String) -> Hook:
+	return _hooks_by_id[id]
+
+
+## True when [param id] is a known hook.
+func has_hook(id: String) -> bool:
+	return _hooks_by_id.has(id)
+
+
 ## The material with [param id]. The id must exist.
 func material_by_id(id: String) -> CraftMaterial:
 	return _materials_by_id[id]
@@ -561,4 +607,36 @@ func _load_gathering(json: Variant) -> bool:
 			push_error("GameData: gathering node %s has an unknown kind %s" % [n.id, n.kind])
 			return false
 		gather_nodes.append(n)
+	return true
+
+
+func _load_lines(json: Variant) -> bool:
+	if not _is_array(json, "lines.json"):
+		return false
+	for entry: Variant in json:
+		if not _has_keys(entry, ["id", "name", "price", "level", "max_kg", "col"], "lines.json"):
+			return false
+		var e: Dictionary = entry
+		var line := Line.new()
+		_fill_shop_entry(line, e)
+		line.max_kg = float(e["max_kg"])
+		line.craft_only = bool(e.get("craft_only", false))
+		lines.append(line)
+		_lines_by_id[line.id] = line
+	return true
+
+
+func _load_hooks(json: Variant) -> bool:
+	if not _is_array(json, "hooks.json"):
+		return false
+	for entry: Variant in json:
+		if not _has_keys(entry, ["id", "name", "price", "level", "react", "zone", "col"], "hooks.json"):
+			return false
+		var e: Dictionary = entry
+		var hook := Hook.new()
+		_fill_shop_entry(hook, e)
+		hook.react = float(e["react"])
+		hook.zone = float(e["zone"])
+		hooks.append(hook)
+		_hooks_by_id[hook.id] = hook
 	return true

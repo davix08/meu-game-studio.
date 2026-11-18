@@ -1,0 +1,38 @@
+[
+	{
+		"id": "simples",
+		"name": "Anzol simples",
+		"price": 0,
+		"level": 1,
+		"react": 0,
+		"zone": 0,
+		"col": "#b8b8b8"
+	},
+	{
+		"id": "aco",
+		"name": "Anzol de aço",
+		"price": 150,
+		"level": 1,
+		"react": 0.12,
+		"zone": 0.02,
+		"col": "#9aa4b0"
+	},
+	{
+		"id": "circular",
+		"name": "Anzol circular",
+		"price": 700,
+		"level": 2,
+		"react": 0.25,
+		"zone": 0.04,
+		"col": "#d0a050"
+	},
+	{
+		"id": "pro",
+		"name": "Anzol profissional",
+		"price": 3000,
+		"level": 3,
+		"react": 0.4,
+		"zone": 0.06,
+		"col": "#ffd23a"
+	}
+]

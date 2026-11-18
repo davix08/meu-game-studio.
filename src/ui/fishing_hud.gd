@@ -208,7 +208,11 @@ func _draw_fight(cx: float) -> void:
 	if not caught:
 		var moods: Array = _texts["mood"]
 		var mood: String = _t("mood_fmt") % str(moods[_machine.species.rarity])
-		_text(x, y + h + _n("mood_below"), mood, int(_n("mood_font")), rarity_color, HORIZONTAL_ALIGNMENT_LEFT)
+		var mood_color: Color = rarity_color
+		if _machine.overweight:
+			mood = _t("line_heavy")
+			mood_color = _c("tranco_color")
+		_text(x, y + h + _n("mood_below"), mood, int(_n("mood_font")), mood_color, HORIZONTAL_ALIGNMENT_LEFT)
 		if _tranco_left > 0.0:
 			_text(x + w, y + h + _n("mood_below"), _t("tranco"), int(_n("tranco_font")), _c("tranco_color"), HORIZONTAL_ALIGNMENT_RIGHT)
 

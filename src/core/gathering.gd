@@ -92,6 +92,13 @@ func craft(recipe_id: String) -> Result:
 			owned.append(recipe.gives_id)
 			_state.rods_owned = owned
 			_state.rod = recipe.gives_id
+			var line_id: String = _data.fixed_text("rod_line")
+			if not _state.lines_owned.has(line_id):
+				var lines: PackedStringArray = _state.lines_owned
+				lines.append(line_id)
+				_state.lines_owned = lines
+			if _state.line == "":
+				_state.line = line_id
 		"bait":
 			var owned_baits: PackedStringArray = _state.baits_owned
 			owned_baits.append(recipe.gives_id)
