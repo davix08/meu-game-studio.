@@ -35,7 +35,7 @@ modes:
   automation: autonomous
 
 platform:
-  multiplayer: false
+  multiplayer: true
   online: false
   targets: [Mobile]
   primary_input: "Touch"
