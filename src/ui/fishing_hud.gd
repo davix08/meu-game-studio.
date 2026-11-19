@@ -46,6 +46,7 @@ var _card_new: bool = false
 var _card_record: bool = false
 var _card_armed: bool = false
 var _restore_frame: int = 0
+var _fight_panel: FightPanel
 
 
 ## Builds the button, the Rest button and the card catcher; loads the texts.
@@ -74,6 +75,11 @@ func setup(look: WorldLook, data: GameData, state: GameState) -> void:
 ## Connects to the machine (read for drawing) and to the signals that raise toasts and the card.
 func bind(machine: FishingMachine) -> void:
 	_machine = machine
+	# The minigame panel (2026-11-19 look): underwater window, fish, hook and progress tube.
+	_fight_panel = FightPanel.new()
+	add_child(_fight_panel)
+	_fight_panel.setup(_look, _data, machine)
+	move_child(_fight_panel, 0)
 	machine.fishing_ended.connect(_on_fishing_ended)
 	_state.fish_caught.connect(_on_fish_caught)
 	_state.level_up.connect(_on_level_up)
@@ -93,6 +99,7 @@ func on_fight_step(dt: float) -> void:
 		var speed: float = absf(_machine.zone_center - _prev_zone) / dt
 		if speed > base * (1.0 + _data.fixed("dart_speed_mult")) * 0.5:
 			_tranco_left = _data.fixed("dart_time")
+			_fight_panel.flash_tranco(_tranco_left)
 	_prev_zone = _machine.zone_center
 
 
@@ -131,7 +138,7 @@ func _draw() -> void:
 		FishingMachine.Phase.WAIT:
 			_text(cx, _n("hint_y"), _t("wait_hint"), int(_n("hint_font")), _c("ui_cream"))
 		FishingMachine.Phase.FIGHT, FishingMachine.Phase.CAUGHT:
-			_draw_fight(cx)
+			pass # Drawn by [FightPanel].
 		FishingMachine.Phase.IDLE:
 			if _state.stats_caught == 0 and not card_open:
 				var key: String = "hint_no_energy" if _state.energy < _data.tune("cast_cost") else "hint_start"

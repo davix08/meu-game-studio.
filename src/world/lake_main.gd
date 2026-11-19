@@ -286,6 +286,10 @@ func _process(delta: float) -> void:
 	# yawed by +_input_yaw around Y, so rotate the input by -_input_yaw (Vector2.rotated).
 	_fisherman.step(delta, dir.rotated(-_input_yaw), run)
 	_actions.set_resting(_state.resting)
+	# During the minigame only PUXAR matters: the side buttons and the joystick step aside.
+	var fighting: bool = phase == FishingMachine.Phase.FIGHT or phase == FishingMachine.Phase.CAUGHT
+	_actions.visible = not fighting
+	_stick.visible = not fighting
 	_update_spot()
 	var e_down: bool = Input.is_physical_key_pressed(KEY_E)
 	if e_down and not _e_was_down and _started and not _screens.is_open():

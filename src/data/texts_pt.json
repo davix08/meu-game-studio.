@@ -20,7 +20,7 @@
 	"pull_fight": "PUXAR",
 	"bite_banner": "MORDEU! PUXAR!",
 	"bite_mark": "!",
-	"fight_hint": "Segure PUXAR para ficar na zona verde",
+	"fight_hint": "Segure PUXAR para manter o anzol no peixe",
 	"wait_hint": "Esperando a mordida... (PUXAR recolhe)",
 	"caught": "PEGOU!",
 	"mood_fmt": "Peixe %s",
