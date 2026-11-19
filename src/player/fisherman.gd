@@ -97,6 +97,11 @@ var _model_luma: Dictionary = {}
 
 ## Model part name -> pivot ("head", "torso", "arm_l", "arm_r", "leg_l", "leg_r").
 const _HEAD_PARTS: Array[String] = ["neck", "head", "left_ear", "right_ear", "hair_left", "hair_right", "L_eyebrow", "L_eye_white", "L_iris", "L_pupil", "R_eyebrow", "R_eye_white", "R_iris", "R_pupil", "full_beard", "beard_left_side", "beard_right_side", "nose", "mouth_hint"]
+## "parts" (a model file made of named parts) or "split" (one textured mesh cut into parts).
+var _model_kind: String = ""
+## Split models already cut, by file path: shared by every fisherman (game and clothes viewer).
+static var _split_cache: Dictionary = {}
+
 ## Clothing groups of the model that the clothes shop can recolor (Story 017), with the
 ## "colors" key of the outfit that dresses them.
 const _OUTFIT_GROUPS: Dictionary = {
@@ -135,7 +140,7 @@ func setup(look: WorldLook, grid: WorldGrid, terrain: LakeTerrain, walk_speed: f
 	scale = Vector3.ONE * look.num("player", "model_scale")
 	_material = MeshBuilder.make_material(look.num("player", "roughness"))
 	_look_ref = look
-	if not _build_from_file(look):
+	if not _build_from_split(look) and not _build_from_file(look):
 		_build_model(look)
 	_load_pose(look)
 	_build_rod(look)
@@ -199,7 +204,7 @@ func setup_display(look: WorldLook) -> void:
 	_hip_height = look.num("player", "hip_height")
 	_material = MeshBuilder.make_material(look.num("player", "roughness"))
 	_look_ref = look
-	if not _build_from_file(look):
+	if not _build_from_split(look) and not _build_from_file(look):
 		_build_model(look)
 	_load_pose(look)
 	_build_rod(look)
@@ -212,7 +217,10 @@ func set_outfit(colors: Dictionary) -> void:
 	if _look_ref == null or _torso == null:
 		return
 	if not _model_materials.is_empty():
-		_dress_model()
+		if _model_kind == "split":
+			_dress_split()
+		else:
+			_dress_model()
 		return
 	for node: Node3D in [_torso, _leg_left, _leg_right]:
 		node.free()
@@ -228,7 +236,7 @@ func set_outfit(colors: Dictionary) -> void:
 ## Returns false (and the code-built model is used) when the file is missing or not imported.
 func _build_from_file(look: WorldLook) -> bool:
 	var path: String = look.text("player", "model_path")
-	if path == "" or not ResourceLoader.exists(path):
+	if look.text("player", "model_kind") != "parts" or path == "" or not ResourceLoader.exists(path):
 		return false
 	var scene: PackedScene = load(path) as PackedScene
 	if scene == null:
@@ -301,8 +309,197 @@ func _build_from_file(look: WorldLook) -> bool:
 					_model_luma[group] = _mesh_luma(node.mesh)
 				node.material_override = _model_materials[group]
 		pivot.add_child(node)
+	_model_kind = "parts"
 	_dress_model()
 	return true
+
+
+## Builds the fisherman from ONE textured mesh (assets/characters/fazendeiro.glb, Y-up, facing
+## +z): the mesh is cut once into hat, head, torso, arms, legs and boots by the heights and widths
+## in world_look.json ("split_*"), each piece goes under the pivot that animates it, and every
+## piece keeps the model's own texture. Returns false when the file is missing or unreadable.
+func _build_from_split(look: WorldLook) -> bool:
+	if look.text("player", "model_kind") != "split":
+		return false
+	var path: String = look.text("player", "split_model_path")
+	if not ResourceLoader.exists(path):
+		return false
+	if not _split_cache.has(path):
+		_split_cache[path] = _cut_model(look, path)
+	var cut: Dictionary = _split_cache[path]
+	if cut.is_empty():
+		return false
+	var parts: Dictionary = cut["parts"]
+	var texture: Texture2D = cut["texture"]
+	var s: float = look.num("player", "model_height") / look.num("player", "split_units_tall")
+	var floor_y: float = look.num("player", "split_floor")
+	var hip := Vector3(0.0, look.num("player", "split_hip") - floor_y, 0.0) * s
+	var neck := Vector3(0.0, look.num("player", "split_neck") - floor_y, 0.0) * s
+	var shoulder := Vector3(look.num("player", "split_shoulder_x"), look.num("player", "split_shoulder_y") - floor_y, 0.0) * s
+	var leg_x: float = look.num("player", "split_leg_x") * s
+	var hand := Vector3(look.num("player", "split_hand_x"), look.num("player", "split_hand_y") - floor_y, look.num("player", "split_hand_z")) * s
+	_hip_height = hip.y
+	_hand_offset = hand - shoulder
+	_torso = Node3D.new()
+	_torso.position = hip
+	add_child(_torso)
+	_head = Node3D.new()
+	_head.position = neck - hip
+	_torso.add_child(_head)
+	_arm_left = Node3D.new()
+	_arm_left.position = Vector3(-shoulder.x, shoulder.y, 0.0) - hip
+	_torso.add_child(_arm_left)
+	_arm_right = Node3D.new()
+	_arm_right.position = shoulder - hip
+	_torso.add_child(_arm_right)
+	_leg_left = Node3D.new()
+	_leg_left.position = Vector3(-leg_x, hip.y, 0.0)
+	add_child(_leg_left)
+	_leg_right = Node3D.new()
+	_leg_right.position = Vector3(leg_x, hip.y, 0.0)
+	add_child(_leg_right)
+	_model_materials.clear()
+	for group: String in ["plain", "hat", "vest", "boots"]:
+		_model_materials[group] = _textured_material(look, texture)
+	var pivots: Dictionary = {
+		"hat": [_head, neck, "hat"], "head": [_head, neck, "plain"], "torso": [_torso, hip, "vest"],
+		"arm_l": [_arm_left, Vector3(-shoulder.x, shoulder.y, 0.0), "vest"], "arm_r": [_arm_right, shoulder, "vest"],
+		"leg_l": [_leg_left, _leg_left.position, "plain"], "leg_r": [_leg_right, _leg_right.position, "plain"],
+		"boot_l": [_leg_left, _leg_left.position, "boots"], "boot_r": [_leg_right, _leg_right.position, "boots"],
+	}
+	var to_game := Basis.from_scale(Vector3.ONE * s)
+	var lift := Vector3(0.0, -floor_y * s, 0.0)
+	for part_name: String in parts:
+		var where: Array = pivots[part_name]
+		var node := MeshInstance3D.new()
+		node.mesh = parts[part_name]
+		node.transform = Transform3D(to_game, lift - (where[1] as Vector3))
+		node.material_override = _model_materials[str(where[2])]
+		(where[0] as Node3D).add_child(node)
+	_model_kind = "split"
+	_dress_split()
+	return true
+
+
+## Cuts the mesh of [param path] into the parts named in [method _build_from_split]; each
+## triangle goes to the part of its center. Returns {"parts": {name: ArrayMesh}, "texture"}.
+func _cut_model(look: WorldLook, path: String) -> Dictionary:
+	var scene: PackedScene = load(path) as PackedScene
+	if scene == null:
+		return {}
+	var source: Node = scene.instantiate()
+	var found: Array[Node] = source.find_children("*", "MeshInstance3D", true, false)
+	if found.is_empty():
+		source.free()
+		return {}
+	var mesh_instance: MeshInstance3D = found[0]
+	var mesh: Mesh = mesh_instance.mesh
+	var texture: Texture2D = null
+	var material: Material = mesh_instance.get_active_material(0)
+	if material is BaseMaterial3D:
+		texture = (material as BaseMaterial3D).albedo_texture
+	var arrays: Array = mesh.surface_get_arrays(0)
+	source.free()
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+	if indices.is_empty():
+		indices.resize(verts.size())
+		for i in verts.size():
+			indices[i] = i
+	var hat_y: float = look.num("player", "split_hat")
+	var neck_y: float = look.num("player", "split_neck")
+	var hip_y: float = look.num("player", "split_hip")
+	var boots_y: float = look.num("player", "split_boots")
+	var arm_x: float = look.num("player", "split_arm_x")
+	var names: Array[String] = ["hat", "head", "torso", "arm_l", "arm_r", "leg_l", "leg_r", "boot_l", "boot_r"]
+	var tris: Dictionary = {}
+	for part_name: String in names:
+		tris[part_name] = PackedInt32Array()
+	for t in range(0, indices.size() - 2, 3):
+		var c: Vector3 = (verts[indices[t]] + verts[indices[t + 1]] + verts[indices[t + 2]]) / 3.0
+		var part_name: String = "torso"
+		if c.y > hat_y:
+			part_name = "hat"
+		elif c.y > neck_y:
+			part_name = "head"
+		elif c.y < boots_y:
+			part_name = "boot_l" if c.x < 0.0 else "boot_r"
+		elif c.y < hip_y:
+			part_name = "leg_l" if c.x < 0.0 else "leg_r"
+		elif absf(c.x) > arm_x:
+			part_name = "arm_l" if c.x < 0.0 else "arm_r"
+		var list: PackedInt32Array = tris[part_name]
+		list.append(t)
+		tris[part_name] = list
+	var parts: Dictionary = {}
+	var remap := PackedInt32Array()
+	remap.resize(verts.size())
+	for part_name: String in names:
+		var list: PackedInt32Array = tris[part_name]
+		if list.is_empty():
+			continue
+		remap.fill(-1)
+		var pv := PackedVector3Array()
+		var pn := PackedVector3Array()
+		var pu := PackedVector2Array()
+		var pi := PackedInt32Array()
+		for t: int in list:
+			for k in 3:
+				var v: int = indices[t + k]
+				if remap[v] < 0:
+					remap[v] = pv.size()
+					pv.append(verts[v])
+					if not normals.is_empty():
+						pn.append(normals[v])
+					if not uvs.is_empty():
+						pu.append(uvs[v])
+				pi.append(remap[v])
+		var out: Array = []
+		out.resize(Mesh.ARRAY_MAX)
+		out[Mesh.ARRAY_VERTEX] = pv
+		if not pn.is_empty():
+			out[Mesh.ARRAY_NORMAL] = pn
+		if not pu.is_empty():
+			out[Mesh.ARRAY_TEX_UV] = pu
+		out[Mesh.ARRAY_INDEX] = pi
+		var part_mesh := ArrayMesh.new()
+		part_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, out)
+		parts[part_name] = part_mesh
+	return {"parts": parts, "texture": texture}
+
+
+func _textured_material(look: WorldLook, texture: Texture2D) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = load(look.text("player", "split_shader")) as Shader
+	material.set_shader_parameter("albedo_tex", texture)
+	material.set_shader_parameter("roughness", look.num("player", "roughness"))
+	material.set_shader_parameter("main_ref", look.num("player", "split_main_ref"))
+	material.set_shader_parameter("red_ref", look.num("player", "split_red_ref"))
+	return material
+
+
+## Clothes on the textured model: the hat takes the hat color (band = trim), the shirt's red
+## pixels take the shirt color, the boots take the boots color. Default pieces keep the texture.
+func _dress_split() -> void:
+	var hat: ShaderMaterial = _model_materials["hat"]
+	var custom_hat: bool = _outfit.get("_custom_hat", false)
+	hat.set_shader_parameter("use_main", 1.0 if custom_hat else 0.0)
+	hat.set_shader_parameter("use_red", 1.0 if custom_hat else 0.0)
+	if custom_hat:
+		hat.set_shader_parameter("main_color", _outfit["hat"])
+		hat.set_shader_parameter("red_color", _outfit["hat_band"])
+	var vest: ShaderMaterial = _model_materials["vest"]
+	var custom_vest: bool = _outfit.get("_custom_vest", false)
+	vest.set_shader_parameter("use_red", 1.0 if custom_vest else 0.0)
+	if custom_vest:
+		vest.set_shader_parameter("red_color", _outfit["vest"])
+	var boots: ShaderMaterial = _model_materials["boots"]
+	var custom_boots: bool = _outfit.get("_custom_boots", false)
+	boots.set_shader_parameter("use_main", 1.0 if custom_boots else 0.0)
+	if custom_boots:
+		boots.set_shader_parameter("main_color", _outfit["boots"])
 
 
 func _model_material(look: WorldLook, _group: String) -> ShaderMaterial:
