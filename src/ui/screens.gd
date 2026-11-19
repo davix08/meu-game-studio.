@@ -723,7 +723,9 @@ func open_clothes() -> void:
 			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(piece["color"])), UiKit.label(str(piece["name"])), b]))
 
 
-## The fisherman colors for the outfit in [param state] (keys of the "colors" look group).
+## The fisherman colors for the outfit in [param state] (keys of the "colors" look group), plus
+## "_custom_<group>" true when a piece other than the default one is worn (the 3D model keeps its
+## own colors for the default pieces).
 static func outfit_colors(town: TownData, state: GameState) -> Dictionary:
 	var out: Dictionary = {}
 	var hat: Dictionary = town.piece(state.outfit.get("hat", ""))
@@ -731,14 +733,19 @@ static func outfit_colors(town: TownData, state: GameState) -> Dictionary:
 		out["hat"] = Color.html(str(hat["color"]))
 		out["hat_dark"] = Color.html(str(hat["color"])).darkened(0.2)
 		out["hat_band"] = Color.html(str(hat["trim"]))
+		var custom_hat: bool = str(hat["id"]) != str((town.clothes("hat")[0] as Dictionary)["id"])
+		out["_custom_hat"] = custom_hat
+		out["_custom_hat_band"] = custom_hat
 	var shirt: Dictionary = town.piece(state.outfit.get("shirt", ""))
 	if not shirt.is_empty():
 		out["vest"] = Color.html(str(shirt["color"]))
 		out["vest_edge"] = Color.html(str(shirt["color"])).darkened(0.35)
 		out["shirt"] = Color.html(str(shirt["trim"]))
+		out["_custom_vest"] = str(shirt["id"]) != str((town.clothes("shirt")[0] as Dictionary)["id"])
 	var boots: Dictionary = town.piece(state.outfit.get("boots", ""))
 	if not boots.is_empty():
 		out["boots"] = Color.html(str(boots["color"]))
+		out["_custom_boots"] = str(boots["id"]) != str((town.clothes("boots")[0] as Dictionary)["id"])
 	return out
 
 

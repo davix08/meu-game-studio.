@@ -88,6 +88,23 @@ var _look_ref: WorldLook
 ## Color overrides of the clothes (Story 017): keys of the "colors" group, e.g. "hat", "vest".
 var _outfit: Dictionary = {}
 var _rod_color: Color = Color.WHITE
+## Position of the right hand from the right shoulder pivot (where the rod is held).
+var _hand_offset: Vector3 = Vector3.ZERO
+## Clothing group -> its shader material, when the 3D model file is used.
+var _model_materials: Dictionary = {}
+## Clothing group -> brightness of the model's own color (keeps highlights when re-dressed).
+var _model_luma: Dictionary = {}
+
+## Model part name -> pivot ("head", "torso", "arm_l", "arm_r", "leg_l", "leg_r").
+const _HEAD_PARTS: Array[String] = ["neck", "head", "left_ear", "right_ear", "hair_left", "hair_right", "L_eyebrow", "L_eye_white", "L_iris", "L_pupil", "R_eyebrow", "R_eye_white", "R_iris", "R_pupil", "full_beard", "beard_left_side", "beard_right_side", "nose", "mouth_hint"]
+## Clothing groups of the model that the clothes shop can recolor (Story 017), with the
+## "colors" key of the outfit that dresses them.
+const _OUTFIT_GROUPS: Dictionary = {
+	"hat": ["hat_brim", "hat_brim_top", "hat_crown", "hat_front_highlight", "hat_brim_front_edge"],
+	"hat_band": ["hat_crown_band"],
+	"vest": ["red_shirt_torso", "shirt_front_detail", "left_sleeve", "right_sleeve", "left_sleeve_cuff", "right_sleeve_cuff"],
+	"boots": ["L_boot", "L_boot_toe", "R_boot", "R_boot_toe"],
+}
 
 
 ## Reads the tuning from [param look], builds the model and places it at the spawn point.
@@ -118,7 +135,8 @@ func setup(look: WorldLook, grid: WorldGrid, terrain: LakeTerrain, walk_speed: f
 	scale = Vector3.ONE * look.num("player", "model_scale")
 	_material = MeshBuilder.make_material(look.num("player", "roughness"))
 	_look_ref = look
-	_build_model(look)
+	if not _build_from_file(look):
+		_build_model(look)
 	_load_pose(look)
 	_build_rod(look)
 	ground_pos = WorldGrid.SPAWN
@@ -181,7 +199,8 @@ func setup_display(look: WorldLook) -> void:
 	_hip_height = look.num("player", "hip_height")
 	_material = MeshBuilder.make_material(look.num("player", "roughness"))
 	_look_ref = look
-	_build_model(look)
+	if not _build_from_file(look):
+		_build_model(look)
 	_load_pose(look)
 	_build_rod(look)
 
@@ -192,12 +211,132 @@ func set_outfit(colors: Dictionary) -> void:
 	_outfit = colors
 	if _look_ref == null or _torso == null:
 		return
+	if not _model_materials.is_empty():
+		_dress_model()
+		return
 	for node: Node3D in [_torso, _leg_left, _leg_right]:
 		node.free()
 	_catch_mesh.free()
 	_build_model(_look_ref)
 	_build_rod(_look_ref)
 	_rod_material.albedo_color = _rod_color
+
+
+## Builds the fisherman from the 3D model file (assets/characters/, path in world_look.json):
+## every named part goes under the pivot that animates it (head, torso, arms, legs), turned from
+## the file's Z-up axes to Godot's and scaled to the game height, with the pixel texture shader.
+## Returns false (and the code-built model is used) when the file is missing or not imported.
+func _build_from_file(look: WorldLook) -> bool:
+	var path: String = look.text("player", "model_path")
+	if path == "" or not ResourceLoader.exists(path):
+		return false
+	var scene: PackedScene = load(path) as PackedScene
+	if scene == null:
+		return false
+	var source: Node = scene.instantiate()
+	var meshes: Dictionary = {}
+	for node: Node in source.find_children("*", "MeshInstance3D", true, false):
+		var mi: MeshInstance3D = node
+		if mi.mesh != null:
+			meshes[String(mi.name)] = mi.mesh
+	source.free()
+	if meshes.is_empty():
+		return false
+	var s: float = look.num("player", "model_height") / look.num("player", "model_units_tall")
+	# File axes: x right, y back (the face looks to -y), z up. Godot: x right, y up, z forward.
+	var to_game := Basis.from_scale(Vector3.ONE * s) * Basis(Vector3.RIGHT, -PI * 0.5)
+	var hip := Vector3(0.0, look.num("player", "model_hip_z"), 0.0) * s
+	var shoulder_x: float = look.num("player", "model_shoulder_x") * s
+	var shoulder_y: float = look.num("player", "model_shoulder_z") * s
+	var neck := Vector3(0.0, look.num("player", "model_neck_z"), 0.0) * s
+	var leg_x: float = look.num("player", "model_hip_x") * s
+	_hip_height = hip.y
+	_hand_offset = Vector3(look.num("player", "model_hand_x") * s - shoulder_x, look.num("player", "model_hand_z") * s - shoulder_y, -look.num("player", "model_hand_y") * s)
+	_torso = Node3D.new()
+	_torso.position = hip
+	add_child(_torso)
+	_head = Node3D.new()
+	_head.position = neck - hip
+	_torso.add_child(_head)
+	_arm_left = Node3D.new()
+	_arm_left.position = Vector3(-shoulder_x, shoulder_y, 0.0) - hip
+	_torso.add_child(_arm_left)
+	_arm_right = Node3D.new()
+	_arm_right.position = Vector3(shoulder_x, shoulder_y, 0.0) - hip
+	_torso.add_child(_arm_right)
+	_leg_left = Node3D.new()
+	_leg_left.position = Vector3(-leg_x, hip.y, 0.0)
+	add_child(_leg_left)
+	_leg_right = Node3D.new()
+	_leg_right.position = Vector3(leg_x, hip.y, 0.0)
+	add_child(_leg_right)
+	_model_materials.clear()
+	var plain: ShaderMaterial = _model_material(look, "")
+	for part_name: String in meshes:
+		var pivot: Node3D = _torso
+		var origin: Vector3 = hip
+		if _HEAD_PARTS.has(part_name) or part_name.begins_with("hat_"):
+			pivot = _head
+			origin = neck
+		elif part_name.begins_with("left_") and part_name != "left_overall_strap" and part_name != "left_gold_buckle":
+			pivot = _arm_left
+			origin = Vector3(-shoulder_x, shoulder_y, 0.0)
+		elif part_name.begins_with("right_") and part_name != "right_overall_strap" and part_name != "right_gold_buckle":
+			pivot = _arm_right
+			origin = Vector3(shoulder_x, shoulder_y, 0.0)
+		elif part_name.begins_with("L_"):
+			pivot = _leg_left
+			origin = _leg_left.position
+		elif part_name.begins_with("R_"):
+			pivot = _leg_right
+			origin = _leg_right.position
+		var node := MeshInstance3D.new()
+		node.mesh = meshes[part_name]
+		node.transform = Transform3D(to_game, -origin)
+		node.material_override = plain
+		for group: String in _OUTFIT_GROUPS:
+			if (_OUTFIT_GROUPS[group] as Array).has(part_name):
+				if not _model_materials.has(group):
+					_model_materials[group] = _model_material(look, group)
+					_model_luma[group] = _mesh_luma(node.mesh)
+				node.material_override = _model_materials[group]
+		pivot.add_child(node)
+	_dress_model()
+	return true
+
+
+func _model_material(look: WorldLook, _group: String) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = load(look.text("player", "model_shader")) as Shader
+	material.set_shader_parameter("pixel_tex", load(look.text("player", "model_texture")) as Texture2D)
+	material.set_shader_parameter("texel_scale", look.num("player", "model_texel_scale"))
+	material.set_shader_parameter("detail", look.num("player", "model_texture_detail"))
+	material.set_shader_parameter("colors_srgb", look.num("player", "model_colors_srgb"))
+	return material
+
+
+## Average brightness of a part's vertex colors.
+func _mesh_luma(mesh: Mesh) -> float:
+	var arrays: Array = mesh.surface_get_arrays(0)
+	var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR] if arrays[Mesh.ARRAY_COLOR] != null else PackedColorArray()
+	if colors.is_empty():
+		return 0.5
+	var total: float = 0.0
+	for c: Color in colors:
+		total += c.r * 0.299 + c.g * 0.587 + c.b * 0.114
+	return total / float(colors.size())
+
+
+## Applies the outfit to the model's clothing groups: a piece that is not the default one
+## replaces the group color; the default outfit keeps the model's own colors.
+func _dress_model() -> void:
+	for group: String in _model_materials:
+		var material: ShaderMaterial = _model_materials[group]
+		var dressed: bool = _outfit.has(group) and _outfit.get("_custom_" + group, false)
+		material.set_shader_parameter("use_override", 1.0 if dressed else 0.0)
+		if dressed:
+			material.set_shader_parameter("override_color", _outfit[group])
+			material.set_shader_parameter("luma_ref", _model_luma[group])
 
 
 func _oc(look: WorldLook, key: String) -> Color:
@@ -373,7 +512,7 @@ func _build_rod(look: WorldLook) -> void:
 	_rod_material = StandardMaterial3D.new()
 	_rod_material.roughness = look.num("player", "roughness")
 	var holder := Node3D.new()
-	holder.position = Vector3(0.0, -(look.num("player", "sleeve_length") + look.num("player", "forearm_length")), 0.0)
+	holder.position = _hand_offset if _hand_offset != Vector3.ZERO else Vector3(0.0, -(look.num("player", "sleeve_length") + look.num("player", "forearm_length")), 0.0)
 	holder.rotation.x = PI * 0.5
 	_arm_right.add_child(holder)
 	_add_box(holder, Vector3(thick, base_len, thick), Vector3(0.0, base_len * 0.5, 0.0))
