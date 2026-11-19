@@ -22,13 +22,15 @@ var _data: GameData
 var _state: GameState
 var _clock: GameClock
 var _progression: Progression
+var _farm: Farm
 var _gear: Button
 var _fps: Label
 var _refresh: float = 0.0
 
 
 ## Builds the gear and the FPS label and connects to the state.
-func setup(look: WorldLook, data: GameData, state: GameState, clock: GameClock, progression: Progression) -> void:
+func setup(look: WorldLook, data: GameData, state: GameState, clock: GameClock, progression: Progression, farm: Farm = null) -> void:
+	_farm = farm
 	_look = look
 	_data = data
 	_state = state
@@ -85,7 +87,7 @@ func _draw() -> void:
 	var text_color: Color = _look.color("ui", "pill_text")
 	var x: float = m
 	# Level: star + "Nv 2" + species bar to the next level.
-	var w: float = 290.0
+	var w: float = 260.0
 	_pill(Rect2(x, m, w, h))
 	_star(Vector2(x + 32.0, m + h * 0.5), 20.0)
 	draw_string(font, Vector2(x + 30.0, m + h * 0.5 + 8.0), str(_state.level), HORIZONTAL_ALIGNMENT_CENTER, 4.0, 22, _look.color("ui", "ink"))
@@ -98,15 +100,27 @@ func _draw() -> void:
 	_bar(Rect2(x + 62.0, m + 36.0, w - 140.0, 16.0), k, _look.color("ui", "species_fill"))
 	draw_string(font, Vector2(x + w - 72.0, m + 51.0), "%d/%d" % [have, need], HORIZONTAL_ALIGNMENT_LEFT, 70.0, 18, text_color)
 	x += w + m
+	# Farm level (2026-11-19 farm map): barn icon, "Fazenda 3" and the experience bar.
+	if _farm != null:
+		w = 200.0
+		_pill(Rect2(x, m, w, h))
+		var barn := Vector2(x + 28.0, m + h * 0.5)
+		draw_colored_polygon(PackedVector2Array([barn + Vector2(-15, 14), barn + Vector2(-15, -3), barn + Vector2(0, -16), barn + Vector2(15, -3), barn + Vector2(15, 14)]), _look.color("ui", "energy_low"))
+		draw_rect(Rect2(barn + Vector2(-5, 2), Vector2(10, 12)), _look.color("ui", "pill_text"))
+		draw_string(font, Vector2(x + 52.0, m + 26.0), Texts.fmt("farm_level", [_farm.level()]), HORIZONTAL_ALIGNMENT_LEFT, w - 56.0, 20, text_color)
+		var bounds: Vector2i = _farm.level_bounds()
+		var fk: float = 1.0 if bounds.y < 0 else clampf(float(_state.farm_xp - bounds.x) / float(maxi(bounds.y - bounds.x, 1)), 0.0, 1.0)
+		_bar(Rect2(x + 52.0, m + 36.0, w - 66.0, 16.0), fk, _look.color("ui", "coin"))
+		x += w + m
 	# Coins.
-	w = 170.0
+	w = 160.0
 	_pill(Rect2(x, m, w, h))
 	draw_circle(Vector2(x + 30.0, m + h * 0.5), 15.0, _look.color("ui", "coin"))
 	draw_arc(Vector2(x + 30.0, m + h * 0.5), 15.0, 0.0, TAU, 20, _look.color("ui", "coin_dark"), 3.0)
 	draw_string(font, Vector2(x + 54.0, m + h * 0.5 + 9.0), str(_state.coins), HORIZONTAL_ALIGNMENT_LEFT, w - 60.0, 26, text_color)
 	x += w + m
 	# Energy.
-	w = 230.0
+	w = 200.0
 	_pill(Rect2(x, m, w, h))
 	var energy_max: float = _data.fixed("energy_max")
 	var e: float = clampf(_state.energy / energy_max, 0.0, 1.0)
@@ -115,7 +129,7 @@ func _draw() -> void:
 	draw_string(font, Vector2(x + w - 68.0, m + 40.0), Texts.fmt("energy_fmt", [roundi(e * 100.0)]), HORIZONTAL_ALIGNMENT_LEFT, 66.0, 20, text_color)
 	x += w + m
 	# Clock: sun or moon, day, time and period.
-	w = 300.0
+	w = 250.0
 	_pill(Rect2(x, m, w, h))
 	var hour: float = fmod(_state.minutes / 60.0, 24.0)
 	var night: bool = hour >= 18.5 or hour < 6.0

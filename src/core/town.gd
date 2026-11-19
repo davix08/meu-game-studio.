@@ -61,7 +61,7 @@ func storage_upgrade_cost() -> int:
 
 ## Moves bag fish [param index] into the warehouse.
 func to_storage(index: int) -> Result:
-	if not _state.is_built("armazem"):
+	if not _state.is_built("galpao") and not _state.is_built("armazem"):
 		return Result.NOT_BUILT
 	if index < 0 or index >= _state.bag.size():
 		return Result.EMPTY
@@ -106,11 +106,25 @@ func storage_value() -> int:
 	return total
 
 
-## Value of the goods that can be sold (sell price above 0).
+## True when a good is sold by "Vender tudo": it has a sell price and is not a material or
+## feed the farm buys (farm_life.shop_goods), so wood, stone and corn are never sold by mistake.
+func is_product(id: String) -> bool:
+	if int(_town.good(id).get("sell", 0)) <= 0:
+		return false
+	if _town.group("farm_life").has("shop_goods") and _town.list("farm_life", "shop_goods").has(id):
+		return false
+	return true
+
+
+## Value of the products in the bag and in the shed (galpão).
 func goods_value() -> int:
 	var total: int = 0
 	for id: String in _state.goods:
-		total += int(_town.good(id).get("sell", 0)) * _state.good_count(id)
+		if is_product(id):
+			total += int(_town.good(id).get("sell", 0)) * _state.good_count(id)
+	for id: String in _state.shed:
+		if is_product(id):
+			total += int(_town.good(id).get("sell", 0)) * int(_state.shed[id])
 	return total
 
 
@@ -122,8 +136,11 @@ func sell_storage_and_goods() -> int:
 		return 0
 	_state.storage.clear()
 	for id: String in _state.goods.keys():
-		if int(_town.good(id).get("sell", 0)) > 0:
+		if is_product(id):
 			_state.goods[id] = 0
+	for id: String in _state.shed.keys():
+		if is_product(id):
+			_state.shed[id] = 0
 	_state.coins += earned
 	_state.stats_earned += earned
 	_state.town_changed.emit()
@@ -412,17 +429,25 @@ func buy_animal(kind: String) -> Result:
 	return Result.OK
 
 
-## Fills the trough of [param home_id] with feed (ração first, then wheat) up to its capacity.
+## Fills the trough of [param home_id] with the feeds that home takes (in order), from the bag
+## first and then from the shed, up to its capacity.
 func fill_trough(home_id: String) -> Result:
 	var room: int = int(_town.num("ranch", "trough_capacity")) - _state.troughs.get(home_id, 0)
 	if room <= 0:
 		return Result.FULL
+	var feeds: Array = _town.list("ranch", "feeds")
+	for h: Variant in _town.homes():
+		if str((h as Dictionary)["id"]) == home_id and (h as Dictionary).has("feeds"):
+			feeds = (h as Dictionary)["feeds"]
 	var moved: int = 0
-	for feed: Variant in _town.list("ranch", "feeds"):
+	for feed: Variant in feeds:
 		var id: String = str(feed)
 		var take: int = mini(room - moved, _state.good_count(id))
 		_state.add_good(id, -take)
 		moved += take
+		var from_shed: int = mini(room - moved, int(_state.shed.get(id, 0)))
+		_state.shed[id] = int(_state.shed.get(id, 0)) - from_shed
+		moved += from_shed
 	if moved == 0:
 		return Result.MISSING
 	_state.troughs[home_id] = _state.troughs.get(home_id, 0) + moved
@@ -543,10 +568,18 @@ func on_new_day() -> void:
 		if trough >= feed:
 			_state.troughs[home_id] = trough - feed
 			a["joy"] = minf(100.0, float(a["joy"]) + _town.num("ranch", "joy_fed"))
-			var products: Dictionary = _state.pending.get(home_id, {})
 			var product: String = str(info["product"])
-			products[product] = int(products.get(product, 0)) + 1
-			_state.pending[home_id] = products
+			if bool(info.get("milk", false)) and not _state.milker:
+				a["milk_ready"] = true
+			elif product != "":
+				var products: Dictionary = _state.pending.get(home_id, {})
+				products[product] = int(products.get(product, 0)) + 1
+				_state.pending[home_id] = products
+			if info.has("grows_into"):
+				a["age"] = int(a.get("age", 0)) + 1
+				if int(a["age"]) >= int(info["grow_days"]):
+					a["kind"] = str(info["grows_into"])
+					a["age"] = 0
 		else:
 			a["joy"] = maxf(0.0, float(a["joy"]) - _town.num("ranch", "joy_hungry"))
 	if _state.meals_wanted > 0:

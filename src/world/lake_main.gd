@@ -53,12 +53,14 @@ var _actions: ActionBar
 var _screens: Screens
 var _sfx: Sfx
 var _town_view: TownView
-var _farm: FarmView
+var _farm: Farm
+var _truck: DeliveryTruck
 var _ranch: RanchView
 var _npcs: NpcView
 var _cycle: DayNight
 var _spots: Array[Spot] = []
 var _spot: Spot
+var _box_spot := Spot.new()
 var _water_plane: Plane
 var _water_y: float = 0.0
 var _run_threshold: float = 0.95
@@ -91,10 +93,7 @@ func _ready() -> void:
 	_town_view = TownView.new()
 	add_child(_town_view)
 	_town_view.setup(_look, _town_data, _state, _world.grid)
-	_farm = FarmView.new()
-	add_child(_farm)
-	_farm.setup(_look, _town_data, _state)
-	_town.ensure_plots(_farm.plot_count)
+	_farm = Farm.new(_data, _town_data, _state, _town)
 	_ranch = RanchView.new()
 	add_child(_ranch)
 	_ranch.setup(_look, _town_data, _state, _world.terrain)
@@ -102,9 +101,14 @@ func _ready() -> void:
 	_fisherman = Fisherman.new()
 	add_child(_fisherman)
 	_fisherman.setup(_look, _world.grid, _world.terrain, _data.tune("walk_speed") / WorldGrid.PIXELS_PER_BLOCK, _data.tune("run_speed") / WorldGrid.PIXELS_PER_BLOCK)
-	_npcs = NpcView.new()
-	add_child(_npcs)
-	_npcs.setup(_look, _town_data, _state, _world.grid, _world.terrain, _town)
+	# The village neighbors stay in the code for the city; the farm map has none (2026-11-19).
+	if not _town_data.neighbors().is_empty():
+		_npcs = NpcView.new()
+		add_child(_npcs)
+		_npcs.setup(_look, _town_data, _state, _world.grid, _world.terrain, _town)
+	_truck = DeliveryTruck.new()
+	add_child(_truck)
+	_truck.setup(_look, _town_data, _state, _farm, _world.grid, _world.terrain)
 
 	_camera = FollowCamera.new()
 	add_child(_camera)
@@ -169,9 +173,10 @@ func _build_interface() -> void:
 	ctx.progression = _progression
 	ctx.energy = _energy
 	ctx.clock = _clock
+	ctx.farm = _farm
 	_top = TopBar.new()
 	root.add_child(_top)
-	_top.setup(_look, _data, _state, _clock, _progression)
+	_top.setup(_look, _data, _state, _clock, _progression, _farm)
 	_fishing_hud = FishingHud.new()
 	root.add_child(_fishing_hud)
 	_fishing_hud.setup(_look, _data, _state)
@@ -199,6 +204,12 @@ func _connect_events() -> void:
 	_state.day_started.connect(_on_day_started)
 	_economy.fish_sold.connect(_on_fish_sold)
 	_machine.fish_bit.connect(_on_fish_bit)
+	_farm.farm_level_up.connect(_on_farm_level_up)
+
+
+func _on_farm_level_up(level: int) -> void:
+	_sfx.play(&"level")
+	_screens.toast(Texts.fmt("farm_up", [level]))
 
 
 func _open_settings() -> void:
@@ -206,8 +217,9 @@ func _open_settings() -> void:
 	_screens.open_settings()
 
 
-func _on_fish_caught(_fish: GameState.Catch, _is_new: bool, _is_record: bool) -> void:
+func _on_fish_caught(fish: GameState.Catch, _is_new: bool, _is_record: bool) -> void:
 	_sfx.play(&"catch")
+	_farm.add_xp(_farm.xp_for_catch(_data.species_by_id(fish.id).rarity))
 	_save_soon = true
 
 
@@ -230,8 +242,9 @@ func _begin(fresh: bool) -> void:
 		var pos := Vector2(_state.position.x, _state.position.z) / WorldGrid.PIXELS_PER_BLOCK
 		if _state.position != Vector3.ZERO and _world.grid.box_free(pos.x, pos.y, 0.25, 0.16):
 			_fisherman.teleport(pos)
-		_town.ensure_plots(_farm.plot_count)
 		_state.town_changed.emit()
+	for key: Variant in _state.chopped:
+		_set_cut(int(str(key)), true)
 	_town.ensure_requests()
 	_dress()
 	_sfx.set_enabled(_state.sound_on)
@@ -335,7 +348,8 @@ func _save() -> void:
 	_save_timer = _data.tune("autosave_seconds")
 	_save_soon = false
 	_sync_position()
-	_npcs.store()
+	if _npcs != null:
+		_npcs.store()
 	SaveGame.write(_state)
 
 
@@ -360,7 +374,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## A tap on the world: a neighbor opens the dialog (Story 013); otherwise it casts.
 func _tap(screen_pos: Vector2) -> void:
-	var who: String = _npcs.npc_at_screen(_camera, screen_pos, _look.num("npc", "tap_radius") * 60.0)
+	var who: String = _npcs.npc_at_screen(_camera, screen_pos, _look.num("npc", "tap_radius") * 60.0) if _npcs != null else ""
 	if who != "" and _machine.is_idle():
 		_sfx.play(&"click")
 		_screens.open_neighbor(who)
@@ -423,6 +437,8 @@ func _toggle_rest() -> void:
 
 func _on_day_started(day: int, auto: bool) -> void:
 	_town.on_new_day()
+	for index: int in _farm.regrow():
+		_set_cut(index, false)
 	_fisherman.teleport(WorldGrid.SPAWN)
 	_screens.show_sleep(day, auto)
 	_save_soon = true
@@ -438,31 +454,82 @@ func _on_lights(on: bool) -> void:
 
 func _build_spots() -> void:
 	var reach: float = _look.num("town", "door_reach")
-	_add_spot(_shop_point(), reach, _label_fixed.bind("act_shop"), _screens.open_shop.bind(Screens.ShopTab.SELL))
-	var screens_by_lot: Dictionary = {
-		"prefeitura": ["act_cityhall", _screens.open_cityhall],
-		"armazem": ["act_warehouse", _screens.open_warehouse],
-		"oficina": ["act_workshop", _screens.open_workshop],
-		"restaurante": ["act_restaurant", _screens.open_restaurant],
-		"roupas": ["act_clothes", _screens.open_clothes],
-	}
-	for id: String in TownPlan.lot_ids(_look):
-		var name: String = str(_town_data.lot(id).get("name", id))
-		if screens_by_lot.has(id):
-			var entry: Array = screens_by_lot[id]
-			_add_spot(TownPlan.lot_door(_look, id), reach, _label_lot.bind(id, str(entry[0]), name), _open_lot.bind(id, entry[1]))
-		elif id.begins_with("casa_"):
-			for n: Variant in _town_data.neighbors():
-				var nb: Dictionary = n
-				if str(nb["lot"]) == id:
-					_add_spot(TownPlan.lot_door(_look, id), reach, _label_talk.bind(str(nb["name"])), _screens.open_neighbor.bind(str(nb["id"])))
-		elif id == "campos":
-			_add_spot(TownPlan.lot_door(_look, id) + Vector2(1.0, 0.0), reach, _label_site.bind(id, name), _screens.toast.bind(Texts.get_text("not_built")))
-	for i in _farm.plot_count:
-		_add_spot(_farm.anchor(i), 1.1, _plot_label.bind(i), _use_plot.bind(i))
-	for home: String in ["galinheiro", "pasto"]:
-		var key: String = "act_coop" if home == "galinheiro" else "act_pasture"
-		_add_spot(_ranch.anchor(home), reach, _label_fixed.bind(key), _screens.open_ranch.bind(home))
+	if TownPlan.has_lot(_look, "galpao"):
+		_add_spot(TownPlan.lot_door(_look, "galpao"), reach, _label_fixed.bind("act_shed"), _screens.open_shed)
+	for home: String in ["galinheiro", "curral"]:
+		if TownPlan.has_lot(_look, home):
+			_add_spot(TownPlan.lot_door(_look, home), reach, _label_home.bind(home), _use_home.bind(home))
+	if TownPlan.has_lot(_look, "plantacao"):
+		_add_spot(TownPlan.lot_door(_look, "plantacao"), reach, _label_fixed.bind("act_field"), _screens.toast.bind(Texts.get_text("field_soon")))
+	if _look.has("town", "city_gate"):
+		var g: Array = _look.raw("town", "city_gate")
+		_add_spot(Vector2(float(g[0]) - 0.5, float(g[1]) + float(g[3]) * 0.5), 2.5, _label_fixed.bind("act_city"), _screens.toast.bind(Texts.get_text("city_soon")))
+	for index: int in _world.props.cuttable():
+		var p: WorldGrid.Placement = _world.grid.placements[index]
+		var rock: bool = p.kind == &"rock"
+		_add_spot(Vector2(p.cell) + Vector2(0.5, 0.5), 1.35, _label_cut.bind(index, rock), _cut.bind(index, rock))
+
+
+func _label_fixed(key: String) -> String:
+	return Texts.get_text(key)
+
+
+func _label_home(home: String) -> String:
+	var name: String = str(_town_data.lot(home).get("name", home))
+	if not _state.is_built(home):
+		return Texts.fmt("act_build", [name])
+	if home == "galinheiro" and _town.pending_count(home) > 0:
+		return Texts.fmt("act_eggs", [_town.pending_count(home)])
+	if home == "curral" and _farm.cows_to_milk() > 0:
+		return Texts.fmt("act_milk", [_farm.cows_to_milk()])
+	if home == "curral" and _town.pending_count(home) > 0:
+		return Texts.fmt("act_milk_bucket", [_town.pending_count(home)])
+	return name
+
+
+## The coop or corral door: build it, collect eggs, milk, or open its screen.
+func _use_home(home: String) -> void:
+	if not _state.is_built(home):
+		_sfx.play(&"click")
+		_screens.open_build(home)
+	elif _town.pending_count(home) > 0 and (home == "galinheiro" or _state.milker):
+		var r: Farm.Result = _farm.collect(home)
+		_sfx.play(&"coin" if r == Farm.Result.OK else &"error")
+		_screens.toast(Texts.get_text("eggs_ok" if home == "galinheiro" else "collected") if r == Farm.Result.OK else Texts.get_text("bag_full"))
+	elif home == "curral" and _farm.cows_to_milk() > 0:
+		var r: Farm.Result = _farm.milk()
+		_sfx.play(&"coin" if r == Farm.Result.OK else &"error")
+		_screens.toast(Texts.get_text("milked") if r == Farm.Result.OK else (Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy")))
+	else:
+		_sfx.play(&"click")
+		_screens.open_ranch(home)
+
+
+func _label_cut(index: int, rock: bool) -> String:
+	if _state.chopped.has(str(index)):
+		return ""
+	return Texts.get_text("act_rock" if rock else "act_chop")
+
+
+## Cuts the tree or breaks the rock of placement [param index].
+func _cut(index: int, rock: bool) -> void:
+	var r: Farm.Result = _farm.gather(index, rock)
+	if r == Farm.Result.OK:
+		_set_cut(index, true)
+		_sfx.play(&"coin")
+		_screens.toast(Texts.fmt("broke" if rock else "chopped", [int(_town_data.num("farm_life", "stone_yield" if rock else "wood_yield"))]))
+	else:
+		_sfx.play(&"error")
+		_screens.toast(Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy"))
+
+
+## Hides or shows a cut tree or rock and frees or blocks its block.
+func _set_cut(index: int, cut: bool) -> void:
+	if index < 0 or index >= _world.grid.placements.size():
+		return
+	var cell: Vector2i = _world.grid.placements[index].cell
+	_world.props.set_cut(index, cut)
+	_world.grid.set_solid(cell.x, cell.y, not cut)
 
 
 func _add_spot(pos: Vector2, radius: float, label: Callable, action: Callable) -> void:
@@ -472,65 +539,6 @@ func _add_spot(pos: Vector2, radius: float, label: Callable, action: Callable) -
 	spot.label = label
 	spot.action = action
 	_spots.append(spot)
-
-
-func _label_fixed(key: String) -> String:
-	return Texts.get_text(key)
-
-
-func _label_lot(id: String, key: String, name: String) -> String:
-	return Texts.get_text(key) if _state.is_built(id) else Texts.fmt("act_site", [name])
-
-
-func _label_talk(name: String) -> String:
-	return Texts.fmt("act_talk", [name])
-
-
-func _label_site(id: String, name: String) -> String:
-	return "" if _state.is_built(id) else Texts.fmt("act_site", [name])
-
-
-func _shop_point() -> Vector2:
-	var shop: Rect2i = EstateMeshes.cell_rect(_look, "shop")
-	return Vector2(float(shop.end.x) + 0.5, float(shop.position.y) + 1.5)
-
-
-func _open_lot(id: String, open: Callable) -> void:
-	if _state.is_built(id):
-		_sfx.play(&"click")
-		open.call()
-	else:
-		_screens.toast(Texts.get_text("not_built"))
-
-
-func _plot_label(i: int) -> String:
-	if not _farm.usable(i) or i >= _state.plots.size():
-		return ""
-	match _town.stage(i):
-		Town.Stage.EMPTY:
-			return Texts.get_text("plant")
-		Town.Stage.RIPE:
-			return Texts.get_text("harvest")
-	return Texts.get_text("plot_title") if bool(_state.plots[i]["watered"]) else Texts.get_text("water")
-
-
-## Waters or harvests at once; empty or already watered plots open the plot screen.
-func _use_plot(i: int) -> void:
-	var stage: Town.Stage = _town.stage(i)
-	if stage == Town.Stage.RIPE:
-		var crop: Dictionary = _town_data.crop(str(_state.plots[i]["crop"]))
-		var r: Town.Result = _town.harvest(i)
-		if r == Town.Result.OK:
-			_sfx.play(&"coin")
-			_screens.toast(Texts.fmt("harvested", [int(crop["harvest"]), str(crop["name"])]))
-		else:
-			_screens.toast(Texts.get_text("no_energy") if r == Town.Result.NO_ENERGY else Texts.get_text("not_ready"))
-	elif stage != Town.Stage.EMPTY and not bool(_state.plots[i]["watered"]):
-		var w: Town.Result = _town.water(i)
-		_sfx.play(&"click" if w == Town.Result.OK else &"error")
-		_screens.toast(Texts.get_text("watered") if w == Town.Result.OK else Texts.get_text("no_energy"))
-	else:
-		_screens.open_plot(i)
 
 
 ## Finds the nearest usable spot in reach and shows the context button.
@@ -548,7 +556,21 @@ func _update_spot() -> void:
 					best = d
 					_spot = spot
 					text = label
+		var boxes: Array[Vector2] = _truck.box_spots()
+		for i in boxes.size():
+			var d: float = me.distance_to(boxes[i])
+			if d <= _look.num("town", "door_reach") and d < best:
+				best = d
+				_box_spot.action = _open_box.bind(i)
+				_spot = _box_spot
+				text = Texts.get_text("act_box")
 	_actions.show_context(text)
+
+
+func _open_box(index: int) -> void:
+	if _farm.open_box(index) == Farm.Result.OK:
+		_sfx.play(&"coin")
+		_screens.toast(Texts.get_text("box_opened"))
 
 
 func _use_spot() -> void:
@@ -556,13 +578,10 @@ func _use_spot() -> void:
 		_spot.action.call()
 
 
+## The shop is on the phone (farm map): it opens anywhere.
 func _open_shop_if_near() -> void:
-	if _fisherman.ground_pos.distance_to(_shop_point()) <= _look.num("town", "door_reach") * 2.0:
-		_sfx.play(&"click")
-		_screens.open_shop()
-	else:
-		_sfx.play(&"error")
-		_screens.toast(Texts.get_text("shop_far"))
+	_sfx.play(&"click")
+	_screens.open_shop()
 
 
 ## The machine measures distances in 2D pixel units on the ground plane.

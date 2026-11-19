@@ -25,8 +25,14 @@ static func building(look: WorldLook, id: String, glass: MeshBuilder) -> ArrayMe
 	match id:
 		"prefeitura":
 			_townhall(mb, glass, look, r)
-		"armazem":
+		"armazem", "galpao":
 			_warehouse(mb, glass, look, r)
+		"galinheiro":
+			_coop_lot(mb, glass, look, r)
+		"curral":
+			_corral(mb, look, r)
+		"plantacao":
+			_field(mb, look, r)
 		"roupas":
 			_clothes(mb, glass, look, r)
 		"restaurante":
@@ -259,6 +265,112 @@ static func _pasture(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
 	EstateMeshes._box(mb, bx0, 0.0, bz0, bx0 + 3.0, 1.8, bz0 + 2.0, look.color("colors", "wood_a"))
 	EstateMeshes._gable(mb, bx0, bx0 + 3.0, bz0, bz0 + 2.0, 1.8, 0.8, 0.25, 6, look.color("colors", "roof_a"), look.color("colors", "roof_b"), look.color("colors", "roof_ridge"), look.color("colors", "wood_a"), look.color("colors", "wood_dark"))
 	EstateMeshes._box(mb, bx0 + 1.0, 0.0, bz0 + 1.98, bx0 + 2.0, 1.3, bz0 + 2.04, look.color("colors", "wood_dark"))
+
+
+# --- farm (2026-11-19 map) ---
+
+## The chicken coop lot: a small red-roofed coop at the back, a fenced yard with a gate at the
+## door, a feeder and the egg basket outside the gate.
+static func _coop_lot(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_lot_fence(mb, look, r, "galinheiro")
+	var x0: float = float(r.position.x) + 0.6
+	var z0: float = float(r.position.y) + 0.4
+	var x1: float = x0 + 4.0
+	var z1: float = z0 + 2.2
+	EstateMeshes._box(mb, x0, 0.0, z0, x1, 0.25, z1, look.color("colors", "stone"))
+	EstateMeshes._planks(mb, x0, x1, z0, z1, 0.25, 1.9, 8, look.color("estate", "coop_wall"), look.color("estate", "coop_wall").darkened(0.1))
+	EstateMeshes._gable(mb, x0, x1, z0, z1, 1.9, 0.9, 0.3, 8, look.color("colors", "roof_a"), look.color("colors", "roof_b"), look.color("colors", "roof_ridge"), look.color("estate", "coop_wall"), look.color("colors", "wood_dark"))
+	mb.add_box(Vector3(x0 + 1.0, 0.75, z1 + 0.03), Vector3(0.6, 0.9, 0.06), look.color("colors", "door"))
+	EstateMeshes._beam(mb, Vector3(x0 + 1.0, 0.0, z1 + 0.9), Vector3(x0 + 1.0, 0.35, z1 + 0.05), 0.25, _c(look, "plank"))
+	_pane(mb, glass, look, Vector3(x0 + 2.8, 1.2, z1), Vector3(0.6, 0.5, 0.0), look.color("colors", "wall_trim"))
+	mb.add_box(Vector3(x1 + 1.2, 0.2, z1 + 0.8), Vector3(1.2, 0.3, 0.4), _c(look, "trough"))
+	mb.add_box(Vector3(x1 + 1.2, 0.36, z1 + 0.8), Vector3(1.0, 0.04, 0.3), look.color("estate", "hay"))
+	var basket: Vector3 = egg_basket(look)
+	mb.add_cone(basket, 0.32, 0.38, 0.28, look.color("estate", "straw").darkened(0.25), look.color("estate", "straw"), 10, false, true)
+
+
+## Where the egg basket stands (outside the coop gate).
+static func egg_basket(look: WorldLook) -> Vector3:
+	var d: Vector2 = TownPlan.lot_door(look, "galinheiro")
+	return Vector3(d.x - 1.4, 0.0, d.y + 0.2)
+
+
+## The milking corral: fence with a gate, a roofed milking stall, a feed trough and a water tub.
+static func _corral(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_lot_fence(mb, look, r, "curral")
+	var x0: float = float(r.position.x) + 0.7
+	var z0: float = float(r.position.y) + 0.7
+	var post: Color = look.color("colors", "wood_dark")
+	for p: Vector2 in [Vector2(x0, z0), Vector2(x0 + 3.0, z0), Vector2(x0, z0 + 2.6), Vector2(x0 + 3.0, z0 + 2.6)]:
+		mb.add_box(Vector3(p.x, 1.1, p.y), Vector3(0.14, 2.2, 0.14), post)
+	EstateMeshes._gable(mb, x0 - 0.1, x0 + 3.1, z0 - 0.1, z0 + 2.7, 2.2, 0.7, 0.25, 6, look.color("colors", "roof_a"), look.color("colors", "roof_b"), look.color("colors", "roof_ridge"), _c(look, "plank"), post)
+	EstateMeshes._planks(mb, x0, x0 + 3.0, z0, z0 + 0.1, 0.0, 1.2, 4, _c(look, "plank"), _c(look, "plank_light"))
+	mb.add_box(Vector3(x0 + 1.5, 0.2, z0 + 1.3), Vector3(0.35, 0.4, 0.35), post)
+	var door: Vector2 = TownPlan.lot_door(look, "curral")
+	var tx: float = float(r.end.x) - 1.0
+	mb.add_box(Vector3(tx, 0.25, door.y - 2.0), Vector3(0.6, 0.35, 1.6), _c(look, "trough"))
+	mb.add_box(Vector3(tx, 0.4, door.y - 2.0), Vector3(0.45, 0.06, 1.4), _c(look, "hay"))
+	mb.add_cone(Vector3(tx, 0.0, door.y + 1.6), 0.45, 0.45, 0.45, _c(look, "trough"), _c(look, "trough"), 10)
+	mb.add_cone(Vector3(tx, 0.4, door.y + 1.6), 0.4, 0.4, 0.04, _c(look, "water_blue"), _c(look, "water_blue"), 10, true)
+
+
+## The future field (locked at farm level 8): fence, tilled rows and small sprouts.
+static func _field(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	_lot_fence(mb, look, r, "plantacao")
+	var soil: Color = _c(look, "crop_soil_dry")
+	var leaf: Color = _c(look, "crop_leaf")
+	var rows: int = r.size.y - 2
+	for k in rows:
+		var z: float = float(r.position.y) + 1.5 + float(k)
+		EstateMeshes._box(mb, float(r.position.x) + 1.0, 0.0, z - 0.32, float(r.end.x) - 1.0, 0.16, z + 0.32, soil.darkened(0.05 * float(k % 2)))
+		var n: int = r.size.x - 2
+		for i in n:
+			var x: float = float(r.position.x) + 1.5 + float(i)
+			mb.add_ellipsoid(Vector3(x, 0.24, z), Vector3(0.12, 0.1, 0.12), leaf.darkened(0.2), leaf, 5, 3, true)
+
+
+## A fence around lot [param id] with a gap at its door.
+static func _lot_fence(mb: MeshBuilder, look: WorldLook, r: Rect2i, id: String) -> void:
+	var wood: Color = look.color("colors", "wood_b")
+	var post: Color = look.color("colors", "wood_dark")
+	var x0: float = float(r.position.x) + 0.15
+	var z0: float = float(r.position.y) + 0.15
+	var x1: float = float(r.end.x) - 0.15
+	var z1: float = float(r.end.y) - 0.15
+	var door: Vector2 = TownPlan.lot_door(look, id)
+	var corners: Array[Vector2] = [Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1)]
+	for i in 4:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[(i + 1) % 4]
+		var n: int = maxi(1, int(a.distance_to(b)))
+		for k in n:
+			var p0: Vector2 = a.lerp(b, float(k) / float(n))
+			var p1: Vector2 = a.lerp(b, float(k + 1) / float(n))
+			var mid: Vector2 = (p0 + p1) * 0.5
+			if mid.distance_to(door) < 1.25:
+				continue
+			mb.add_box(Vector3(p0.x, 0.45, p0.y), Vector3(0.12, 0.9, 0.12), post)
+			EstateMeshes._beam(mb, Vector3(p0.x, 0.65, p0.y), Vector3(p1.x, 0.65, p1.y), 0.07, wood)
+			EstateMeshes._beam(mb, Vector3(p0.x, 0.35, p0.y), Vector3(p1.x, 0.35, p1.y), 0.07, wood)
+
+
+## The closed road to the city: barrier posts and a signpost (the striped arm that lifts for the
+## truck is built by [DeliveryTruck]).
+static func city_gate(look: WorldLook) -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var g: Array = look.raw(GROUP, "city_gate")
+	var x: float = float(g[0]) + 0.5
+	var z0: float = float(g[1])
+	var z1: float = float(g[1]) + float(g[3])
+	var post: Color = look.color("colors", "wood_dark")
+	for z: float in [z0 + 0.2, z1 - 0.2]:
+		mb.add_box(Vector3(x, 0.6, z), Vector3(0.18, 1.2, 0.18), post)
+	var sign: Array = look.raw(GROUP, "city_sign")
+	var s := Vector3(float(sign[0]), 0.0, float(sign[1]))
+	mb.add_box(s + Vector3(0.0, 0.8, 0.0), Vector3(0.1, 1.6, 0.1), post)
+	mb.add_box(s + Vector3(0.35, 1.4, 0.0), Vector3(0.9, 0.3, 0.06), _c(look, "sign_color"))
+	mb.add_triangle(s + Vector3(0.8, 1.25, 0.0), s + Vector3(0.8, 1.55, 0.0), s + Vector3(1.0, 1.4, 0.0), _c(look, "sign_color"), Vector3.BACK)
+	return mb.build()
 
 
 static func _c(look: WorldLook, key: String) -> Color:

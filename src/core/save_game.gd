@@ -23,7 +23,9 @@ extends RefCounted
 ## [/codeblock]
 
 ## Version written by this class.
-const FORMAT_VERSION: int = 3
+const FORMAT_VERSION: int = 4
+## Format 3 (the village map), still read: the player goes back to the farm house.
+const V3_VERSION: int = 3
 ## Previous format (before the town), still read.
 const V2_VERSION: int = 2
 ## Version of the 2D prototype's save ("v": 1).
@@ -81,6 +83,12 @@ static func to_dict(state: GameState) -> Dictionary:
 		"meals_wanted": state.meals_wanted,
 		"meals_served": state.meals_served,
 		"npcs": state.npcs.duplicate(true),
+		"farm_xp": state.farm_xp,
+		"shed": state.shed.duplicate(),
+		"orders": state.orders.duplicate(true),
+		"boxes": state.boxes.duplicate(true),
+		"chopped": state.chopped.duplicate(),
+		"milker": state.milker,
 		"sound_on": state.sound_on,
 		"show_fps": state.show_fps,
 	}
@@ -116,10 +124,12 @@ static func read(path: String = DEFAULT_PATH) -> Dictionary:
 	var save: Dictionary = parsed
 	if save.has("version") and int(_number(save, "version", 0)) == FORMAT_VERSION:
 		return save
+	if save.has("version") and int(_number(save, "version", 0)) == V3_VERSION:
+		return convert_v3(save)
 	if save.has("version") and int(_number(save, "version", 0)) == V2_VERSION:
-		return convert_v2(save)
+		return convert_v3(convert_v2(save))
 	if not save.has("version") and int(_number(save, "v", 0)) == V1_VERSION:
-		return convert_v1(save)
+		return convert_v3(convert_v1(save))
 	push_warning("SaveGame: %s has an unknown version; ignored" % path)
 	return {}
 
@@ -164,10 +174,20 @@ static func convert_v1(v1: Dictionary) -> Dictionary:
 	return convert_v2(out)
 
 
+## Converts a format 3 save (village map) to format 4 (farm map): same progress, but the
+## position and the neighbor walkers are dropped, so the farmer starts at the house.
+static func convert_v3(v3: Dictionary) -> Dictionary:
+	var out: Dictionary = v3.duplicate(true)
+	out["version"] = FORMAT_VERSION
+	out.erase("pos")
+	out.erase("npcs")
+	return out
+
+
 ## Converts a format 2 save: same fields, the position moved onto the bigger map (Story 009).
 static func convert_v2(v2: Dictionary) -> Dictionary:
 	var out: Dictionary = v2.duplicate(true)
-	out["version"] = FORMAT_VERSION
+	out["version"] = V3_VERSION
 	if out.get("pos") is Array and (out["pos"] as Array).size() == 3:
 		var pos: Array = out["pos"]
 		if _is_number(pos[0]) and _is_number(pos[2]):
@@ -249,7 +269,7 @@ static func _apply_town(state: GameState, data: GameData, save: Dictionary) -> v
 		for a: Variant in save["animals"]:
 			if a is Dictionary:
 				var animal: Dictionary = a
-				state.animals.append({"kind": str(animal.get("kind", "")), "joy": _number(animal, "joy", 50.0)})
+				state.animals.append({"kind": str(animal.get("kind", "")), "joy": _number(animal, "joy", 50.0), "age": int(_number(animal, "age", 0)), "milk_ready": bool(animal.get("milk_ready", false))})
 	if save.get("troughs") is Dictionary:
 		var troughs: Dictionary = save["troughs"]
 		for id: Variant in troughs:
@@ -280,6 +300,23 @@ static func _apply_town(state: GameState, data: GameData, save: Dictionary) -> v
 	state.meals_served = int(_number(save, "meals_served", state.meals_served))
 	if save.get("npcs") is Dictionary:
 		state.npcs = (save["npcs"] as Dictionary).duplicate(true)
+	state.farm_xp = int(_number(save, "farm_xp", state.farm_xp))
+	if save.get("shed") is Dictionary:
+		var shed: Dictionary = save["shed"]
+		for id: Variant in shed:
+			if _is_number(shed[id]):
+				state.shed[str(id)] = int(shed[id])
+	for key: String in ["orders", "boxes"]:
+		if save.get(key) is Array:
+			var list: Array[Dictionary] = state.orders if key == "orders" else state.boxes
+			list.clear()
+			for o: Variant in save[key]:
+				if o is Dictionary and (o as Dictionary).get("items") is Dictionary:
+					list.append({"dest": str((o as Dictionary).get("dest", "galpao")), "items": ((o as Dictionary)["items"] as Dictionary).duplicate()})
+	if save.get("chopped") is Dictionary:
+		state.chopped = (save["chopped"] as Dictionary).duplicate()
+	if save.get("milker") is bool:
+		state.milker = save["milker"]
 	if save.get("sound_on") is bool:
 		state.sound_on = save["sound_on"]
 	if save.get("show_fps") is bool:

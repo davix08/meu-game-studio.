@@ -147,6 +147,19 @@ var meals_wanted: int = 0
 var meals_served: int = 0
 ## Neighbor walkers: id -> {"x": float, "z": float, "step": int} (Story 013).
 var npcs: Dictionary = {}
+# --- Farm (2026-11-19 farm map). Saved by [SaveGame] format 4. ---
+## Farm experience; the farm level comes from it ([Farm.level]).
+var farm_xp: int = 0
+## Goods kept in the shed (galpão): good id -> count. The bag holds [member goods].
+var shed: Dictionary = {}
+## Paid orders waiting for the truck: {"dest": "galpao" or a home id, "items": {id: count}}.
+var orders: Array[Dictionary] = []
+## Boxes left by the truck, waiting to be opened: {"dest", "items"}.
+var boxes: Array[Dictionary] = []
+## Trees and rocks cut: placement index (as text) -> day they grow back.
+var chopped: Dictionary = {}
+## The milking machine is installed: milk goes to the bucket by itself.
+var milker: bool = false
 ## Settings: sound on, FPS counter shown (Story 006).
 var sound_on: bool = true
 var show_fps: bool = false

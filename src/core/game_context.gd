@@ -27,3 +27,5 @@ var progression: Progression
 var energy: Energy
 ## Clock.
 var clock: GameClock
+## Farm rules (level, shed, buildings, orders, milking).
+var farm: Farm

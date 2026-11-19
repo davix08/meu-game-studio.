@@ -1,6 +1,6 @@
 {
 	"hud": {
-		"region_name": "Vila do Lago Esmeralda",
+		"region_name": "Fazenda do Lago",
 		"region_font_size": 30,
 		"fps_font_size": 22,
 		"margin": 20,
@@ -251,8 +251,8 @@
 	},
 	"boat": {
 		"enabled": 1,
-		"x": 48.1,
-		"z": 28.5
+		"x": 31.6,
+		"z": 16.5
 	},
 	"smoke": {
 		"count": 5,
@@ -330,9 +330,9 @@
 		"lights_on": 0,
 		"glow_energy": 2.5,
 		"glow_color": "#ffd070",
-		"plaza_x": 30,
-		"plaza_y": 24,
-		"plaza_w": 2,
+		"plaza_x": 17,
+		"plaza_y": 8,
+		"plaza_w": 3,
 		"plaza_h": 2,
 		"shed_x": 36,
 		"shed_y": 19,
@@ -402,28 +402,28 @@
 		"crates_count": 3,
 		"barrels_count": 2,
 		"prop_gap": 0.6,
-		"board_x": 35,
-		"board_y": 25,
+		"board_x": 21,
+		"board_y": 8,
 		"board_w": 2,
 		"board_h": 1,
-		"bench_x": 41,
-		"bench_y": 25,
+		"bench_x": 45,
+		"bench_y": 17,
 		"bench_w": 2,
 		"bench_h": 1,
-		"lamp_count": 3,
-		"lamp_1_x": 31,
-		"lamp_1_y": 26,
+		"lamp_count": 2,
+		"lamp_1_x": 23,
+		"lamp_1_y": 9,
 		"lamp_1_w": 1,
 		"lamp_1_h": 1,
-		"lamp_2_x": 38,
-		"lamp_2_y": 25,
+		"lamp_2_x": 33,
+		"lamp_2_y": 9,
 		"lamp_2_w": 1,
 		"lamp_2_h": 1,
 		"lamp_3_x": 43,
 		"lamp_3_y": 25,
 		"lamp_3_w": 1,
 		"lamp_3_h": 1,
-		"pathfence_count": 2,
+		"pathfence_count": 0,
 		"pathfence_1_x": 36,
 		"pathfence_1_y": 23,
 		"pathfence_1_w": 3,
@@ -486,7 +486,13 @@
 		"paper_c": "#bfe4f4",
 		"pin": "#e0443a",
 		"lamp_iron": "#2f2a28",
-		"garden_plants": 0
+		"garden_plants": 0,
+		"parts": [
+			"house",
+			"lamps",
+			"bench",
+			"board"
+		]
 	},
 	"fishing": {
 		"arc_height": 2.2,
@@ -686,6 +692,482 @@
 		"pull_text_color": "#ffffff"
 	},
 	"town": {
+		"roads": [
+			[
+				5,
+				10,
+				47,
+				2
+			],
+			[
+				29,
+				12,
+				2,
+				2
+			],
+			[
+				13,
+				12,
+				2,
+				19
+			],
+			[
+				13,
+				30,
+				38,
+				2
+			],
+			[
+				49,
+				10,
+				2,
+				22
+			],
+			[
+				49,
+				20,
+				11,
+				2
+			]
+		],
+		"plaza": [
+			17,
+			8,
+			3,
+			2
+		],
+		"lots": {
+			"galpao": [
+				6,
+				4,
+				6,
+				5,
+				0
+			],
+			"galinheiro": [
+				25,
+				4,
+				7,
+				5,
+				0
+			],
+			"curral": [
+				3,
+				14,
+				9,
+				8,
+				2
+			],
+			"plantacao": [
+				16,
+				32,
+				24,
+				6,
+				1
+			]
+		},
+		"river": [
+			[
+				44,
+				-1
+			],
+			[
+				44,
+				4
+			],
+			[
+				42,
+				9
+			],
+			[
+				40,
+				13
+			],
+			[
+				38,
+				16
+			]
+		],
+		"river_radius": 1.3,
+		"forests": [
+			[
+				0,
+				0,
+				60,
+				3,
+				0.75
+			],
+			[
+				0,
+				0,
+				3,
+				42,
+				0.75
+			],
+			[
+				57,
+				0,
+				3,
+				42,
+				0.75
+			],
+			[
+				0,
+				39,
+				60,
+				3,
+				0.75
+			],
+			[
+				51,
+				0,
+				9,
+				9,
+				0.6
+			],
+			[
+				52,
+				23,
+				8,
+				16,
+				0.5
+			],
+			[
+				0,
+				32,
+				14,
+				8,
+				0.5
+			],
+			[
+				33,
+				0,
+				9,
+				4,
+				0.5
+			]
+		],
+		"boulders": [
+			[
+				41,
+				3
+			],
+			[
+				47,
+				3
+			],
+			[
+				40,
+				6
+			],
+			[
+				47,
+				7
+			],
+			[
+				45,
+				12
+			],
+			[
+				18,
+				26
+			],
+			[
+				44,
+				25
+			]
+		],
+		"field_plot_cols": 2,
+		"field_plot_rows": 4,
+		"field_plot_length": 5,
+		"garden_plots_west_gap": 0.6,
+		"interact_radius": 1.8,
+		"door_reach": 1.7,
+		"sign_color": "#c99a5c",
+		"site_fence": "#b08a50",
+		"roof_tile_a": "#c2442f",
+		"roof_tile_b": "#a3352a",
+		"brick": "#b8643a",
+		"plank": "#a8743f",
+		"plank_light": "#c99a5c",
+		"wall_cream": "#f1e3c2",
+		"wall_blue": "#a8c8e0",
+		"wall_green": "#b8d8a8",
+		"wall_pink": "#f0c8c0",
+		"wall_yellow": "#f4dc96",
+		"roof_green": "#4a8a5a",
+		"roof_blue": "#4a6a9a",
+		"roof_brown": "#7a4a2a",
+		"roof_slate": "#5a6070",
+		"flag_red": "#d83a2a",
+		"flag_white": "#ffffff",
+		"metal": "#7a7e86",
+		"anvil": "#3a3a40",
+		"fire": "#ff9a3a",
+		"barrel": "#9a6a3a",
+		"table": "#b8844a",
+		"cloth_a": "#e86a9a",
+		"cloth_b": "#6ab0e8",
+		"cloth_c": "#f0d040",
+		"mailbox": "#d83a2a",
+		"trough": "#8a5a2b",
+		"water_blue": "#6ac0e8",
+		"hay": "#e8c860",
+		"crop_soil_dry": "#7a5236",
+		"crop_soil_wet": "#4a2f1e",
+		"crop_leaf": "#4cae3a",
+		"crop_leaf_light": "#7acb48",
+		"marker_color": "#ffd23a",
+		"marker_height": 3.2,
+		"marker_bob": 0.15,
+		"cliff_dark": "#4f4c47",
+		"cliff_light": "#77736a",
+		"fall_color": "#dff4ff",
+		"chunk_size": 16,
+		"small_prop_range": 55.0,
+		"city_gate": [
+			56,
+			19,
+			2,
+			4
+		],
+		"city_sign": [
+			55.2,
+			18.6
+		],
+		"locked_lots": {
+			"plantacao": "Plantação · Nível 8"
+		},
+		"city_label": "Cidade (em breve)"
+	},
+	"daynight": {
+		"hours": [
+			0,
+			4.5,
+			6,
+			8,
+			12,
+			16,
+			18,
+			19.5,
+			21,
+			24
+		],
+		"sun_energy": [
+			0.08,
+			0.08,
+			0.55,
+			1.15,
+			1.35,
+			1.3,
+			1.0,
+			0.35,
+			0.1,
+			0.08
+		],
+		"sun_pitch": [
+			70,
+			30,
+			10,
+			25,
+			60,
+			40,
+			22,
+			10,
+			40,
+			70
+		],
+		"sun_colors": [
+			"#6a7ab8",
+			"#7a88c0",
+			"#ffb070",
+			"#ffe0b0",
+			"#fff2dc",
+			"#ffd9a0",
+			"#ffa860",
+			"#ff8a50",
+			"#7a88c8",
+			"#6a7ab8"
+		],
+		"sky_top": [
+			"#0e1838",
+			"#1a2448",
+			"#5a8ac8",
+			"#5f9fd8",
+			"#4a90e0",
+			"#5f9fd8",
+			"#5a80c0",
+			"#3a4a80",
+			"#141e40",
+			"#0e1838"
+		],
+		"sky_horizon": [
+			"#1e2a50",
+			"#3a4070",
+			"#ffc890",
+			"#f7d8a8",
+			"#cfe4f4",
+			"#f7c98f",
+			"#ff9a60",
+			"#c06a60",
+			"#28305a",
+			"#1e2a50"
+		],
+		"ambient": [
+			"#4a5a90",
+			"#5a6aa0",
+			"#e8c8b0",
+			"#ffe8c8",
+			"#fff4e0",
+			"#ffe8c8",
+			"#ffc8a0",
+			"#a088b0",
+			"#4a5a90",
+			"#4a5a90"
+		],
+		"ambient_energy": [
+			0.45,
+			0.5,
+			0.65,
+			0.75,
+			0.85,
+			0.75,
+			0.7,
+			0.55,
+			0.45,
+			0.45
+		],
+		"fog": [
+			"#1e2a50",
+			"#3a4070",
+			"#f4d3a0",
+			"#f4e0b8",
+			"#dcecf4",
+			"#f4d3a0",
+			"#f0a070",
+			"#7a6080",
+			"#28305a",
+			"#1e2a50"
+		],
+		"sun_yaw": -55.0,
+		"lights_on_hour": 18.6,
+		"lights_off_hour": 6.2,
+		"fireflies": 40,
+		"firefly_color": "#d8ff6a",
+		"firefly_size": 0.05,
+		"firefly_area": 14.0,
+		"firefly_height": 1.2,
+		"window_light_energy": 2.5
+	},
+	"npc": {
+		"scale": 0.92,
+		"tap_radius": 1.2,
+		"bob": 0.04,
+		"step_freq": 9.0
+	},
+	"boulder": {
+		"scale_min": 1.8,
+		"scale_max": 2.6,
+		"height_min": 0.8,
+		"height_max": 1.3,
+		"shadow": 1
+	},
+	"tree2": {
+		"scale_min": 0.9,
+		"scale_max": 1.2,
+		"height_min": 0.9,
+		"height_max": 1.2,
+		"shadow": 1
+	},
+	"ui": {
+		"font_size": 24,
+		"title_size": 34,
+		"small_size": 19,
+		"panel_fill": "#fbefd2",
+		"panel_border": "#8a5a32",
+		"panel_border_width": 4,
+		"corner_radius": 18,
+		"ink": "#4a2f1c",
+		"muted": "#8a6a48",
+		"good": "#3f8a3a",
+		"bad": "#c0392b",
+		"button_fill": "#6ab04c",
+		"button_hover": "#7cc45a",
+		"button_pressed": "#4f8f38",
+		"button_disabled": "#b8a88a",
+		"button_text": "#ffffff",
+		"button_border": "#3f6e2a",
+		"tab_fill": "#e8c98f",
+		"tab_active": "#f6a93b",
+		"row_fill": "#f3e2bc",
+		"row_alt": "#efd9ab",
+		"dim": "#1e140c99",
+		"sheet_width": 940,
+		"sheet_height": 620,
+		"row_height": 64,
+		"button_height": 56,
+		"pad": 14,
+		"top_height": 64,
+		"top_margin": 14,
+		"pill_fill": "#2b1d14c8",
+		"pill_text": "#fff6dc",
+		"coin": "#ffd23a",
+		"coin_dark": "#c89a1a",
+		"star": "#ffd23a",
+		"energy_fill": "#6ad04a",
+		"energy_low": "#e04a3a",
+		"energy_back": "#00000060",
+		"species_fill": "#5ab0f0",
+		"sun": "#ffd23a",
+		"moon": "#e8eef8",
+		"round_button": 44,
+		"action_gap": 14,
+		"context_width": 250,
+		"context_height": 62,
+		"context_fill": "#f6a93bee",
+		"fish_body_light": 0.25
+	},
+	"sfx": {
+		"mix_rate": 22050,
+		"volume_db": -8.0,
+		"players": 4,
+		"click": [
+			660,
+			0.06,
+			0.0
+		],
+		"coin": [
+			988,
+			0.12,
+			1318
+		],
+		"cast": [
+			300,
+			0.18,
+			520
+		],
+		"bite": [
+			880,
+			0.15,
+			0.0
+		],
+		"catch": [
+			523,
+			0.35,
+			1046
+		],
+		"level": [
+			523,
+			0.5,
+			1568
+		],
+		"error": [
+			180,
+			0.18,
+			0.0
+		]
+	},
+	"town_village": {
 		"roads": [
 			[
 				4,
@@ -961,231 +1443,62 @@
 		"chunk_size": 16,
 		"small_prop_range": 55.0
 	},
-	"daynight": {
-		"hours": [
-			0,
-			4.5,
-			6,
-			8,
-			12,
+	"farm": {
+		"width": 60,
+		"height": 42,
+		"house": [
 			16,
+			4,
+			5,
+			4
+		],
+		"door": [
 			18,
-			19.5,
-			21,
-			24
+			7
 		],
-		"sun_energy": [
-			0.08,
-			0.08,
-			0.55,
-			1.15,
-			1.35,
-			1.3,
-			1.0,
-			0.35,
-			0.1,
-			0.08
-		],
-		"sun_pitch": [
-			70,
+		"pier_x": 29,
+		"pier_y0": 14,
+		"pier_y1": 18,
+		"lake_center": [
 			30,
-			10,
-			25,
-			60,
-			40,
-			22,
-			10,
-			40,
-			70
+			21
 		],
-		"sun_colors": [
-			"#6a7ab8",
-			"#7a88c0",
-			"#ffb070",
-			"#ffe0b0",
-			"#fff2dc",
-			"#ffd9a0",
-			"#ffa860",
-			"#ff8a50",
-			"#7a88c8",
-			"#6a7ab8"
+		"lake_radius": [
+			13,
+			6.5
 		],
-		"sky_top": [
-			"#0e1838",
-			"#1a2448",
-			"#5a8ac8",
-			"#5f9fd8",
-			"#4a90e0",
-			"#5f9fd8",
-			"#5a80c0",
-			"#3a4a80",
-			"#141e40",
-			"#0e1838"
+		"lake_deep": 0.55,
+		"lake_noise": 0.08,
+		"spawn": [
+			19.5,
+			9.6
 		],
-		"sky_horizon": [
-			"#1e2a50",
-			"#3a4070",
-			"#ffc890",
-			"#f7d8a8",
-			"#cfe4f4",
-			"#f7c98f",
-			"#ff9a60",
-			"#c06a60",
-			"#28305a",
-			"#1e2a50"
-		],
-		"ambient": [
-			"#4a5a90",
-			"#5a6aa0",
-			"#e8c8b0",
-			"#ffe8c8",
-			"#fff4e0",
-			"#ffe8c8",
-			"#ffc8a0",
-			"#a088b0",
-			"#4a5a90",
-			"#4a5a90"
-		],
-		"ambient_energy": [
-			0.45,
-			0.5,
-			0.65,
-			0.75,
-			0.85,
-			0.75,
-			0.7,
-			0.55,
-			0.45,
-			0.45
-		],
-		"fog": [
-			"#1e2a50",
-			"#3a4070",
-			"#f4d3a0",
-			"#f4e0b8",
-			"#dcecf4",
-			"#f4d3a0",
-			"#f0a070",
-			"#7a6080",
-			"#28305a",
-			"#1e2a50"
-		],
-		"sun_yaw": -55.0,
-		"lights_on_hour": 18.6,
-		"lights_off_hour": 6.2,
-		"fireflies": 40,
-		"firefly_color": "#d8ff6a",
-		"firefly_size": 0.05,
-		"firefly_area": 14.0,
-		"firefly_height": 1.2,
-		"window_light_energy": 2.5
-	},
-	"npc": {
-		"scale": 0.92,
-		"tap_radius": 1.2,
-		"bob": 0.04,
-		"step_freq": 9.0
-	},
-	"boulder": {
-		"scale_min": 1.8,
-		"scale_max": 2.6,
-		"height_min": 0.8,
-		"height_max": 1.3,
-		"shadow": 1
-	},
-	"tree2": {
-		"scale_min": 0.9,
-		"scale_max": 1.2,
-		"height_min": 0.9,
-		"height_max": 1.2,
-		"shadow": 1
-	},
-	"ui": {
-		"font_size": 24,
-		"title_size": 34,
-		"small_size": 19,
-		"panel_fill": "#fbefd2",
-		"panel_border": "#8a5a32",
-		"panel_border_width": 4,
-		"corner_radius": 18,
-		"ink": "#4a2f1c",
-		"muted": "#8a6a48",
-		"good": "#3f8a3a",
-		"bad": "#c0392b",
-		"button_fill": "#6ab04c",
-		"button_hover": "#7cc45a",
-		"button_pressed": "#4f8f38",
-		"button_disabled": "#b8a88a",
-		"button_text": "#ffffff",
-		"button_border": "#3f6e2a",
-		"tab_fill": "#e8c98f",
-		"tab_active": "#f6a93b",
-		"row_fill": "#f3e2bc",
-		"row_alt": "#efd9ab",
-		"dim": "#1e140c99",
-		"sheet_width": 940,
-		"sheet_height": 620,
-		"row_height": 64,
-		"button_height": 56,
-		"pad": 14,
-		"top_height": 64,
-		"top_margin": 14,
-		"pill_fill": "#2b1d14c8",
-		"pill_text": "#fff6dc",
-		"coin": "#ffd23a",
-		"coin_dark": "#c89a1a",
-		"star": "#ffd23a",
-		"energy_fill": "#6ad04a",
-		"energy_low": "#e04a3a",
-		"energy_back": "#00000060",
-		"species_fill": "#5ab0f0",
-		"sun": "#ffd23a",
-		"moon": "#e8eef8",
-		"round_button": 44,
-		"action_gap": 14,
-		"context_width": 250,
-		"context_height": 62,
-		"context_fill": "#f6a93bee",
-		"fish_body_light": 0.25
-	},
-	"sfx": {
-		"mix_rate": 22050,
-		"volume_db": -8.0,
-		"players": 4,
-		"click": [
-			660,
-			0.06,
-			0.0
-		],
-		"coin": [
-			988,
-			0.12,
-			1318
-		],
-		"cast": [
-			300,
-			0.18,
-			520
-		],
-		"bite": [
-			880,
-			0.15,
-			0.0
-		],
-		"catch": [
-			523,
-			0.35,
-			1046
-		],
-		"level": [
-			523,
-			0.5,
-			1568
-		],
-		"error": [
-			180,
-			0.18,
-			0.0
+		"border": 3,
+		"tree_chance": 0.05,
+		"rock_chance": 0.025,
+		"truck_start": [
+			59.5,
+			20.5
 		]
+	},
+	"truck": {
+		"body": "#6f9aa8",
+		"body_dark": "#567f8c",
+		"trim": "#2c3236",
+		"glass": "#25313a",
+		"chrome": "#c8ccd0",
+		"light": "#fff2b0",
+		"tail": "#d83a2a",
+		"tire": "#26221f",
+		"box": "#d4a464",
+		"box_dark": "#b8864a",
+		"box_stripe": "#c8302a",
+		"wheel_radius": 0.33,
+		"texel_scale": 0.75,
+		"texture_detail": 0.3,
+		"turn_speed": 6.0,
+		"gate_lift_distance": 5.0,
+		"box_label_size": 40,
+		"cargo_boxes": 3
 	}
 }

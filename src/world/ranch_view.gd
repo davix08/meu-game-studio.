@@ -53,12 +53,15 @@ func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerra
 	_meshes["galinha"] = [EstateMeshes.hen(look, true), EstateMeshes.hen(look, false)]
 	_meshes["ovelha"] = [_sheep()]
 	_meshes["vaca"] = [_cow()]
-	var pen: Rect2i = EstateMeshes.cell_rect(look, "pen")
-	var coop_end: float = float(pen.position.y) + 0.3 + look.num("estate", "coop_depth") + 0.35
-	var margin: float = look.num("estate", "hen_margin")
-	_areas["galinheiro"] = Rect2(float(pen.position.x) + margin, coop_end, float(pen.size.x) - margin * 2.0, float(pen.end.y) - margin - coop_end)
-	var pasture: Rect2i = TownPlan.lot_rect(look, "pasto")
-	_areas["pasto"] = Rect2(float(pasture.position.x) + 1.2, float(pasture.position.y) + 3.4, float(pasture.size.x) - 3.4, float(pasture.size.y) - 4.6)
+	_meshes["bezerro"] = [_cow()]
+	# Where each home's animals walk: the coop yard in front of the coop, the corral east of the
+	# milking stall (lots of the farm map).
+	if TownPlan.has_lot(look, "galinheiro"):
+		var coop: Rect2i = TownPlan.lot_rect(look, "galinheiro")
+		_areas["galinheiro"] = Rect2(float(coop.position.x) + 0.7, float(coop.position.y) + 3.0, float(coop.size.x) - 1.4, float(coop.size.y) - 3.6)
+	if TownPlan.has_lot(look, "curral"):
+		var corral: Rect2i = TownPlan.lot_rect(look, "curral")
+		_areas["curral"] = Rect2(float(corral.position.x) + 4.2, float(corral.position.y) + 1.0, float(corral.size.x) - 5.6, float(corral.size.y) - 2.0)
 	var products := MultiMesh.new()
 	products.transform_format = MultiMesh.TRANSFORM_3D
 	products.use_colors = true
@@ -75,10 +78,7 @@ func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerra
 
 ## Where the player stands to feed and collect at [param home_id] (meters, x z).
 func anchor(home_id: String) -> Vector2:
-	if home_id == "galinheiro":
-		var pen: Rect2i = EstateMeshes.cell_rect(_look, "pen")
-		return Vector2(float(pen.position.x) + float(pen.size.x) * 0.5, float(pen.end.y) + 0.5)
-	return TownPlan.lot_door(_look, "pasto")
+	return TownPlan.lot_door(_look, home_id)
 
 
 ## At night the animals lie down and stop walking.
@@ -91,7 +91,7 @@ func refresh() -> void:
 	var signature: String = ""
 	for a: Dictionary in _state.animals:
 		signature += str(a["kind"]) + ","
-	signature += "|" + str(_state.is_built("pasto"))
+	signature += "|" + str(_state.is_built("galinheiro")) + str(_state.is_built("curral"))
 	if signature != _signature:
 		_signature = signature
 		for c: Critter in _critters:
@@ -100,7 +100,7 @@ func refresh() -> void:
 		for i in _state.animals.size():
 			var kind: String = str(_state.animals[i]["kind"])
 			var home: String = str(_town.animal(kind).get("home", ""))
-			if not _areas.has(home) or (home == "pasto" and not _state.is_built("pasto")):
+			if not _areas.has(home) or not _state.is_built(home):
 				continue
 			_add_critter(kind, home, i)
 	_draw_products()
@@ -124,6 +124,8 @@ func _add_critter(kind: String, home: String, index: int) -> void:
 	c.heading = _rng.randf() * TAU
 	c.phase = _rng.randf() * TAU
 	c.lift = 0.25 if kind == "galinha" else 0.0
+	if kind == "bezerro":
+		c.node.scale = Vector3.ONE * 0.6
 	c.speed = 0.45 if kind == "galinha" else 0.35
 	c.timer = _rng.randf_range(0.5, 2.5)
 	_critters.append(c)
@@ -170,16 +172,19 @@ func _place(c: Critter, tilt: float, bob: float) -> void:
 func _draw_products() -> void:
 	var transforms: Array[Transform3D] = []
 	var colors: Array[Color] = []
-	for home: String in ["galinheiro", "pasto"]:
+	for home: String in ["galinheiro", "curral"]:
+		if not _areas.has(home):
+			continue
 		var products: Dictionary = _state.pending.get(home, {})
-		var spot: Vector2 = anchor(home) + (Vector2(0.0, -1.2) if home == "galinheiro" else Vector2(-1.0, 0.6))
+		var basket: Vector3 = TownMeshes.egg_basket(_look)
+		var spot: Vector2 = Vector2(basket.x - 0.2, basket.z - 0.1) if home == "galinheiro" else anchor(home) + Vector2(-1.0, 0.6)
 		var n: int = 0
 		for id: Variant in products:
 			var color: Color = Color.html(str(_town.good(str(id)).get("color", "#ffffff")))
 			var big: bool = str(id) != "ovo"
 			for k in mini(int(products[id]), 8):
 				var offset := Vector2(float(n % 4) * 0.22, float(n / 4) * 0.22)
-				transforms.append(Transform3D(Basis.from_scale(Vector3.ONE * (2.2 if big else 1.0)), Vector3(spot.x + offset.x, 0.05, spot.y + offset.y)))
+				transforms.append(Transform3D(Basis.from_scale(Vector3.ONE * (2.2 if big else 1.0)), Vector3(spot.x + offset.x, 0.3 if home == "galinheiro" else 0.05, spot.y + offset.y)))
 				colors.append(color)
 				n += 1
 	var multi: MultiMesh = _products.multimesh

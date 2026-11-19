@@ -28,6 +28,7 @@ var _markers: Dictionary = {}
 var _marker_base: float = 0.0
 var _marker_bob: float = 0.0
 var _time: float = 0.0
+var _locked: Dictionary = {}
 
 
 ## Builds every lot model and connects to the state.
@@ -65,8 +66,24 @@ func setup(look: WorldLook, town: TownData, state: GameState, grid: WorldGrid) -
 			smoke.setup(look, top)
 			_smokes[id] = smoke
 	_instance(glass.build(), _glass_material)
+	if look.has("town", "locked_lots"):
+		var locked: Dictionary = look.raw("town", "locked_lots")
+		for id: Variant in locked:
+			_locked[str(id)] = true
+			var sign := _label(str(locked[id]), 64)
+			var door: Vector2 = TownPlan.lot_door(look, str(id))
+			sign.position = Vector3(door.x, 1.6, door.y)
+			(_built[str(id)] as Node3D).add_child(sign)
+	if look.has("town", "city_gate"):
+		_instance(TownMeshes.city_gate(look), material)
+		var city := _label(look.text("town", "city_label"), 60)
+		var at: Array = look.raw("town", "city_sign")
+		city.position = Vector3(float(at[0]) + 0.3, 3.4, float(at[1]))
+		add_child(city)
 	for entry: Variant in town.neighbors():
 		var n: Dictionary = entry
+		if not TownPlan.has_lot(look, str(n["lot"])):
+			continue
 		var marker := Label3D.new()
 		marker.text = "!"
 		marker.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -85,7 +102,7 @@ func setup(look: WorldLook, town: TownData, state: GameState, grid: WorldGrid) -
 ## Shows built lots, sites, smoke and request markers as the state says.
 func refresh() -> void:
 	for id: String in _built:
-		var built: bool = _state.is_built(id)
+		var built: bool = _state.is_built(id) or _locked.has(id)
 		(_built[id] as Node3D).visible = built
 		(_sites[id] as Node3D).visible = not built
 		if _smokes.has(id):
@@ -107,6 +124,17 @@ func _process(delta: float) -> void:
 		var marker: Label3D = _markers[id]
 		if marker.visible:
 			marker.position.y = _marker_base + 1.0 + sin(_time * 3.0) * _marker_bob
+
+
+func _label(text: String, size: int) -> Label3D:
+	var label := Label3D.new()
+	label.text = text
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.font_size = size
+	label.pixel_size = 0.01
+	label.outline_size = 12
+	label.modulate = _look.color("hud", "text_color")
+	return label
 
 
 func _instance(mesh: ArrayMesh, material: StandardMaterial3D) -> MeshInstance3D:

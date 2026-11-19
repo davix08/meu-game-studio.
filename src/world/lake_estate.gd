@@ -55,9 +55,11 @@ class Hen:
 ## after creating the grid, before the terrain is built.
 static func plan(grid: WorldGrid, look: WorldLook) -> void:
 	var rects: Array[Rect2i] = []
+	var parts: Array = EstateMeshes.parts_of(look)
 	for prefix: String in SOLID_PREFIXES:
-		rects.append(EstateMeshes.cell_rect(look, prefix))
-	for i in look.integer(EstateMeshes.GROUP, "lamp_count"):
+		if parts.has(prefix):
+			rects.append(EstateMeshes.cell_rect(look, prefix))
+	for i in (look.integer(EstateMeshes.GROUP, "lamp_count") if parts.has("lamps") else 0):
 		rects.append(EstateMeshes.cell_rect(look, "lamp_%d" % (i + 1)))
 	for i in look.integer(EstateMeshes.GROUP, "pathfence_count"):
 		rects.append(EstateMeshes.cell_rect(look, "pathfence_%d" % (i + 1)))
@@ -85,12 +87,18 @@ func build(terrain: LakeTerrain, look: WorldLook) -> void:
 	_glow_energy = look.num(EstateMeshes.GROUP, "glow_energy")
 	_add_mesh(glass.build(), _glass_material)
 	set_lights(look.integer(EstateMeshes.GROUP, "lights_on") == 1)
+	var parts: Array = EstateMeshes.parts_of(look)
 	_build_fences()
-	_build_garden_plants()
-	_build_shop_props()
-	_build_shed_props()
-	_build_hens()
-	_build_windmill()
+	if parts.has("garden"):
+		_build_garden_plants()
+	if parts.has("shop"):
+		_build_shop_props()
+	if parts.has("shed") or parts.has("tractor"):
+		_build_shed_props()
+	if parts.has("pen"):
+		_build_hens()
+	if parts.has("mill"):
+		_build_windmill()
 
 
 ## Turns the glow of the windows and lamp glass on or off.
@@ -135,6 +143,8 @@ func _build_fences() -> void:
 	var colors: Array[Color] = []
 	var inset: float = _look.num(EstateMeshes.GROUP, "fence_inset")
 	for prefix: String in ["garden", "pen"]:
+		if not EstateMeshes.parts_of(_look).has(prefix):
+			continue
 		var r: Rect2i = EstateMeshes.cell_rect(_look, prefix)
 		var lo := Vector2(float(r.position.x) + inset, float(r.position.y) + inset)
 		var hi := Vector2(float(r.end.x) - inset, float(r.end.y) - inset)

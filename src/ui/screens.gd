@@ -27,7 +27,7 @@ signal outfit_changed
 ## A screen opened or closed.
 signal open_changed(open: bool)
 
-enum ShopTab { SELL, RODS, BAITS, ITEMS, FARM }
+enum ShopTab { SELL, RODS, BAITS, ITEMS, FARM, AUCTION, UPGRADES }
 
 var _look: WorldLook
 var _ctx: GameContext
@@ -255,7 +255,7 @@ func open_bag() -> void:
 		body.add_child(UiKit.label(Texts.get_text("bag_empty"), 0, _look.color("ui", "muted")))
 	for i in s.bag.size():
 		body.add_child(UiKit.row(_look, [_fish_icon(s.bag[i].id), UiKit.label(_fish_line(s.bag[i]))], i % 2 == 1))
-	body.add_child(UiKit.label(Texts.get_text("bag_goods"), 26))
+	body.add_child(UiKit.label("%s · %d/%d" % [Texts.get_text("bag_goods"), _ctx.farm.bag_items(), int(_ctx.town_data.num("farm_life", "bag_items"))], 26))
 	for g: Variant in _ctx.town_data.goods():
 		var good: Dictionary = g
 		var n: int = s.good_count(str(good["id"]))
@@ -277,7 +277,8 @@ func open_bag() -> void:
 			var _act3: Callable = func() -> void:
 				var r: Town.Result = _ctx.town.use_crop_bait(id)
 				_result(r == Town.Result.OK, Texts.get_text("crop_bait_ok") if r == Town.Result.OK else _town_text(r))
-			body.add_child(UiKit.button(_look, Texts.fmt("use_crop_bait", [str(crop["name"]), s.good_count(id)]), _act3, s.good_count(id) > 0))
+			if s.good_count(id) > 0:
+				body.add_child(UiKit.button(_look, Texts.fmt("use_crop_bait", [str(crop["name"]), s.good_count(id)]), _act3))
 
 
 # --- Settings (Story 006) ---
@@ -317,7 +318,7 @@ func _confirm_new(back: Callable) -> void:
 ## The fish shop on [param tab].
 func open_shop(tab: int = ShopTab.SELL) -> void:
 	var body: VBoxContainer = _sheet(Texts.get_text("shop"), func() -> void: open_shop(tab))
-	var names: Array[String] = [Texts.get_text("tab_sell"), Texts.get_text("tab_rods"), Texts.get_text("tab_baits"), Texts.get_text("tab_items"), Texts.get_text("tab_farm")]
+	var names: Array[String] = [Texts.get_text("tab_sell"), Texts.get_text("tab_rods"), Texts.get_text("tab_baits"), Texts.get_text("tab_items"), Texts.get_text("tab_farm"), Texts.get_text("tab_auction"), Texts.get_text("tab_upgrades")]
 	_tabs(body, names, tab, func(i: int) -> void: open_shop(i))
 	match tab:
 		ShopTab.SELL:
@@ -339,21 +340,62 @@ func open_shop(tab: int = ShopTab.SELL) -> void:
 				var b: Button = UiKit.button(_look, Texts.fmt("need_level", [item.level]) if locked else Texts.fmt("buy", [item.price]), _act7, not locked and _ctx.state.coins >= item.price)
 				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, "#e8a040"), UiKit.label("%s × %d\n%s" % [item.name, owned, item.description]), b]))
 		ShopTab.FARM:
-			for g: Variant in _ctx.town_data.goods():
-				var good: Dictionary = g
+			for g: Variant in _ctx.town_data.list("farm_life", "shop_goods"):
+				var good: Dictionary = _ctx.town_data.good(str(g))
 				var price: int = int(good["price"])
-				if price <= 0:
-					continue
 				var id: String = str(good["id"])
-				var _act8: Callable = func() -> void:
-					var r: Town.Result = _ctx.town.buy_good(id, 1)
+				var _buy1: Callable = func() -> void:
+					var r: Farm.Result = _ctx.farm.order_good(id, 1)
+					_result(r == Farm.Result.OK, Texts.get_text("ordered") if r == Farm.Result.OK else Texts.get_text("no_coins"))
+				var one: Button = UiKit.button(_look, Texts.fmt("buy", [price]), _buy1, _ctx.state.coins >= price)
+				var _buy10: Callable = func() -> void:
+					var r: Farm.Result = _ctx.farm.order_good(id, 10)
+					_result(r == Farm.Result.OK, Texts.get_text("ordered") if r == Farm.Result.OK else Texts.get_text("no_coins"))
+				var ten: Button = UiKit.button(_look, "10× " + Texts.fmt("buy", [price * 10]), _buy10, _ctx.state.coins >= price * 10)
+				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(good["color"])), UiKit.label("%s · %d" % [str(good["name"]), _ctx.farm.owned(id)]), one, ten]))
+		ShopTab.AUCTION:
+			for a: Variant in _ctx.town_data.animals():
+				var info: Dictionary = a
+				var kind: String = str(info["id"])
+				var home: String = str(info["home"])
+				var home_name: String = str(_ctx.town_data.lot(home).get("name", home))
+				var built: bool = _ctx.state.is_built(home)
+				var price: int = int(info["price"])
+				var _bid: Callable = func() -> void:
+					var r: Farm.Result = _ctx.farm.order_animal(kind)
+					var text: String = Texts.get_text("ordered_animal")
+					if r == Farm.Result.NOT_BUILT:
+						text = Texts.fmt("need_building", [home_name])
+					elif r == Farm.Result.FULL:
+						text = Texts.get_text("home_full")
+					elif r != Farm.Result.OK:
+						text = Texts.get_text("no_coins")
+					_result(r == Farm.Result.OK, text)
+				var label: String = Texts.fmt("buy", [price]) if built else Texts.fmt("auction_need", [home_name])
+				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, "#f4f0e6"), UiKit.label("%s\n%s" % [str(info["name"]), home_name]), UiKit.button(_look, label, _bid, built and _ctx.state.coins >= price)]))
+		ShopTab.UPGRADES:
+			var farm: Farm = _ctx.farm
+			var price: int = int(_ctx.town_data.num("farm_life", "milker_price"))
+			var need: int = int(_ctx.town_data.num("farm_life", "milker_level"))
+			var corral_name: String = str(_ctx.town_data.lot("curral").get("name", ""))
+			var text: String = Texts.fmt("milker_buy", [price])
+			if _ctx.state.milker:
+				text = Texts.get_text("milker_done")
+			elif not _ctx.state.is_built("curral"):
+				text = Texts.fmt("need_building", [corral_name])
+			elif farm.level() < need:
+				text = Texts.fmt("milker_level", [need])
+			var _milker: Callable = func() -> void:
+				var r: Farm.Result = farm.buy_milker()
+				_result(r == Farm.Result.OK, Texts.get_text("milker_done") if r == Farm.Result.OK else Texts.get_text("no_coins"))
+			var can: bool = not _ctx.state.milker and _ctx.state.is_built("curral") and farm.level() >= need and _ctx.state.coins >= price
+			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, "#c8ccd0"), UiKit.label(Texts.get_text("milker")), UiKit.button(_look, text, _milker, can)]))
+			var cost: int = _ctx.town.storage_upgrade_cost()
+			if cost >= 0:
+				var _expand: Callable = func() -> void:
+					var r: Town.Result = _ctx.town.upgrade_storage()
 					_result(r == Town.Result.OK, Texts.get_text("bought") if r == Town.Result.OK else _town_text(r))
-				var one: Button = UiKit.button(_look, Texts.fmt("buy", [price]), _act8, _ctx.state.coins >= price)
-				var _act9: Callable = func() -> void:
-					var r: Town.Result = _ctx.town.buy_good(id, 5)
-					_result(r == Town.Result.OK, Texts.get_text("bought") if r == Town.Result.OK else _town_text(r))
-				var five: Button = UiKit.button(_look, "5× " + Texts.fmt("buy", [price * 5]), _act9, _ctx.state.coins >= price * 5)
-				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(good["color"])), UiKit.label("%s × %d" % [str(good["name"]), _ctx.state.good_count(id)]), one, five]))
+				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, "#a8743f"), UiKit.label(Texts.get_text("shed")), UiKit.button(_look, Texts.fmt("warehouse_upgrade", [int(_ctx.town_data.num("storage", "upgrade_step")), cost]), _expand, _ctx.state.coins >= cost)]))
 
 
 func _shop_sell(body: VBoxContainer) -> void:
@@ -498,6 +540,93 @@ func open_warehouse() -> void:
 		body.add_child(UiKit.button(_look, Texts.fmt("warehouse_upgrade", [int(_ctx.town_data.num("storage", "upgrade_step")), cost]), _act14, s.coins >= cost))
 
 
+# --- Shed (galpão, farm map) ---
+
+## The shed: the bag and the shed side by side; a tap moves a fish or a whole stack of items.
+func open_shed() -> void:
+	var s: GameState = _ctx.state
+	var t: Town = _ctx.town
+	var f: Farm = _ctx.farm
+	var body: VBoxContainer = _sheet(Texts.get_text("shed"), open_shed)
+	body.add_child(UiKit.label(Texts.get_text("tap_to_move"), 0, _look.color("ui", "muted")))
+	body.add_child(UiKit.button(_look, Texts.get_text("store_all"), _store_all, f.bag_items() > 0))
+	var cols := HBoxContainer.new()
+	cols.add_theme_constant_override(&"separation", 12)
+	body.add_child(cols)
+	var left := VBoxContainer.new()
+	var right := VBoxContainer.new()
+	for c: VBoxContainer in [left, right]:
+		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cols.add_child(c)
+	left.add_child(UiKit.label(Texts.fmt("shed_bag", [s.bag.size(), int(_ctx.data.tune("bag_size")), f.bag_items(), int(_ctx.town_data.num("farm_life", "bag_items"))]), 22))
+	right.add_child(UiKit.label(Texts.fmt("shed_store", [s.storage.size(), t.storage_capacity()]), 22))
+	for id: String in s.goods:
+		if s.good_count(id) > 0:
+			left.add_child(UiKit.button(_look, Texts.fmt("items_fmt", [_ctx.town_data.good_name(id), s.good_count(id)]) + "  →", _move_good.bind(id, true)))
+	for id: Variant in s.shed:
+		if int(s.shed[id]) > 0:
+			right.add_child(UiKit.button(_look, "←  " + Texts.fmt("items_fmt", [_ctx.town_data.good_name(str(id)), int(s.shed[id])]), _move_good.bind(str(id), false)))
+	for i in s.bag.size():
+		left.add_child(UiKit.button(_look, _fish_line(s.bag[i]) + "  →", _move_fish.bind(i, true)))
+	for i in s.storage.size():
+		right.add_child(UiKit.button(_look, "←  " + _fish_line(s.storage[i]), _move_fish.bind(i, false)))
+
+
+func _store_all() -> void:
+	_shed_result(_ctx.farm.store_all() == Farm.Result.OK)
+
+
+func _shed_result(ok: bool) -> void:
+	_sfx.play(&"click" if ok else &"error")
+	_refresh()
+
+
+func _move_good(id: String, to_shed: bool) -> void:
+	var r: Farm.Result = _ctx.farm.store_good(id) if to_shed else _ctx.farm.take_good(id)
+	if r == Farm.Result.BAG_FULL:
+		toast(Texts.get_text("bag_full"))
+	_shed_result(r == Farm.Result.OK)
+
+
+func _move_fish(index: int, to_shed: bool) -> void:
+	var r: Town.Result = _ctx.town.to_storage(index) if to_shed else _ctx.town.to_bag(index)
+	if r != Town.Result.OK:
+		toast(_town_text(r))
+	_shed_result(r == Town.Result.OK)
+
+
+# --- Farm buildings (farm map) ---
+
+## What building [param id] needs (farm level, wood, stone, coins) and the Construir button.
+func open_build(id: String) -> void:
+	var f: Farm = _ctx.farm
+	var name: String = str(_ctx.town_data.lot(id).get("name", id))
+	var body: VBoxContainer = _sheet(Texts.fmt("build_title", [name]), open_build.bind(id))
+	var need: Dictionary = f.needs(id)
+	var good: Color = _look.color("ui", "good")
+	var bad: Color = _look.color("ui", "bad")
+	var lvl: int = int(need.get("level", 1))
+	body.add_child(UiKit.label(Texts.fmt("build_need_level", [lvl, f.level()]), 26, good if f.level() >= lvl else bad))
+	for res: String in ["madeira", "pedra"]:
+		var n: int = int(need.get(res, 0))
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(_ctx.town_data.good(res)["color"])), UiKit.label(Texts.fmt("build_need", [_ctx.town_data.good_name(res), f.owned(res), n]), 0, good if f.owned(res) >= n else bad)]))
+	var coins: int = int(need.get("coins", 0))
+	body.add_child(UiKit.label(Texts.fmt("build_coins", [_ctx.state.coins, coins]), 0, good if _ctx.state.coins >= coins else bad))
+	var _build: Callable = func() -> void:
+		var r: Farm.Result = f.build(id)
+		var text: String = Texts.get_text("built_ok")
+		if r == Farm.Result.LOW_LEVEL:
+			text = Texts.fmt("build_low", [lvl])
+		elif r == Farm.Result.MISSING:
+			text = Texts.get_text("build_missing")
+		elif r == Farm.Result.NOT_ENOUGH_COINS:
+			text = Texts.get_text("no_coins")
+		_result(r == Farm.Result.OK, text)
+		if r == Farm.Result.OK:
+			close()
+	body.add_child(UiKit.button(_look, Texts.get_text("build_btn"), _build, f.build_blocker(id) == Farm.Result.OK))
+
+
 # --- Workshop (Story 011) ---
 
 ## The equipped rod, its level, current and next stats, and the upgrade button.
@@ -630,46 +759,47 @@ func open_plot(i: int) -> void:
 
 # --- Ranch (Story 016) ---
 
-## The animal home [param home_id]: animals and their joy, trough, products, feed, collect, buy.
+## The animal home [param home_id] (coop or corral): animals and their joy, trough, products,
+## feed, collect and milk. Animals are bought at the auction (shop).
 func open_ranch(home_id: String) -> void:
 	var s: GameState = _ctx.state
 	var t: Town = _ctx.town
+	var f: Farm = _ctx.farm
 	var td: TownData = _ctx.town_data
-	var title: String = Texts.get_text("act_coop") if home_id == "galinheiro" else Texts.get_text("act_pasture")
-	var body: VBoxContainer = _sheet(title, func() -> void: open_ranch(home_id))
+	var title: String = str(td.lot(home_id).get("name", home_id))
+	var body: VBoxContainer = _sheet(title, open_ranch.bind(home_id))
 	var capacity: int = 0
 	for h: Variant in td.homes():
 		if str((h as Dictionary)["id"]) == home_id:
 			capacity = int((h as Dictionary)["capacity"])
 	body.add_child(UiKit.label(Texts.fmt("ranch_home", [title, t.animals_in(home_id), capacity]), 26))
-	if not t.home_open(home_id):
-		body.add_child(UiKit.label(Texts.get_text("home_closed"), 0, _look.color("ui", "bad")))
-		return
 	for a: Dictionary in s.animals:
 		var info: Dictionary = td.animal(str(a["kind"]))
-		if str(info["home"]) == home_id:
-			body.add_child(UiKit.label(Texts.fmt("animal_joy", [str(info["name"]), int(float(a["joy"]))]), _look.integer("ui", "small_size")))
+		if str(info["home"]) != home_id:
+			continue
+		var line: String = Texts.fmt("animal_joy", [str(info["name"]), int(float(a["joy"]))])
+		if info.has("grows_into"):
+			line = Texts.fmt("calf_age", [str(info["name"]), int(info["grow_days"]) - int(a.get("age", 0))])
+		body.add_child(UiKit.label(line, _look.integer("ui", "small_size")))
 	body.add_child(UiKit.label(Texts.fmt("ranch_trough", [s.troughs.get(home_id, 0), int(td.num("ranch", "trough_capacity"))])))
-	var _act22: Callable = func() -> void:
-		var r: Town.Result = t.fill_trough(home_id)
-		_result(r == Town.Result.OK, Texts.get_text("filled") if r == Town.Result.OK else (Texts.get_text("no_feed") if r == Town.Result.MISSING else _town_text(r)))
-	body.add_child(UiKit.button(_look, Texts.get_text("fill_trough"), _act22))
+	var _feed: Callable = func() -> void:
+		var r: Farm.Result = f.feed(home_id)
+		_result(r == Farm.Result.OK, Texts.get_text("filled") if r == Farm.Result.OK else (Texts.get_text("full") if r == Farm.Result.FULL else Texts.get_text("no_feed")))
+	body.add_child(UiKit.button(_look, Texts.get_text("fill_trough"), _feed))
 	var pending: int = t.pending_count(home_id)
 	body.add_child(UiKit.label(Texts.fmt("ranch_pending", [pending])))
-	var _act23: Callable = func() -> void:
-		var r: Town.Result = t.collect(home_id)
-		_result(r == Town.Result.OK, Texts.get_text("collected") if r == Town.Result.OK else Texts.get_text("nothing"))
-	body.add_child(UiKit.button(_look, Texts.get_text("collect"), _act23, pending > 0))
-	for k: Variant in td.animals():
-		var kind: Dictionary = k
-		if str(kind["home"]) != home_id:
-			continue
-		var kind_id: String = str(kind["id"])
-		var price: int = int(kind["price"])
-		var _act24: Callable = func() -> void:
-			var r: Town.Result = t.buy_animal(kind_id)
-			_result(r == Town.Result.OK, Texts.get_text("bought") if r == Town.Result.OK else _town_text(r))
-		body.add_child(UiKit.button(_look, Texts.fmt("buy_animal", [str(kind["name"]), price]), _act24, s.coins >= price))
+	var _collect: Callable = func() -> void:
+		var r: Farm.Result = f.collect(home_id)
+		_result(r == Farm.Result.OK, Texts.get_text("collected") if r == Farm.Result.OK else (Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("nothing")))
+	body.add_child(UiKit.button(_look, Texts.get_text("collect"), _collect, pending > 0))
+	if home_id == "curral" and not s.milker:
+		var cows: int = f.cows_to_milk()
+		body.add_child(UiKit.label(Texts.fmt("ranch_milk_ready", [cows])))
+		var _milk: Callable = func() -> void:
+			var r: Farm.Result = f.milk()
+			_result(r == Farm.Result.OK, Texts.get_text("milked") if r == Farm.Result.OK else (Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy")))
+		body.add_child(UiKit.button(_look, Texts.fmt("act_milk", [cows]), _milk, cows > 0))
+	body.add_child(UiKit.label(Texts.get_text("ranch_buy_hint"), 0, _look.color("ui", "muted")))
 
 
 # --- Clothes (Story 017) ---

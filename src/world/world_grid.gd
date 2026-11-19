@@ -1,6 +1,6 @@
 class_name WorldGrid
 extends RefCounted
-## The logical 96x68 block grid of Lago Esmeralda and its town: the single source of truth for collision
+## The logical block grid of the farm by the lake: the single source of truth for collision
 ## and water. 1 block = 1 meter (1 Godot unit) in the 3D world; x is east, z (the grid's y)
 ## is south.
 ##
@@ -24,40 +24,38 @@ extends RefCounted
 ## Block kinds (same numbers as T in the 2D prototype; interior kinds are not ported).
 enum Tile { GRASS, DIRT, SAND, SHALLOW, DEEP, DOCK, BRIDGE, FLOWERS }
 
-## Grid width in blocks.
-const WIDTH: int = 96
-## Grid height in blocks.
-const HEIGHT: int = 68
-## Where the original 48x34 lake map starts inside the bigger grid (Story 009).
-const ORIGIN: Vector2i = Vector2i(24, 17)
-## The original lake map area.
-const LAKE_RECT: Rect2i = Rect2i(24, 17, 48, 34)
 ## 2D prototype pixels per block (TS). Fishing data (cast_range, spot_radius) and the
 ## [WorldQuery] positions are expressed in these pixels.
 const PIXELS_PER_BLOCK: float = 16.0
 ## Tolerance used by [method box_free] (0.01 px of the 2D, in blocks).
 const BOX_EPSILON: float = 0.0006
+## Where the old 48x34 lake map sat inside the village map of Story 009 (old saves only).
+const ORIGIN: Vector2i = Vector2i(24, 17)
 
-## Fishing house footprint in blocks (OUT.house).
-const HOUSE: Rect2i = Rect2i(30, 19, 5, 4)
-## Door block (OUT.door), on the south side of the house.
-const DOOR: Vector2i = Vector2i(32, 22)
-## West column of the 2-wide pier (OUT.pier.x).
-const PIER_X: int = 45
-## First pier row (OUT.pier.y0).
-const PIER_Y0: int = 25
-## Last pier row (OUT.pier.y1).
-const PIER_Y1: int = 30
-## Island block (OUT.island).
-const ISLAND: Vector2i = Vector2i(58, 36)
-## Islet block (OUT.islet).
-const ISLET: Vector2i = Vector2i(41, 32)
-## Spawn point in blocks (OUT.spawn is 9*16+8, 7*16+10 px).
-const SPAWN: Vector2 = Vector2(33.5, 24.625)
-## Lantern at the end of the pier, in blocks (x 22.75, z 13.875).
-const LANTERN: Vector2 = Vector2(46.75, 30.875)
+# The farm layout (2026-11-19 map): set from the "farm" group of world_look.json when a grid is
+# built with a look; the defaults are the same values.
+## Grid width in blocks.
+static var WIDTH: int = 60
+## Grid height in blocks.
+static var HEIGHT: int = 42
+## Farmer's house footprint in blocks.
+static var HOUSE: Rect2i = Rect2i(16, 4, 5, 4)
+## Door block, on the south side of the house.
+static var DOOR: Vector2i = Vector2i(18, 7)
+## West column of the 2-wide pier.
+static var PIER_X: int = 29
+## First pier row.
+static var PIER_Y0: int = 14
+## Last pier row.
+static var PIER_Y1: int = 18
+## Spawn point in blocks (in front of the house).
+static var SPAWN: Vector2 = Vector2(19.5, 9.6)
+## Lantern at the end of the pier, in blocks.
+static var LANTERN: Vector2 = Vector2(30.75, 18.875)
 ## Sign by the door, in blocks.
-const SIGN: Vector2 = Vector2(34.25, 23.75)
+static var SIGN: Vector2 = Vector2(20.25, 8.75)
+## The lake area (used to place the scattered trees and rocks around it).
+static var LAKE_RECT: Rect2i = Rect2i(17, 14, 27, 14)
 
 
 ## A decoration or solid prop placed by the map rules.
@@ -71,6 +69,8 @@ class Placement:
 	var pos: Vector2 = Vector2.ZERO
 	## For "lily": true when it has a flower.
 	var flag: bool = false
+	## Trees and rocks the player can cut or break (inside the farm, not the border forest).
+	var choppable: bool = false
 
 
 ## Props and decorations, in the order the 2D rules produce them.
@@ -82,7 +82,10 @@ var _solid: PackedByteArray = PackedByteArray()
 var _river: PackedByteArray = PackedByteArray()
 
 
-func _init() -> void:
+## Builds the grid. With [param look], the farm layout comes from its "farm" group.
+func _init(look: WorldLook = null) -> void:
+	if look != null:
+		configure(look)
 	_river.resize(WIDTH * HEIGHT)
 	_river.fill(0)
 	_tiles.resize(WIDTH * HEIGHT)
@@ -92,6 +95,42 @@ func _init() -> void:
 	_solid.resize(WIDTH * HEIGHT)
 	_solid.fill(0)
 	_build_outdoor()
+
+
+## Reads the farm layout (size, house, pier, spawn) from [param look] into the static values.
+static func configure(look: WorldLook) -> void:
+	WIDTH = look.integer("farm", "width")
+	HEIGHT = look.integer("farm", "height")
+	var h: Array = look.raw("farm", "house")
+	HOUSE = Rect2i(int(h[0]), int(h[1]), int(h[2]), int(h[3]))
+	var d: Array = look.raw("farm", "door")
+	DOOR = Vector2i(int(d[0]), int(d[1]))
+	PIER_X = look.integer("farm", "pier_x")
+	PIER_Y0 = look.integer("farm", "pier_y0")
+	PIER_Y1 = look.integer("farm", "pier_y1")
+	var sp: Array = look.raw("farm", "spawn")
+	SPAWN = Vector2(float(sp[0]), float(sp[1]))
+	LANTERN = Vector2(float(PIER_X) + 1.75, float(PIER_Y1) + 0.875)
+	SIGN = Vector2(float(DOOR.x) + 2.25, float(DOOR.y) + 1.75)
+	var c: Array = look.raw("farm", "lake_center")
+	var r: Array = look.raw("farm", "lake_radius")
+	LAKE_RECT = Rect2i(int(float(c[0]) - float(r[0])), int(float(c[1]) - float(r[1])), int(float(r[0]) * 2.0), int(float(r[1]) * 2.0))
+	_lake_c = Vector2(float(c[0]), float(c[1]))
+	_lake_r = Vector2(float(r[0]), float(r[1]))
+	_lake_deep = look.num("farm", "lake_deep")
+	_lake_noise = look.num("farm", "lake_noise")
+	_border = look.integer("farm", "border")
+	_tree_chance = look.num("farm", "tree_chance")
+	_rock_chance = look.num("farm", "rock_chance")
+
+
+static var _lake_c: Vector2 = Vector2(30.0, 21.0)
+static var _lake_r: Vector2 = Vector2(13.0, 6.5)
+static var _lake_deep: float = 0.55
+static var _lake_noise: float = 0.08
+static var _border: int = 3
+static var _tree_chance: float = 0.05
+static var _rock_chance: float = 0.025
 
 
 ## Deterministic hash of integer coordinates to [0, 1) (hash2 of the 2D prototype). Used for
@@ -237,20 +276,8 @@ func _set_tile(x: int, y: int, tile: int) -> void:
 
 
 func _lake_value(x: float, y: float) -> float:
-	var d: float = pow((x - 25.0) / 15.0, 2.0) + pow((y - 19.5) / 10.0, 2.0)
-	d += 0.09 * sin(x * 0.55) + 0.07 * cos(y * 0.8 + 1.0)
-	var cove: float = pow((x - 37.0) / 7.0, 2.0) + pow((y - 25.0) / 5.0, 2.0) + 0.05 * sin(y)
-	return minf(d, cove)
-
-
-func _stamp_island(center: Vector2i, radius: float) -> void:
-	for y in range(center.y - 4, center.y + 5):
-		for x in range(center.x - 4, center.x + 5):
-			var d: float = Vector2(x - center.x, y - center.y).length()
-			if d < radius:
-				_set_tile(x, y, Tile.GRASS if d < radius - 1.0 else Tile.SAND)
-			elif d < radius + 1.2 and tile_at(x, y) == Tile.DEEP:
-				_set_tile(x, y, Tile.SHALLOW)
+	var d: float = pow((x - _lake_c.x) / _lake_r.x, 2.0) + pow((y - _lake_c.y) / _lake_r.y, 2.0)
+	return d + _lake_noise * sin(x * 0.55) + _lake_noise * 0.8 * cos(y * 0.8 + 1.0)
 
 
 func _paint_path(x: int, y: int) -> void:
@@ -282,14 +309,12 @@ func _add_solid_prop(kind: StringName, cell: Vector2i, offset_y_px: float) -> vo
 
 
 func _build_outdoor() -> void:
-	# Lake: elliptical with noise, plus the east cove.
+	# Lake: an oval with a little noise in the middle of the farm.
 	for y in HEIGHT:
 		for x in WIDTH:
-			var d: float = _lake_value(x - ORIGIN.x + 0.5, y - ORIGIN.y + 0.5)
+			var d: float = _lake_value(x + 0.5, y + 0.5)
 			if d < 1.0:
-				_set_tile(x, y, Tile.DEEP if d < 0.62 else Tile.SHALLOW)
-	_stamp_island(ISLAND, 2.9)
-	_stamp_island(ISLET, 1.7)
+				_set_tile(x, y, Tile.DEEP if d < _lake_deep else Tile.SHALLOW)
 
 	# Sand beaches next to water.
 	for y in HEIGHT:
@@ -315,29 +340,10 @@ func _build_outdoor() -> void:
 					if t >= 0 and not is_water_tile(t):
 						_set_tile(x, y, Tile.SHALLOW)
 
-	# Dirt path: house door -> pier, and a branch to the island bridge.
-	var o: Vector2i = ORIGIN
-	for y in range(DOOR.y + 1, o.y + 8):
-		_paint_path(DOOR.x, y)
-	for x in range(DOOR.x, PIER_X + 1):
-		_paint_path(x, o.y + 7)
-	for y in range(o.y + 7, o.y + 31):
-		_paint_path(o.x + 43, y)
-	for x in range(PIER_X, o.x + 44):
-		_paint_path(x, o.y + 6)
-
-	# Pier (2 wide) going south into the lake.
+	# Pier (2 wide) going south from the north shore into the lake.
 	for y in range(PIER_Y0, PIER_Y1 + 1):
 		for x in range(PIER_X, PIER_X + 2):
 			_set_tile(x, y, Tile.DOCK)
-
-	# Bridge to the island, from the east shore.
-	for x in range(ISLAND.x + 2, ORIGIN.x + 46):
-		var t: int = tile_at(x, ISLAND.y)
-		if is_water_tile(t) or t == Tile.SAND:
-			_set_tile(x, ISLAND.y, Tile.BRIDGE)
-		else:
-			break
 
 	# Flowers.
 	for y in HEIGHT:
@@ -352,7 +358,8 @@ func _build_outdoor() -> void:
 			_solid[y * WIDTH + x] = 1
 	_solid[(DOOR.y + 1) * WIDTH + DOOR.x + 2] = 1
 
-	# Trees, pines, bushes and rocks (all solid).
+	# Border forest (solid, cannot be cut) and scattered trees and rocks inside the farm, which
+	# the player can cut or break for wood and stone.
 	for y in HEIGHT:
 		for x in WIDTH:
 			var t: int = tile_at(x, y)
@@ -360,28 +367,21 @@ func _build_outdoor() -> void:
 				continue
 			if _solid[y * WIDTH + x] == 1 or not _is_clear(x, y):
 				continue
-			var near_path: bool = false
-			for dy in range(-1, 2):
-				for dx in range(-1, 2):
-					var n: int = tile_at(x + dx, y + dy)
-					if n == Tile.DIRT or n == Tile.BRIDGE or n == Tile.DOCK:
-						near_path = true
-			var border: bool = x < 2 or y < 1 or x > WIDTH - 3 or y > HEIGHT - 3
-			var h: float = hash2(x, y, 3)
 			var cell := Vector2i(x, y)
-			var tree_from: float = 0.9 if LAKE_RECT.has_point(cell) else 0.95
-			if (border and h > 0.12) or (not near_path and h > tree_from):
-				var kind: StringName = &"pine" if hash2(x, y, 4) > 0.55 else &"tree"
-				_add_solid_prop(kind, cell, 14.0)
-			elif not near_path and h > 0.86:
-				_add_solid_prop(&"bush", cell, 13.0)
-			elif not near_path and h > 0.84:
+			var h: float = hash2(x, y, 3)
+			var border: bool = x < _border or y < _border or x >= WIDTH - _border or y >= HEIGHT - _border
+			if border:
+				if h > 0.12:
+					var kind: StringName = &"pine" if hash2(x, y, 4) > 0.55 else &"tree"
+					_add_solid_prop(kind, cell, 14.0)
+				continue
+			if h > 1.0 - _tree_chance:
+				var tree: StringName = &"pine" if hash2(x, y, 4) > 0.55 else &"tree"
+				_add_solid_prop(tree, cell, 14.0)
+				placements[placements.size() - 1].choppable = true
+			elif h > 1.0 - _tree_chance - _rock_chance:
 				_add_solid_prop(&"rock", cell, 13.0)
-
-	# A tree on each island and a rock beside the big one.
-	_add_solid_prop(&"tree", Vector2i(ISLAND.x, ISLAND.y - 1), 14.0)
-	_add_solid_prop(&"tree", ISLET, 14.0)
-	_add_solid_prop(&"rock", Vector2i(ISLAND.x - 1, ISLAND.y + 1), 13.0)
+				placements[placements.size() - 1].choppable = true
 
 	# Decoration: grass tufts, reeds and lily pads.
 	for y in HEIGHT:

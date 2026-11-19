@@ -41,17 +41,36 @@ static func garden_strip_center(look: WorldLook) -> Vector2:
 ## lamps is added to [param glass].
 static func build_static(look: WorldLook, glass: MeshBuilder) -> ArrayMesh:
 	var mb := MeshBuilder.new()
-	_house(mb, look, glass)
-	_shed(mb, look)
-	_tractor(mb, look)
-	_garden(mb, look)
-	_coop(mb, look)
-	_tower(mb, look)
-	_mill_tower(mb, look)
-	_shop(mb, look, glass)
-	_board_and_bench(mb, look)
-	_lamps(mb, look, glass)
+	var parts: Array = parts_of(look)
+	if parts.has("house"):
+		_house(mb, look, glass)
+	if parts.has("shed"):
+		_shed(mb, look)
+	if parts.has("tractor"):
+		_tractor(mb, look)
+	if parts.has("garden"):
+		_garden(mb, look)
+	if parts.has("pen"):
+		_coop(mb, look)
+	if parts.has("tower"):
+		_tower(mb, look)
+	if parts.has("mill"):
+		_mill_tower(mb, look)
+	if parts.has("shop"):
+		_shop(mb, look, glass)
+	if parts.has("bench") or parts.has("board"):
+		_board_and_bench(mb, look)
+	if parts.has("lamps"):
+		_lamps(mb, look, glass)
 	return mb.build()
+
+
+## The estate pieces this map shows (estate.parts in world_look.json; all of them when absent).
+## Names: house, shed, tractor, garden, pen, tower, mill, shop, board, bench, lamps.
+static func parts_of(look: WorldLook) -> Array:
+	if look.has(GROUP, "parts"):
+		return look.raw(GROUP, "parts")
+	return ["house", "shed", "tractor", "garden", "pen", "tower", "mill", "shop", "board", "bench", "lamps"]
 
 
 ## One fence module along x, 1 m long, centered on the origin (a post at each end).

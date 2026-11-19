@@ -2,21 +2,25 @@
 	"storage": {
 		"start_capacity": 30,
 		"upgrade_step": 20,
-		"upgrade_costs": [250, 600, 1500]
+		"upgrade_costs": [
+			250,
+			600,
+			1500
+		]
 	},
 	"workshop": {
 		"max_level": 3,
-		"level_costs": [150, 400, 1000],
+		"level_costs": [
+			150,
+			400,
+			1000
+		],
 		"rod_price_factor": 0.3,
 		"range_per_level": 6,
 		"zone_per_level": 0.03,
 		"power_per_level": 0.08
 	},
-	"neighbors": [
-		{"id": "ana", "name": "Dona Ana", "lot": "casa_1", "skin": "#e8b88a", "hair": "#8a8a90", "hat": "#d8506a", "shirt": "#6aa8e0", "pants": "#5a4a8a", "offset_minutes": 0, "greeting": "Bom dia, prefeito! Estou com vontade de um peixe fresquinho."},
-		{"id": "joao", "name": "Seu João", "lot": "casa_2", "skin": "#c88a5a", "hair": "#3a2a20", "hat": "#3a6a3a", "shirt": "#e0a040", "pants": "#4a3a2a", "offset_minutes": 25, "greeting": "Ô prefeito! Me arruma uns peixes pro almoço?"},
-		{"id": "lia", "name": "Lia", "lot": "casa_3", "skin": "#f0c8a0", "hair": "#c0602a", "hat": "#f0d040", "shirt": "#c05ad0", "pants": "#2f5fa8", "offset_minutes": 50, "greeting": "Oi! Quero fazer uma receita nova, você me ajuda?"}
-	],
+	"neighbors": [],
 	"requests": {
 		"count_min": 1,
 		"count_max": 3,
@@ -29,18 +33,56 @@
 		"walk_speed": 3.0,
 		"act_seconds": 4.0,
 		"steps": [
-			{"hour": 6.0, "place": "home", "act": "acordar"},
-			{"hour": 7.5, "place": "restaurante", "act": "comer"},
-			{"hour": 10.0, "place": "loja", "act": "comprar"},
-			{"hour": 12.0, "place": "restaurante", "act": "comer"},
-			{"hour": 14.0, "place": "praca", "act": "passear"},
-			{"hour": 16.5, "place": "roupas", "act": "comprar"},
-			{"hour": 19.0, "place": "restaurante", "act": "beber"},
-			{"hour": 21.0, "place": "home", "act": "dormir"}
+			{
+				"hour": 6.0,
+				"place": "home",
+				"act": "acordar"
+			},
+			{
+				"hour": 7.5,
+				"place": "restaurante",
+				"act": "comer"
+			},
+			{
+				"hour": 10.0,
+				"place": "loja",
+				"act": "comprar"
+			},
+			{
+				"hour": 12.0,
+				"place": "restaurante",
+				"act": "comer"
+			},
+			{
+				"hour": 14.0,
+				"place": "praca",
+				"act": "passear"
+			},
+			{
+				"hour": 16.5,
+				"place": "roupas",
+				"act": "comprar"
+			},
+			{
+				"hour": 19.0,
+				"place": "restaurante",
+				"act": "beber"
+			},
+			{
+				"hour": 21.0,
+				"place": "home",
+				"act": "dormir"
+			}
 		]
 	},
 	"restaurant": {
-		"dish_names": ["Peixe frito", "Moqueca", "Peixe assado", "Prato do chef", "Banquete lendário"],
+		"dish_names": [
+			"Peixe frito",
+			"Moqueca",
+			"Peixe assado",
+			"Prato do chef",
+			"Banquete lendário"
+		],
 		"dish_value_mult": 1.5,
 		"dish_min_value": 15,
 		"stock_max": 20,
@@ -55,8 +97,24 @@
 		"bait_minutes": 120,
 		"bait_wait_mult": 0.75,
 		"crops": [
-			{"id": "cenoura", "name": "Cenoura", "seed": "semente_cenoura", "grow_days": 2, "harvest": 3, "color": "#f08a2a", "bait": true},
-			{"id": "trigo", "name": "Trigo", "seed": "semente_trigo", "grow_days": 3, "harvest": 4, "color": "#e8c860", "bait": false}
+			{
+				"id": "cenoura",
+				"name": "Cenoura",
+				"seed": "semente_cenoura",
+				"grow_days": 2,
+				"harvest": 3,
+				"color": "#f08a2a",
+				"bait": true
+			},
+			{
+				"id": "trigo",
+				"name": "Trigo",
+				"seed": "semente_trigo",
+				"grow_days": 3,
+				"harvest": 4,
+				"color": "#e8c860",
+				"bait": false
+			}
 		]
 	},
 	"ranch": {
@@ -64,45 +122,224 @@
 		"joy_fed": 20,
 		"joy_hungry": 25,
 		"joy_start": 70,
-		"start_animals": ["galinha", "galinha"],
-		"feeds": ["racao", "trigo"],
+		"start_animals": [],
+		"feeds": [
+			"racao",
+			"milho"
+		],
 		"homes": [
-			{"id": "galinheiro", "name": "Galinheiro", "capacity": 6, "lot": ""},
-			{"id": "pasto", "name": "Pasto", "capacity": 6, "lot": "pasto"}
+			{
+				"id": "galinheiro",
+				"name": "Galinheiro",
+				"capacity": 8,
+				"lot": "galinheiro",
+				"feeds": [
+					"milho"
+				]
+			},
+			{
+				"id": "curral",
+				"name": "Curral de ordenha",
+				"capacity": 4,
+				"lot": "curral",
+				"feeds": [
+					"racao",
+					"milho"
+				]
+			}
 		],
 		"animals": [
-			{"id": "galinha", "name": "Galinha", "price": 60, "product": "ovo", "home": "galinheiro", "feed": 1},
-			{"id": "ovelha", "name": "Ovelha", "price": 220, "product": "la", "home": "pasto", "feed": 2},
-			{"id": "vaca", "name": "Vaca", "price": 350, "product": "leite", "home": "pasto", "feed": 2}
+			{
+				"id": "galinha",
+				"name": "Galinha",
+				"price": 60,
+				"product": "ovo",
+				"home": "galinheiro",
+				"feed": 1
+			},
+			{
+				"id": "bezerro",
+				"name": "Bezerro",
+				"price": 180,
+				"product": "",
+				"home": "curral",
+				"feed": 1,
+				"grows_into": "vaca",
+				"grow_days": 4
+			},
+			{
+				"id": "vaca",
+				"name": "Vaca",
+				"price": 450,
+				"product": "leite",
+				"home": "curral",
+				"feed": 2,
+				"milk": true
+			}
 		]
 	},
 	"goods": [
-		{"id": "ovo", "name": "Ovo", "sell": 18, "price": 0, "color": "#fbf6ea"},
-		{"id": "leite", "name": "Leite", "sell": 45, "price": 0, "color": "#ffffff"},
-		{"id": "la", "name": "Lã", "sell": 35, "price": 0, "color": "#f2ead8"},
-		{"id": "cenoura", "name": "Cenoura", "sell": 32, "price": 0, "color": "#f08a2a"},
-		{"id": "trigo", "name": "Trigo", "sell": 10, "price": 0, "color": "#e8c860"},
-		{"id": "semente_cenoura", "name": "Semente de cenoura", "sell": 0, "price": 12, "color": "#c86a2a"},
-		{"id": "semente_trigo", "name": "Semente de trigo", "sell": 0, "price": 8, "color": "#c8a840"},
-		{"id": "racao", "name": "Ração", "sell": 0, "price": 4, "color": "#b08a50"}
+		{
+			"id": "ovo",
+			"name": "Ovo",
+			"sell": 18,
+			"price": 0,
+			"color": "#fbf6ea"
+		},
+		{
+			"id": "leite",
+			"name": "Leite",
+			"sell": 45,
+			"price": 0,
+			"color": "#ffffff"
+		},
+		{
+			"id": "la",
+			"name": "Lã",
+			"sell": 35,
+			"price": 0,
+			"color": "#f2ead8"
+		},
+		{
+			"id": "cenoura",
+			"name": "Cenoura",
+			"sell": 32,
+			"price": 0,
+			"color": "#f08a2a"
+		},
+		{
+			"id": "trigo",
+			"name": "Trigo",
+			"sell": 10,
+			"price": 0,
+			"color": "#e8c860"
+		},
+		{
+			"id": "semente_cenoura",
+			"name": "Semente de cenoura",
+			"sell": 0,
+			"price": 12,
+			"color": "#c86a2a"
+		},
+		{
+			"id": "semente_trigo",
+			"name": "Semente de trigo",
+			"sell": 0,
+			"price": 8,
+			"color": "#c8a840"
+		},
+		{
+			"id": "racao",
+			"name": "Ração",
+			"sell": 0,
+			"price": 4,
+			"color": "#b08a50"
+		},
+		{
+			"id": "milho",
+			"name": "Milho",
+			"sell": 1,
+			"price": 3,
+			"color": "#f0c830"
+		},
+		{
+			"id": "madeira",
+			"name": "Madeira",
+			"sell": 2,
+			"price": 8,
+			"color": "#a8743f"
+		},
+		{
+			"id": "pedra",
+			"name": "Pedra",
+			"sell": 2,
+			"price": 10,
+			"color": "#9a9ea6"
+		}
 	],
 	"clothes": {
 		"hat": [
-			{"id": "palha", "name": "Chapéu de palha", "price": 0, "color": "#eab63c", "trim": "#d02b22"},
-			{"id": "bone", "name": "Boné azul", "price": 120, "color": "#2f6aa8", "trim": "#f0f0f0"},
-			{"id": "verde", "name": "Chapéu verde", "price": 260, "color": "#3f8a4a", "trim": "#e8c040"},
-			{"id": "rosa", "name": "Chapéu rosa", "price": 420, "color": "#e86a9a", "trim": "#ffffff"}
+			{
+				"id": "palha",
+				"name": "Chapéu de palha",
+				"price": 0,
+				"color": "#eab63c",
+				"trim": "#d02b22"
+			},
+			{
+				"id": "bone",
+				"name": "Boné azul",
+				"price": 120,
+				"color": "#2f6aa8",
+				"trim": "#f0f0f0"
+			},
+			{
+				"id": "verde",
+				"name": "Chapéu verde",
+				"price": 260,
+				"color": "#3f8a4a",
+				"trim": "#e8c040"
+			},
+			{
+				"id": "rosa",
+				"name": "Chapéu rosa",
+				"price": 420,
+				"color": "#e86a9a",
+				"trim": "#ffffff"
+			}
 		],
 		"shirt": [
-			{"id": "colete", "name": "Colete vermelho", "price": 0, "color": "#c4372d", "trim": "#efdcae"},
-			{"id": "xadrez", "name": "Camisa xadrez", "price": 150, "color": "#2f7a4a", "trim": "#f4e6c0"},
-			{"id": "azul", "name": "Colete azul", "price": 220, "color": "#2f5fa8", "trim": "#ffffff"},
-			{"id": "dourado", "name": "Colete dourado", "price": 500, "color": "#e0b030", "trim": "#5a3a1e"}
+			{
+				"id": "colete",
+				"name": "Colete vermelho",
+				"price": 0,
+				"color": "#c4372d",
+				"trim": "#efdcae"
+			},
+			{
+				"id": "xadrez",
+				"name": "Camisa xadrez",
+				"price": 150,
+				"color": "#2f7a4a",
+				"trim": "#f4e6c0"
+			},
+			{
+				"id": "azul",
+				"name": "Colete azul",
+				"price": 220,
+				"color": "#2f5fa8",
+				"trim": "#ffffff"
+			},
+			{
+				"id": "dourado",
+				"name": "Colete dourado",
+				"price": 500,
+				"color": "#e0b030",
+				"trim": "#5a3a1e"
+			}
 		],
 		"boots": [
-			{"id": "marrom", "name": "Botas marrons", "price": 0, "color": "#6b3f1f", "trim": "#6b3f1f"},
-			{"id": "galocha", "name": "Galochas amarelas", "price": 140, "color": "#f0c020", "trim": "#f0c020"},
-			{"id": "pretas", "name": "Botas pretas", "price": 300, "color": "#2a2a30", "trim": "#2a2a30"}
+			{
+				"id": "marrom",
+				"name": "Botas marrons",
+				"price": 0,
+				"color": "#6b3f1f",
+				"trim": "#6b3f1f"
+			},
+			{
+				"id": "galocha",
+				"name": "Galochas amarelas",
+				"price": 140,
+				"color": "#f0c020",
+				"trim": "#f0c020"
+			},
+			{
+				"id": "pretas",
+				"name": "Botas pretas",
+				"price": 300,
+				"color": "#2a2a30",
+				"trim": "#2a2a30"
+			}
 		]
 	},
 	"city": {
@@ -114,23 +351,259 @@
 		"food_smoothing": 0.5,
 		"food_start": 0.5,
 		"lots": [
-			{"id": "prefeitura", "name": "Prefeitura", "cost": 0, "min_city_level": 1, "start_built": true, "service": false, "about": "Painel da cidade"},
-			{"id": "armazem", "name": "Armazém", "cost": 0, "min_city_level": 1, "start_built": true, "service": true, "about": "Guarda peixes fora da bolsa"},
-			{"id": "casa_1", "name": "Casa da Dona Ana", "cost": 0, "min_city_level": 1, "start_built": true, "service": false, "about": "Vizinha com pedidos"},
-			{"id": "casa_2", "name": "Casa do Seu João", "cost": 0, "min_city_level": 1, "start_built": true, "service": false, "about": "Vizinho com pedidos"},
-			{"id": "casa_3", "name": "Casa da Lia", "cost": 0, "min_city_level": 1, "start_built": true, "service": false, "about": "Vizinha com pedidos"},
-			{"id": "oficina", "name": "Oficina de varas", "cost": 300, "min_city_level": 1, "start_built": false, "service": true, "about": "Melhora a vara em 3 níveis"},
-			{"id": "restaurante", "name": "Cervejaria-restaurante", "cost": 500, "min_city_level": 1, "start_built": false, "service": true, "about": "Vende pratos e cerveja aos vizinhos"},
-			{"id": "campos", "name": "Campos de plantio", "cost": 250, "min_city_level": 1, "start_built": false, "service": true, "about": "Mais canteiros para plantar"},
-			{"id": "pasto", "name": "Pasto", "cost": 400, "min_city_level": 2, "start_built": false, "service": true, "about": "Vacas e ovelhas"},
-			{"id": "roupas", "name": "Loja de roupas", "cost": 800, "min_city_level": 2, "start_built": false, "service": true, "about": "Chapéus, camisas e botas"}
+			{
+				"id": "galpao",
+				"name": "Galpão de itens",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Baú da fazenda"
+			},
+			{
+				"id": "galinheiro",
+				"name": "Galinheiro",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Galinhas e ovos"
+			},
+			{
+				"id": "curral",
+				"name": "Curral de ordenha",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Vacas e leite"
+			},
+			{
+				"id": "plantacao",
+				"name": "Plantação",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Em breve"
+			},
+			{
+				"id": "prefeitura",
+				"name": "Prefeitura",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Painel da cidade"
+			},
+			{
+				"id": "armazem",
+				"name": "Armazém",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": true,
+				"about": "Guarda peixes fora da bolsa"
+			},
+			{
+				"id": "casa_1",
+				"name": "Casa da Dona Ana",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Vizinha com pedidos"
+			},
+			{
+				"id": "casa_2",
+				"name": "Casa do Seu João",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Vizinho com pedidos"
+			},
+			{
+				"id": "casa_3",
+				"name": "Casa da Lia",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Vizinha com pedidos"
+			},
+			{
+				"id": "oficina",
+				"name": "Oficina de varas",
+				"cost": 300,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": true,
+				"about": "Melhora a vara em 3 níveis"
+			},
+			{
+				"id": "restaurante",
+				"name": "Cervejaria-restaurante",
+				"cost": 500,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": true,
+				"about": "Vende pratos e cerveja aos vizinhos"
+			},
+			{
+				"id": "campos",
+				"name": "Campos de plantio",
+				"cost": 250,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": true,
+				"about": "Mais canteiros para plantar"
+			},
+			{
+				"id": "pasto",
+				"name": "Pasto",
+				"cost": 400,
+				"min_city_level": 2,
+				"start_built": false,
+				"service": true,
+				"about": "Vacas e ovelhas"
+			},
+			{
+				"id": "roupas",
+				"name": "Loja de roupas",
+				"cost": 800,
+				"min_city_level": 2,
+				"start_built": false,
+				"service": true,
+				"about": "Chapéus, camisas e botas"
+			}
 		],
 		"levels": [
-			{"satisfaction": 0, "reward": 0},
-			{"satisfaction": 35, "reward": 300},
-			{"satisfaction": 55, "reward": 800},
-			{"satisfaction": 75, "reward": 2000},
-			{"satisfaction": 90, "reward": 5000}
+			{
+				"satisfaction": 0,
+				"reward": 0
+			},
+			{
+				"satisfaction": 35,
+				"reward": 300
+			},
+			{
+				"satisfaction": 55,
+				"reward": 800
+			},
+			{
+				"satisfaction": 75,
+				"reward": 2000
+			},
+			{
+				"satisfaction": 90,
+				"reward": 5000
+			}
 		]
+	},
+	"neighbors_city": [
+		{
+			"id": "ana",
+			"name": "Dona Ana",
+			"lot": "casa_1",
+			"skin": "#e8b88a",
+			"hair": "#8a8a90",
+			"hat": "#d8506a",
+			"shirt": "#6aa8e0",
+			"pants": "#5a4a8a",
+			"offset_minutes": 0,
+			"greeting": "Bom dia, prefeito! Estou com vontade de um peixe fresquinho."
+		},
+		{
+			"id": "joao",
+			"name": "Seu João",
+			"lot": "casa_2",
+			"skin": "#c88a5a",
+			"hair": "#3a2a20",
+			"hat": "#3a6a3a",
+			"shirt": "#e0a040",
+			"pants": "#4a3a2a",
+			"offset_minutes": 25,
+			"greeting": "Ô prefeito! Me arruma uns peixes pro almoço?"
+		},
+		{
+			"id": "lia",
+			"name": "Lia",
+			"lot": "casa_3",
+			"skin": "#f0c8a0",
+			"hair": "#c0602a",
+			"hat": "#f0d040",
+			"shirt": "#c05ad0",
+			"pants": "#2f5fa8",
+			"offset_minutes": 50,
+			"greeting": "Oi! Quero fazer uma receita nova, você me ajuda?"
+		}
+	],
+	"farm_life": {
+		"level_xp": [
+			0,
+			30,
+			80,
+			150,
+			250,
+			380,
+			550,
+			760,
+			1000,
+			1300
+		],
+		"xp_catch": [
+			4,
+			7,
+			12,
+			20,
+			40
+		],
+		"xp_chop": 3,
+		"xp_rock": 3,
+		"xp_egg": 2,
+		"xp_feed": 2,
+		"xp_milk": 4,
+		"xp_box": 1,
+		"xp_build": 25,
+		"bag_items": 30,
+		"chop_energy": 6,
+		"wood_yield": 3,
+		"rock_energy": 6,
+		"stone_yield": 2,
+		"regrow_days": 3,
+		"milk_energy": 2,
+		"collect_energy": 1,
+		"milker_price": 1500,
+		"milker_level": 6,
+		"buildings": {
+			"galinheiro": {
+				"level": 2,
+				"madeira": 20,
+				"pedra": 10,
+				"coins": 300
+			},
+			"curral": {
+				"level": 5,
+				"madeira": 40,
+				"pedra": 25,
+				"coins": 900
+			},
+			"plantacao": {
+				"level": 8,
+				"madeira": 0,
+				"pedra": 0,
+				"coins": 0
+			}
+		},
+		"shop_goods": [
+			"milho",
+			"racao",
+			"madeira",
+			"pedra"
+		],
+		"truck_speed": 5.0,
+		"truck_unload_seconds": 2.5,
+		"truck_delay_seconds": 3.0
 	}
 }

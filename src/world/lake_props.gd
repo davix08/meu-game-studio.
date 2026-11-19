@@ -14,6 +14,10 @@ var _grid: WorldGrid
 var _terrain: LakeTerrain
 var _look: WorldLook
 var _material: StandardMaterial3D
+## Placement index -> [MultiMesh, instance index, Transform3D], for trees and rocks that can be
+## cut (2026-11-19 farm map).
+var _where: Dictionary = {}
+var _ids: Array[int] = []
 
 
 ## Builds all props for [param grid], standing on [param terrain], styled by [param look].
@@ -48,9 +52,12 @@ func _scatter(kind: StringName, mesh: ArrayMesh) -> void:
 	var group: String = String(kind)
 	var transforms: Array[Transform3D] = []
 	var colors: Array[Color] = []
-	for p: WorldGrid.Placement in _grid.placements:
+	_ids.clear()
+	for index in _grid.placements.size():
+		var p: WorldGrid.Placement = _grid.placements[index]
 		if p.kind != kind:
 			continue
+		_ids.append(index if p.choppable else -1)
 		var y: float = _terrain.ground_height_at(p.pos.x, p.pos.y)
 		if kind == &"lily":
 			y = _look.num("terrain", "water_level") + _look.num("lily", "height_above_water")
@@ -61,6 +68,7 @@ func _scatter(kind: StringName, mesh: ArrayMesh) -> void:
 			color = Color(tint * 1.12, tint * 0.86, tint * 0.5, 1.0)
 		colors.append(color)
 	_add_multimesh(mesh, transforms, colors, _look.integer(group, "shadow") == 1)
+	_ids.clear()
 
 
 ## Flowers: four per FLOWERS block (same hash rule as the 2D drawTile) plus one on each
@@ -112,13 +120,18 @@ func _add_multimesh(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Arr
 	for key: Variant in groups:
 		var part_t: Array[Transform3D] = []
 		var part_c: Array[Color] = []
+		var part_ids: Array[int] = []
 		for i: Variant in groups[key]:
 			part_t.append(transforms[int(i)])
 			part_c.append(colors[int(i)])
-		_add_chunk(mesh, part_t, part_c, casts_shadow, small)
+			part_ids.append(_ids[int(i)] if int(i) < _ids.size() else -1)
+		var multi: MultiMesh = _add_chunk(mesh, part_t, part_c, casts_shadow, small)
+		for k in part_ids.size():
+			if part_ids[k] >= 0:
+				_where[part_ids[k]] = [multi, k, part_t[k]]
 
 
-func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool, small: bool) -> void:
+func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool, small: bool) -> MultiMesh:
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
 	multi.use_colors = true
@@ -134,3 +147,22 @@ func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[C
 	if small:
 		node.visibility_range_end = _look.num("town", "small_prop_range")
 	add_child(node)
+	return multi
+
+
+## Hides (cut) or shows again (grown back) the tree or rock of placement [param index].
+func set_cut(index: int, cut: bool) -> void:
+	if not _where.has(index):
+		return
+	var entry: Array = _where[index]
+	var multi: MultiMesh = entry[0]
+	var base: Transform3D = entry[2]
+	multi.set_instance_transform(int(entry[1]), Transform3D(base.basis.scaled(Vector3.ONE * 0.001), base.origin) if cut else base)
+
+
+## Indices of the placements that can be cut or broken.
+func cuttable() -> Array[int]:
+	var out: Array[int] = []
+	for index: Variant in _where:
+		out.append(int(index))
+	return out

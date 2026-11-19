@@ -489,3 +489,28 @@ Comuns são tranquilos. O primeiro aperto vem lá pelo minuto 3 a 5: peixes inco
 **Who it's for / what they feel:** quem gosta de jogos calmos de coleção e quer "mais um lançamento" no celular. *(guessed)*
 
 **Games you love / don't:** RPGs clássicos em pixel art *(inferred (strong))*
+
+
+## Change after play (2026-11-19): the farm map
+
+The map is now only the farm, after the user's drawing:
+- **North**: house, shed and chicken coop, plus the waterfall with its bridge.
+- **Middle**: the lake with the pier.
+- **West**: the milking corral.
+- **South**: the field, locked at farm level 8 and doing nothing yet.
+- **East**: the road to the city, closed for this first test.
+
+Fishing stays as it was.
+
+New:
+- a farm level from 1 to 10;
+- the shed as the farm's chest, with the bag limited to 30 items;
+- cutting trees and breaking rocks for materials;
+- the coop (level 2) and the corral (level 5), built with wood, stone and coins;
+- the shop on the phone, with an auction tab;
+- the delivery truck, which leaves a box at the shed, coop or corral;
+- chickens laying eggs when fed with corn;
+- cows milked by hand, with a milking machine to buy later;
+- calves that grow into cows.
+
+The village systems (neighbors, restaurant, workshop, clothes, city hall) wait in the code for the city.

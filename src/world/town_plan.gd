@@ -25,7 +25,6 @@ const GROUP: String = "town"
 ## Paints the town on [param grid].
 static func plan(grid: WorldGrid, look: WorldLook) -> void:
 	_plan_river(grid, look)
-	_plan_piers(grid)
 	for r: Variant in _array(look, "roads"):
 		var rect: Rect2i = _rect(r)
 		grid.clear_area(rect)
@@ -44,6 +43,8 @@ static func plan(grid: WorldGrid, look: WorldLook) -> void:
 		grid.block_area(rect)
 		_door_path(grid, look, id)
 	_plan_forests(grid, look)
+	if look.has(GROUP, "city_gate"):
+		grid.block_area(_rect(_array(look, "city_gate")))
 	for b: Variant in _array(look, "boulders"):
 		var cell := Vector2i(int(b[0]), int(b[1]))
 		if not grid.is_water(cell.x, cell.y):
@@ -65,6 +66,11 @@ static func apply_lot_state(grid: WorldGrid, look: WorldLook, id: String, built:
 			grid.set_solid(x, y, false)
 	var inside: Vector2i = gate - _side_step(lot_side(look, id))
 	grid.set_solid(inside.x, inside.y, false)
+
+
+## True when the map has a lot called [param id].
+static func has_lot(look: WorldLook, id: String) -> bool:
+	return (look.raw(GROUP, "lots") as Dictionary).has(id)
 
 
 ## Ids of the lots, in data order.
@@ -153,21 +159,6 @@ static func _plan_river(grid: WorldGrid, look: WorldLook) -> void:
 				grid.set_tile(x, y, WorldGrid.Tile.SAND)
 			if best < radius:
 				grid.mark_river(x, y)
-
-
-## The L arm at the end of the main pier and a small pier on the west shore.
-static func _plan_piers(grid: WorldGrid) -> void:
-	for y in range(WorldGrid.PIER_Y1 - 1, WorldGrid.PIER_Y1 + 1):
-		for x in range(WorldGrid.PIER_X + 2, WorldGrid.PIER_X + 5):
-			if grid.is_water(x, y):
-				grid.set_tile(x, y, WorldGrid.Tile.DOCK)
-	var row: int = WorldGrid.ISLAND.y + 1
-	var x0: int = WorldGrid.ORIGIN.x
-	while x0 < WorldGrid.ORIGIN.x + 20 and not grid.is_water(x0, row):
-		x0 += 1
-	for x in range(x0, x0 + 4):
-		if grid.is_water(x, row):
-			grid.set_tile(x, row, WorldGrid.Tile.DOCK)
 
 
 static func _plan_forests(grid: WorldGrid, look: WorldLook) -> void:

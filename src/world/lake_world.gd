@@ -24,6 +24,8 @@ var query: LakeWorldQuery
 ## The house, farm and village (Story 004); call [method LakeEstate.set_lights] to light the
 ## windows and lamps (Story 008).
 var estate: LakeEstate
+## Trees, rocks and decorations; cut trees and rocks are hidden through it.
+var props: LakeProps
 ## The sun, the environment and the sky material, driven by [DayNight] (Story 008).
 var sun: DirectionalLight3D
 var environment: Environment
@@ -40,7 +42,7 @@ var _smoke_time: float = 0.0
 
 ## Builds the grid, the 3D scene content, the light and the environment.
 func build(look: WorldLook) -> void:
-	grid = WorldGrid.new()
+	grid = WorldGrid.new(look)
 	TownPlan.plan(grid, look)
 	LakeEstate.plan(grid, look)
 	query = LakeWorldQuery.new(grid)
@@ -50,7 +52,7 @@ func build(look: WorldLook) -> void:
 	var water := LakeWater.new()
 	add_child(water)
 	water.build(terrain, look)
-	var props := LakeProps.new()
+	props = LakeProps.new()
 	add_child(props)
 	props.build(grid, terrain, look)
 	estate = LakeEstate.new()
