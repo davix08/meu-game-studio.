@@ -90,6 +90,8 @@ var _outfit: Dictionary = {}
 var _rod_color: Color = Color.WHITE
 ## Position of the right hand from the right shoulder pivot (where the rod is held).
 var _hand_offset: Vector3 = Vector3.ZERO
+var _rod_holder: Node3D
+var _rod_visible: bool = true
 ## Clothing group -> its shader material, when the 3D model file is used.
 var _model_materials: Dictionary = {}
 ## Clothing group -> brightness of the model's own color (keeps highlights when re-dressed).
@@ -682,6 +684,13 @@ func set_rod_color(color: Color) -> void:
 	_rod_material.albedo_color = color
 
 
+## Shows the rod in the hand or puts it away (walking without the rod, 2026-11-19).
+func set_rod_visible(on: bool) -> void:
+	_rod_visible = on
+	if _rod_holder != null:
+		_rod_holder.visible = on
+
+
 ## Moves the fisherman to [param pos] (blocks x, z) at once (new day, loading a save).
 func teleport(pos: Vector2) -> void:
 	ground_pos = pos
@@ -709,6 +718,8 @@ func _build_rod(look: WorldLook) -> void:
 	_rod_material = StandardMaterial3D.new()
 	_rod_material.roughness = look.num("player", "roughness")
 	var holder := Node3D.new()
+	_rod_holder = holder
+	holder.visible = _rod_visible
 	holder.position = _hand_offset if _hand_offset != Vector3.ZERO else Vector3(0.0, -(look.num("player", "sleeve_length") + look.num("player", "forearm_length")), 0.0)
 	holder.rotation.x = PI * 0.5
 	_arm_right.add_child(holder)

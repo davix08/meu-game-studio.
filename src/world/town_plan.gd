@@ -28,9 +28,20 @@ static func plan(grid: WorldGrid, look: WorldLook) -> void:
 	for r: Variant in _array(look, "roads"):
 		var rect: Rect2i = _rect(r)
 		grid.clear_area(rect)
+		# Where the road crosses water, the bridge is one straight rectangle: the whole road width,
+		# from one block before the first water block to one block after the last (2026-11-19).
+		var along_x: bool = rect.size.x >= rect.size.y
+		var lo: int = 1 << 30
+		var hi: int = -1
 		for y in range(rect.position.y, rect.end.y):
 			for x in range(rect.position.x, rect.end.x):
 				if grid.is_water(x, y):
+					lo = mini(lo, x if along_x else y)
+					hi = maxi(hi, x if along_x else y)
+		for y in range(rect.position.y, rect.end.y):
+			for x in range(rect.position.x, rect.end.x):
+				var k: int = x if along_x else y
+				if hi >= 0 and k >= lo - 1 and k <= hi + 1:
 					grid.set_tile(x, y, WorldGrid.Tile.BRIDGE)
 				elif grid.tile_at(x, y) >= 0 and grid.tile_at(x, y) != WorldGrid.Tile.DOCK and grid.tile_at(x, y) != WorldGrid.Tile.BRIDGE:
 					grid.set_tile(x, y, WorldGrid.Tile.DIRT)

@@ -247,5 +247,22 @@
 	"ranch_buy_hint": "Compre animais no Leilão (botão Loja).",
 	"calf_age": "%s · vira vaca em %d dias",
 	"items_fmt": "%s × %d",
-	"auction_need": "Precisa do %s"
+	"auction_need": "Precisa do %s",
+	"book_place_any": "Lago · a qualquer hora",
+	"book_place_day": "Lago · de dia",
+	"book_place_night": "Lago · à noite",
+	"book_total": "Capturas: %d",
+	"book_biggest": "~ Maior captura ~",
+	"book_best": "%s",
+	"book_sort": "Ordenar:",
+	"sort_caught": "Pescados",
+	"sort_rarity": "Raridade",
+	"sort_name": "Nome",
+	"book_none": "Ainda não pescado",
+	"btn_rod_stow": "Guardar",
+	"btn_rod_take": "Pegar vara",
+	"pull_take_rod": "PEGAR VARA",
+	"rod_stowed": "Vara guardada: andando sem a vara.",
+	"rod_taken": "Vara na mão!",
+	"rod_busy": "Recolha a linha antes de guardar a vara."
 }

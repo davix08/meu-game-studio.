@@ -160,6 +160,8 @@ var boxes: Array[Dictionary] = []
 var chopped: Dictionary = {}
 ## The milking machine is installed: milk goes to the bucket by itself.
 var milker: bool = false
+## The farmer holds the fishing rod (false: walking with it put away).
+var rod_out: bool = true
 ## Settings: sound on, FPS counter shown (Story 006).
 var sound_on: bool = true
 var show_fps: bool = false

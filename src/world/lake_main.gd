@@ -193,6 +193,7 @@ func _build_interface() -> void:
 	_actions.rest_pressed.connect(_toggle_rest)
 	_actions.shop_pressed.connect(_open_shop_if_near)
 	_actions.context_pressed.connect(_use_spot)
+	_actions.rod_pressed.connect(_toggle_rod)
 	_screens.start_chosen.connect(_begin)
 	_screens.new_game_requested.connect(_new_game)
 	_screens.outfit_changed.connect(_dress)
@@ -247,6 +248,7 @@ func _begin(fresh: bool) -> void:
 		_set_cut(int(str(key)), true)
 	_town.ensure_requests()
 	_dress()
+	_apply_rod()
 	_sfx.set_enabled(_state.sound_on)
 	_sync_position()
 	_started = true
@@ -324,6 +326,9 @@ func _physics_process(delta: float) -> void:
 			_hold_stale = false
 		if _hold_stale:
 			hold = false
+	if press and phase == FishingMachine.Phase.IDLE and not _state.rod_out:
+		_toggle_rod()
+		press = false
 	if press:
 		if phase == FishingMachine.Phase.IDLE:
 			_cast_forward()
@@ -388,6 +393,8 @@ func _tap(screen_pos: Vector2) -> void:
 
 ## Casts to the water point under [param screen_pos]: the camera ray meets the water plane.
 func _cast_at_screen(screen_pos: Vector2) -> void:
+	if not _state.rod_out:
+		return
 	var hit: Variant = _water_plane.intersects_ray(_camera.project_ray_origin(screen_pos), _camera.project_ray_normal(screen_pos))
 	if hit != null:
 		var point: Vector3 = hit
@@ -429,6 +436,24 @@ func _try_cast(world_point: Vector3) -> void:
 func _show_cast_result(result: FishingMachine.CastResult) -> void:
 	if result != FishingMachine.CastResult.BUSY:
 		_fishing_hud.show_toast("cast_" + FishingMachine.CastResult.keys()[result].to_lower())
+
+
+## Puts the rod away or takes it out (only while not fishing).
+func _toggle_rod() -> void:
+	if not _machine.is_idle():
+		_screens.toast(Texts.get_text("rod_busy"))
+		return
+	_state.rod_out = not _state.rod_out
+	_apply_rod()
+	_sfx.play(&"click")
+	_screens.toast(Texts.get_text("rod_taken") if _state.rod_out else Texts.get_text("rod_stowed"))
+	_save_soon = true
+
+
+func _apply_rod() -> void:
+	_fisherman.set_rod_visible(_state.rod_out)
+	_fishing_hud.rod_out = _state.rod_out
+	_actions.set_rod(_state.rod_out)
 
 
 func _toggle_rest() -> void:

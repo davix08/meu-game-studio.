@@ -1,0 +1,146 @@
+{
+	"path": "res://assets/fish/fish_%02d.png",
+	"faces_left": true,
+	"species": {
+		"sardinha": {
+			"sprite": 1,
+			"tint": "#ffffff"
+		},
+		"tilapia": {
+			"sprite": 2,
+			"tint": "#ffffff"
+		},
+		"cavala": {
+			"sprite": 3,
+			"tint": "#ffffff"
+		},
+		"acara": {
+			"sprite": 4,
+			"tint": "#ffffff"
+		},
+		"piaba": {
+			"sprite": 5,
+			"tint": "#ffffff"
+		},
+		"perca": {
+			"sprite": 6,
+			"tint": "#ffffff"
+		},
+		"camarao": {
+			"sprite": 7,
+			"tint": "#ffffff"
+		},
+		"tucunare": {
+			"sprite": 8,
+			"tint": "#ffffff"
+		},
+		"carpa": {
+			"sprite": 9,
+			"tint": "#ffffff"
+		},
+		"salmao": {
+			"sprite": 10,
+			"tint": "#ffffff"
+		},
+		"palhaco": {
+			"sprite": 11,
+			"tint": "#ffffff"
+		},
+		"baiacu": {
+			"sprite": 12,
+			"tint": "#ffffff"
+		},
+		"cirurgiao": {
+			"sprite": 1,
+			"tint": "#bcd8ff"
+		},
+		"caranguejo": {
+			"sprite": 2,
+			"tint": "#bcd8ff"
+		},
+		"dourado": {
+			"sprite": 3,
+			"tint": "#bcd8ff"
+		},
+		"koi": {
+			"sprite": 4,
+			"tint": "#bcd8ff"
+		},
+		"leao": {
+			"sprite": 5,
+			"tint": "#bcd8ff"
+		},
+		"cavalo": {
+			"sprite": 6,
+			"tint": "#bcd8ff"
+		},
+		"choco": {
+			"sprite": 7,
+			"tint": "#bcd8ff"
+		},
+		"polvo": {
+			"sprite": 8,
+			"tint": "#bcd8ff"
+		},
+		"lagosta": {
+			"sprite": 9,
+			"tint": "#bcd8ff"
+		},
+		"fantasma": {
+			"sprite": 10,
+			"tint": "#bcd8ff"
+		},
+		"tubaraoazul": {
+			"sprite": 11,
+			"tint": "#bcd8ff"
+		},
+		"espada": {
+			"sprite": 12,
+			"tint": "#bcd8ff"
+		},
+		"jamanta": {
+			"sprite": 1,
+			"tint": "#ffd8a8"
+		},
+		"atum": {
+			"sprite": 2,
+			"tint": "#ffd8a8"
+		},
+		"martelo": {
+			"sprite": 3,
+			"tint": "#ffd8a8"
+		},
+		"celacanto": {
+			"sprite": 4,
+			"tint": "#ffd8a8"
+		},
+		"nautilo": {
+			"sprite": 5,
+			"tint": "#ffd8a8"
+		},
+		"moreia": {
+			"sprite": 6,
+			"tint": "#ffd8a8"
+		},
+		"lua": {
+			"sprite": 7,
+			"tint": "#ffd8a8"
+		},
+		"lula": {
+			"sprite": 8,
+			"tint": "#ffd8a8"
+		},
+		"baleia": {
+			"sprite": 9,
+			"tint": "#ffd8a8"
+		},
+		"arowana": {
+			"sprite": 10,
+			"tint": "#ffd8a8"
+		},
+		"remo": {
+			"sprite": 11,
+			"tint": "#ffd8a8"
+		}
+	}
+}

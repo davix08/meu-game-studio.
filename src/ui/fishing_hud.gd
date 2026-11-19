@@ -25,6 +25,8 @@ const TEXTS_PATH: String = "res://src/data/texts_pt.json"
 
 ## The PUXAR button.
 var pull: PullButton
+## False while the farmer walks with the rod put away (the button then takes the rod out).
+var rod_out: bool = true
 ## True while the capture card is on screen.
 var card_open: bool = false
 
@@ -58,6 +60,7 @@ func setup(look: WorldLook, data: GameData, state: GameState) -> void:
 	_texts = parsed
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_style = StyleBoxFlat.new()
 	_style.set_corner_radius_all(look.integer("hud", "corner_radius"))
 	_style.set_border_width_all(int(_n("ui_panel_border")))
@@ -117,7 +120,7 @@ func _process(delta: float) -> void:
 		_card_time += delta
 	match _machine.phase:
 		FishingMachine.Phase.IDLE:
-			pull.label = _t("pull_cast")
+			pull.label = _t("pull_cast") if rod_out else _t("pull_take_rod")
 		FishingMachine.Phase.CAST, FishingMachine.Phase.WAIT:
 			pull.label = _t("pull_reel")
 		FishingMachine.Phase.BITE:
@@ -238,6 +241,10 @@ func _draw_card() -> void:
 	if _card_time > _n("card_continue_delay"):
 		_text(0.0, top + _n("card_continue_y"), _t("card_continue"), int(_n("card_continue_font")), _c("card_continue_color"))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# The fish picture (2026-11-19 fish art), drawn in screen space at the card scale.
+	var fish_center: Vector2 = size * 0.5 + Vector2(0.0, (top + _n("card_fish_y")) * s)
+	var fish_size := Vector2(_n("card_fish_w"), _n("card_fish_h")) * s
+	FishArt.draw(self, _card_fish.id, Rect2(fish_center - fish_size * 0.5, fish_size), true, false)
 
 
 func _weight_text(kg: float) -> String:

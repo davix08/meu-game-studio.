@@ -35,6 +35,7 @@ func setup(look: WorldLook, data: GameData, machine: FishingMachine) -> void:
 	_machine = machine
 	_p = look.num("fight", "pixel")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var w: float = look.num("fight", "width")
 	var h: float = look.num("fight", "height")
 	anchor_left = 0.5
@@ -174,7 +175,8 @@ func _draw() -> void:
 	if _tranco_left > 0.0:
 		fish_y += sin(_time * 40.0) * p
 	var fish_color: Color = Color.from_hsv(float(absi(hash(_machine.species.id)) % 1000) / 1000.0, 0.65, 0.8)
-	_fish(Vector2(fish_x, fish_y), fish_len, fish_color, rarity)
+	if not FishArt.draw(self, _machine.species.id, Rect2(fish_x - fish_len * 0.5, fish_y - fish_len * 0.4, fish_len, fish_len * 0.8), _facing > 0.0, false):
+		_fish(Vector2(fish_x, fish_y), fish_len, fish_color, rarity)
 	var hx: float = wx + _machine.indicator * ww
 	var hook_y: float = fish_y + p * 2.0
 	_r(hx, wy, p * 0.5, hook_y - wy, _c("line"))

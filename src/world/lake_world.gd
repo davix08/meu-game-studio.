@@ -110,6 +110,13 @@ func _build_environment(look: WorldLook) -> void:
 	env.fog_light_color = look.color("environment", "fog_color")
 	env.fog_density = look.num("environment", "fog_density")
 	env.fog_sky_affect = look.num("environment", "fog_sky_affect")
+	# Overcast, softer light (2026-11-19): filmic tone mapping, a little less exposure and color.
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = look.num("environment", "tonemap_exposure")
+	env.adjustment_enabled = true
+	env.adjustment_saturation = look.num("environment", "saturation")
+	env.adjustment_brightness = look.num("environment", "brightness")
+	env.adjustment_contrast = look.num("environment", "contrast")
 	environment = env
 	var holder := WorldEnvironment.new()
 	holder.environment = env

@@ -89,6 +89,7 @@ static func to_dict(state: GameState) -> Dictionary:
 		"boxes": state.boxes.duplicate(true),
 		"chopped": state.chopped.duplicate(),
 		"milker": state.milker,
+		"rod_out": state.rod_out,
 		"sound_on": state.sound_on,
 		"show_fps": state.show_fps,
 	}
@@ -317,6 +318,8 @@ static func _apply_town(state: GameState, data: GameData, save: Dictionary) -> v
 		state.chopped = (save["chopped"] as Dictionary).duplicate()
 	if save.get("milker") is bool:
 		state.milker = save["milker"]
+	if save.get("rod_out") is bool:
+		state.rod_out = save["rod_out"]
 	if save.get("sound_on") is bool:
 		state.sound_on = save["sound_on"]
 	if save.get("show_fps") is bool:

@@ -443,28 +443,124 @@ func _economy_text(r: Economy.Result) -> String:
 
 # --- Book and level up (Story 007) ---
 
-## The fish book: 35 species, undiscovered ones as silhouettes, with the counter.
-func open_book() -> void:
+## The fish book as an open book (2026-11-19): the left page shows the chosen species (name
+## banner, big picture or silhouette, rarity, where and when it bites, catches and the biggest
+## one); the right page shows the counter, the sort choice and every species as a tile (dark
+## silhouettes for the ones not caught yet). A tap on a tile shows it on the left page.
+func open_book(selected: String = "", sort: int = 0) -> void:
 	var s: GameState = _ctx.state
-	var body: VBoxContainer = _sheet(Texts.get_text("book"), open_book)
-	body.add_child(UiKit.label(Texts.fmt("book_count", [s.discovered(), _ctx.data.species.size()]), 26, _look.color("ui", "good")))
+	var d: GameData = _ctx.data
+	if selected == "":
+		selected = d.species[0].id
+		for sp: GameData.Species in d.species:
+			if s.book.has(sp.id):
+				selected = sp.id
+				break
+	var body: VBoxContainer = _sheet(Texts.get_text("book"), open_book.bind(selected, sort))
+	var pages := HBoxContainer.new()
+	pages.add_theme_constant_override(&"separation", 6)
+	body.add_child(pages)
+	var page_style: StyleBoxFlat = UiKit.flat(_bc("page"), 10)
+	page_style.set_border_width_all(3)
+	page_style.border_color = _bc("page_edge")
+	page_style.set_content_margin_all(14.0)
+	# Left page: the chosen species.
+	var left := PanelContainer.new()
+	left.add_theme_stylebox_override(&"panel", page_style)
+	left.custom_minimum_size = Vector2(_look.num("book", "left_w"), 0.0)
+	pages.add_child(left)
+	var lv := VBoxContainer.new()
+	lv.add_theme_constant_override(&"separation", 8)
+	left.add_child(lv)
+	var sp: GameData.Species = d.species_by_id(selected)
+	var known: bool = s.book.has(selected)
+	var banner: Label = UiKit.label(sp.name.to_upper() if known else Texts.get_text("book_unknown"), 24, _bc("ink"))
+	banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	banner.add_theme_stylebox_override(&"normal", UiKit.flat(_bc("banner"), 14))
+	lv.add_child(banner)
+	var picture := PanelContainer.new()
+	picture.add_theme_stylebox_override(&"panel", UiKit.flat(_bc("picture"), 12))
+	var big := FishIcon.new()
+	big.framed = false
+	big.custom_minimum_size = Vector2(0.0, _look.num("book", "picture_h"))
+	big.setup_fish(selected, Color.html(d.rarity_colors[sp.rarity]), known)
+	picture.add_child(big)
+	lv.add_child(picture)
+	var rarity: Label = UiKit.label(d.rarity_names[sp.rarity], _look.integer("ui", "small_size"), Color.WHITE)
+	rarity.add_theme_stylebox_override(&"normal", UiKit.flat(Color.html(d.rarity_colors[sp.rarity]).darkened(0.25), 8))
+	rarity.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	rarity.autowrap_mode = TextServer.AUTOWRAP_OFF
+	lv.add_child(rarity)
+	var place_key: String = "book_place_day" if sp.time == "day" else ("book_place_night" if sp.time == "night" else "book_place_any")
+	lv.add_child(UiKit.label(Texts.get_text(place_key), 0, _bc("ink")))
+	if known:
+		var entry: GameState.BookEntry = s.book[selected]
+		lv.add_child(UiKit.label(Texts.fmt("book_total", [entry.count]), 0, _bc("ink")))
+		lv.add_child(UiKit.label(Texts.get_text("book_biggest"), 22, _bc("accent")))
+		lv.add_child(UiKit.label(_kg(entry.best), 0, _bc("ink")))
+	else:
+		lv.add_child(UiKit.label(Texts.get_text("book_none"), 0, _bc("tile_dark")))
+	# Right page: counter, sort and the grid.
+	var right := PanelContainer.new()
+	right.add_theme_stylebox_override(&"panel", page_style)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pages.add_child(right)
+	var rv := VBoxContainer.new()
+	rv.add_theme_constant_override(&"separation", 8)
+	right.add_child(rv)
+	var head := HBoxContainer.new()
+	var counter: Label = UiKit.label("%d / %d" % [s.discovered(), d.species.size()], 24, _bc("accent"))
+	counter.autowrap_mode = TextServer.AUTOWRAP_OFF
+	counter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(counter)
+	var sort_label: Label = UiKit.label(Texts.get_text("book_sort"), _look.integer("ui", "small_size"), _bc("ink"))
+	sort_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	head.add_child(sort_label)
+	var sort_names: Array[String] = [Texts.get_text("sort_caught"), Texts.get_text("sort_rarity"), Texts.get_text("sort_name")]
+	var sort_button: Button = UiKit.button(_look, sort_names[sort], open_book.bind(selected, (sort + 1) % 3))
+	sort_button.add_theme_stylebox_override(&"normal", UiKit.flat(_bc("ink"), 8))
+	head.add_child(sort_button)
+	rv.add_child(head)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(0.0, 380.0)
+	rv.add_child(scroll)
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = _look.integer("book", "columns")
 	grid.add_theme_constant_override(&"h_separation", 8)
 	grid.add_theme_constant_override(&"v_separation", 8)
-	body.add_child(grid)
-	for sp: GameData.Species in _ctx.data.species:
-		var known: bool = s.book.has(sp.id)
-		var text: String = Texts.get_text("book_unknown")
-		if known:
-			var entry: GameState.BookEntry = s.book[sp.id]
-			text = "%s\n%s · %s · %d×" % [sp.name, _ctx.data.rarity_names[sp.rarity], _kg(entry.best), entry.count]
-		else:
-			text += "\n" + _ctx.data.rarity_names[sp.rarity]
-		var label: Label = UiKit.label(text, _look.integer("ui", "small_size"), Color.html(_ctx.data.rarity_colors[sp.rarity]).darkened(0.35) if known else _look.color("ui", "muted"))
-		var cell: PanelContainer = UiKit.row(_look, [_fish_icon(sp.id, known), label])
-		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		grid.add_child(cell)
+	scroll.add_child(grid)
+	var order: Array[GameData.Species] = d.species.duplicate()
+	if sort == 0:
+		var caught_first: Callable = func(a: GameData.Species, b: GameData.Species) -> bool:
+			var ka: bool = s.book.has(a.id)
+			var kb: bool = s.book.has(b.id)
+			if ka != kb:
+				return ka
+			return a.rarity < b.rarity or (a.rarity == b.rarity and a.name < b.name)
+		order.sort_custom(caught_first)
+	elif sort == 1:
+		order.sort_custom(func(a: GameData.Species, b: GameData.Species) -> bool: return a.rarity < b.rarity or (a.rarity == b.rarity and a.name < b.name))
+	else:
+		order.sort_custom(func(a: GameData.Species, b: GameData.Species) -> bool: return a.name < b.name)
+	for each: GameData.Species in order:
+		var tile := Button.new()
+		tile.focus_mode = Control.FOCUS_NONE
+		tile.custom_minimum_size = Vector2(_look.num("book", "tile_w"), _look.num("book", "tile_h"))
+		var tile_color: Color = _bc("tile_selected") if each.id == selected else _bc("tile")
+		for state_name: String in ["normal", "hover", "pressed"]:
+			tile.add_theme_stylebox_override(StringName(state_name), UiKit.flat(tile_color, 10))
+		var icon := FishIcon.new()
+		icon.framed = false
+		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon.setup_fish(each.id, Color.html(d.rarity_colors[each.rarity]), s.book.has(each.id))
+		tile.add_child(icon)
+		tile.pressed.connect(open_book.bind(each.id, sort))
+		grid.add_child(tile)
+
+
+func _bc(key: String) -> Color:
+	return _look.color("book", key)
 
 
 ## The level-up screen: new title, new species, new shop entries and the reward.

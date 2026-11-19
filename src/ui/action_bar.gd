@@ -18,11 +18,14 @@ signal bag_pressed
 signal rest_pressed
 signal book_pressed
 signal shop_pressed
+## The rod button was tapped (put the rod away or take it out).
+signal rod_pressed
 ## The context button was tapped.
 signal context_pressed
 
 var _look: WorldLook
 var _rest: Button
+var _rod: Button
 var _context: Button
 
 
@@ -37,6 +40,7 @@ func setup(look: WorldLook) -> void:
 	var gap: float = look.num("ui", "action_gap")
 	_round(Texts.get_text("btn_bag"), Vector2(m + pull + gap + d, m + d), bag_pressed)
 	_rest = _round(Texts.get_text("btn_rest"), Vector2(m + pull + gap + d, m + d * 2.0 + gap), rest_pressed)
+	_rod = _round(Texts.get_text("btn_rod_stow"), Vector2(m + pull + gap + d, m + d * 3.0 + gap * 2.0), rod_pressed)
 	_round(Texts.get_text("btn_book"), Vector2(m + d, m + pull + gap + d), book_pressed)
 	_round(Texts.get_text("btn_shop"), Vector2(m + d * 2.0 + gap, m + pull + gap + d), shop_pressed)
 	_context = Button.new()
@@ -58,6 +62,11 @@ func setup(look: WorldLook) -> void:
 ## Shows the rest button as "Parar" while resting.
 func set_resting(on: bool) -> void:
 	_rest.text = Texts.get_text("btn_rest_stop") if on else Texts.get_text("btn_rest")
+
+
+## Shows the rod button as "Guardar" while the rod is in the hand, "Pegar vara" otherwise.
+func set_rod(out: bool) -> void:
+	_rod.text = Texts.get_text("btn_rod_stow") if out else Texts.get_text("btn_rod_take")
 
 
 ## Shows the context button with [param text], or hides it when [param text] is empty.

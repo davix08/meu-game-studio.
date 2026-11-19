@@ -19,16 +19,21 @@ var _kind: Kind = Kind.FISH
 var _body: Color = Color.WHITE
 var _ring: Color = Color.WHITE
 var _known: bool = true
+var _id: String = ""
+## Draws the ring and the light disc behind the fish (off in the fish book grid).
+var framed: bool = true
 
 
 func _init() -> void:
 	custom_minimum_size = Vector2(64.0, 52.0)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 
 ## A fish of species [param id]; [param rarity_color] rings it; [param known] false = silhouette.
 func setup_fish(id: String, rarity_color: Color, known: bool) -> void:
 	_kind = Kind.FISH
+	_id = id
 	var h: float = float(absi(hash(id)) % 1000) / 1000.0
 	_body = Color.from_hsv(h, 0.45, 0.85)
 	_ring = rarity_color
@@ -47,8 +52,11 @@ func setup_item(kind: Kind, color: Color) -> void:
 
 func _draw() -> void:
 	var c: Vector2 = size * 0.5
-	draw_circle(c, minf(size.x, size.y) * 0.48, Color(1, 1, 1, 0.35))
-	draw_arc(c, minf(size.x, size.y) * 0.48, 0.0, TAU, 32, _ring, 3.0, true)
+	if framed:
+		draw_circle(c, minf(size.x, size.y) * 0.48, Color(1, 1, 1, 0.35))
+		draw_arc(c, minf(size.x, size.y) * 0.48, 0.0, TAU, 32, _ring, 3.0, true)
+	if _kind == Kind.FISH and FishArt.draw(self, _id, Rect2(size * 0.08, size * 0.84), false, not _known):
+		return
 	match _kind:
 		Kind.FISH:
 			_draw_fish(c)
