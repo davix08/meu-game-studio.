@@ -4,6 +4,9 @@
 // Variants: none (one shader, one material).
 // The mesh vertex color carries the water depth in COLOR.r (0 at the shore, 1 at the deepest
 // point), so the color, the transparency and the shore foam come from the depth.
+// 2026-11-21: a seamless ripple picture (assets/water/ondas.png, from the user's water photo) is
+// sampled twice in world space, scrolling in two directions, to give the surface real ripples
+// and sparkles; 2 texture reads per fragment.
 // Story 005: COLOR.g is 1 on river water, where stripes of foam run along flow_dir (the current).
 shader_type spatial;
 render_mode cull_disabled;
@@ -25,6 +28,13 @@ uniform float flow_speed = 1.6;
 uniform float flow_scale = 2.4;
 uniform float flow_strength = 0.45;
 
+// Ripple picture: grey levels only (the color comes from shallow/deep_color).
+uniform sampler2D ripple_tex : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform float ripple_scale = 0.18;
+uniform float ripple_speed = 0.02;
+uniform float ripple_strength = 0.55;
+uniform float ripple_sparkle = 0.9;
+
 varying vec3 wpos;
 varying float depth01;
 varying float river;
@@ -41,11 +51,15 @@ void fragment() {
 	float d = clamp(depth01, 0.0, 1.0);
 	vec3 col = mix(shallow_color.rgb, deep_color.rgb, smoothstep(0.0, 0.85, d));
 	float ripple = sin(wpos.x * 5.0 + TIME * 1.7) * sin(wpos.z * 4.3 - TIME * 1.3);
-	col += vec3(0.05 * ripple);
+	col += vec3(0.015 * ripple);
 	float shore = 1.0 - smoothstep(0.0, foam_width, d);
 	float foam_wave = 0.5 + 0.5 * sin(wpos.x * 3.0 + wpos.z * 2.0 + TIME * 1.6);
 	float foam = shore * (0.35 + 0.65 * foam_wave);
-	float glint = pow(max(ripple, 0.0), 6.0) * glint_strength;
+	vec2 uv_a = wpos.xz * ripple_scale + vec2(TIME * ripple_speed, TIME * ripple_speed * 0.6);
+	vec2 uv_b = wpos.xz * ripple_scale * 1.7 + vec2(-TIME * ripple_speed * 0.7, TIME * ripple_speed * 0.45);
+	float waves = (texture(ripple_tex, uv_a).r + texture(ripple_tex, uv_b).r) * 0.5;
+	col *= mix(1.0, 0.6 + waves * 0.8, ripple_strength);
+	float glint = pow(max(ripple, 0.0), 8.0) * glint_strength * 0.3 + pow(waves, 4.0) * ripple_sparkle;
 	// Current: stripes moving along flow_dir, broken up across the flow by a slower wave.
 	float along = dot(wpos.xz, flow_dir) * flow_scale - TIME * flow_speed;
 	float across = dot(wpos.xz, vec2(-flow_dir.y, flow_dir.x));

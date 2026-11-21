@@ -61,6 +61,10 @@ func build(terrain: LakeTerrain, look: WorldLook) -> void:
 
 	var material := ShaderMaterial.new()
 	material.shader = load(SHADER_PATH) as Shader
+	if look.has("water", "ripple_texture") and ResourceLoader.exists(look.text("water", "ripple_texture")):
+		material.set_shader_parameter("ripple_tex", load(look.text("water", "ripple_texture")) as Texture2D)
+		for key: String in ["ripple_scale", "ripple_speed", "ripple_strength", "ripple_sparkle"]:
+			material.set_shader_parameter(key, look.num("water", key))
 	material.set_shader_parameter("flow_dir", Vector2(look.num("water", "flow_dir_x"), look.num("water", "flow_dir_z")).normalized())
 	for key: String in ["shallow_color", "deep_color", "foam_color", "glint_color"]:
 		material.set_shader_parameter(key, look.color("water", key))
