@@ -90,6 +90,13 @@ static func to_dict(state: GameState) -> Dictionary:
 		"chopped": state.chopped.duplicate(),
 		"milker": state.milker,
 		"rod_out": state.rod_out,
+		"crop_plots": state.crop_plots.duplicate(true),
+		"prod_started": state.prod_started,
+		"storage_levels": state.storage_levels.duplicate(),
+		"factories": state.factories.duplicate(true),
+		"order_board": state.order_board.duplicate(true),
+		"stall": state.stall.duplicate(true),
+		"expanded": Array(state.expanded),
 		"sound_on": state.sound_on,
 		"show_fps": state.show_fps,
 	}
@@ -320,6 +327,26 @@ static func _apply_town(state: GameState, data: GameData, save: Dictionary) -> v
 		state.milker = save["milker"]
 	if save.get("rod_out") is bool:
 		state.rod_out = save["rod_out"]
+	if save.get("crop_plots") is Array:
+		state.crop_plots.clear()
+		for p: Variant in save["crop_plots"]:
+			if p is Dictionary:
+				state.crop_plots.append({"crop": str((p as Dictionary).get("crop", "")), "ready_at": _number(p, "ready_at", 0.0)})
+	if save.get("prod_started") is bool:
+		state.prod_started = save["prod_started"]
+	if save.get("storage_levels") is Dictionary:
+		state.storage_levels = (save["storage_levels"] as Dictionary).duplicate()
+	if save.get("factories") is Dictionary:
+		state.factories = (save["factories"] as Dictionary).duplicate(true)
+	if save.get("order_board") is Array:
+		state.order_board.clear()
+		for o: Variant in save["order_board"]:
+			if o is Dictionary:
+				state.order_board.append((o as Dictionary).duplicate(true))
+	if save.get("stall") is Array:
+		state.stall = (save["stall"] as Array).duplicate(true)
+	if save.get("expanded") is Array:
+		state.expanded = PackedStringArray(save["expanded"])
 	if save.get("sound_on") is bool:
 		state.sound_on = save["sound_on"]
 	if save.get("show_fps") is bool:

@@ -56,6 +56,7 @@ static func plan(grid: WorldGrid, look: WorldLook) -> void:
 	_plan_forests(grid, look)
 	if look.has(GROUP, "city_gate"):
 		grid.block_area(_rect(_array(look, "city_gate")))
+	_plan_expansions(grid, look)
 	for b: Variant in _array(look, "boulders"):
 		var cell := Vector2i(int(b[0]), int(b[1]))
 		if not grid.is_water(cell.x, cell.y):
@@ -170,6 +171,52 @@ static func _plan_river(grid: WorldGrid, look: WorldLook) -> void:
 				grid.set_tile(x, y, WorldGrid.Tile.SAND)
 			if best < radius:
 				grid.mark_river(x, y)
+
+
+## Expansion areas (2026-11-21): every tree and rock inside one is tagged with the area (and
+## registered as removable), and the whole area is blocked until it is opened.
+static func _plan_expansions(grid: WorldGrid, look: WorldLook) -> void:
+	if not look.has(GROUP, "expansions"):
+		return
+	var zones: Dictionary = look.raw(GROUP, "expansions")
+	for id: Variant in zones:
+		var rect: Rect2i = _rect((zones[id] as Dictionary)["rect"])
+		for p: WorldGrid.Placement in grid.placements:
+			if rect.has_point(p.cell) and (p.kind == &"tree" or p.kind == &"pine" or p.kind == &"rock" or p.kind == &"bush"):
+				p.zone = str(id)
+				p.choppable = true
+		grid.block_area(rect)
+
+
+## Opens expansion [param id] on the grid: the area becomes walkable again, except its lots.
+static func open_expansion(grid: WorldGrid, look: WorldLook, id: String) -> void:
+	var rect: Rect2i = _rect(((look.raw(GROUP, "expansions") as Dictionary)[id] as Dictionary)["rect"])
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			grid.set_solid(x, y, false)
+	for lot: String in lot_ids(look):
+		if rect.intersects(lot_rect(look, lot)):
+			grid.block_area(lot_rect(look, lot))
+
+
+## Expansion ids, in data order.
+static func expansion_ids(look: WorldLook) -> Array[String]:
+	var out: Array[String] = []
+	if look.has(GROUP, "expansions"):
+		for id: Variant in look.raw(GROUP, "expansions"):
+			out.append(str(id))
+	return out
+
+
+## The rectangle of expansion [param id].
+static func expansion_rect(look: WorldLook, id: String) -> Rect2i:
+	return _rect(((look.raw(GROUP, "expansions") as Dictionary)[id] as Dictionary)["rect"])
+
+
+## Where the sign of expansion [param id] stands (meters, x z).
+static func expansion_sign(look: WorldLook, id: String) -> Vector2:
+	var s: Array = ((look.raw(GROUP, "expansions") as Dictionary)[id] as Dictionary)["sign"]
+	return Vector2(float(s[0]), float(s[1]))
 
 
 static func _plan_forests(grid: WorldGrid, look: WorldLook) -> void:

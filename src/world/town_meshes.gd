@@ -32,7 +32,25 @@ static func building(look: WorldLook, id: String, glass: MeshBuilder) -> ArrayMe
 		"curral":
 			_corral(mb, look, r)
 		"plantacao":
-			_field(mb, look, r)
+			_lot_fence(mb, look, r, "plantacao")
+		"silo":
+			_silo(mb, look, r)
+		"fabrica_racao":
+			_factory(mb, glass, look, r, _c(look, "plank"), _c(look, "roof_green"), true)
+		"padaria":
+			_factory(mb, glass, look, r, _c(look, "wall_cream"), _c(look, "roof_tile_a"), true)
+		"laticinios":
+			_factory(mb, glass, look, r, _c(look, "wall_blue"), _c(look, "roof_slate"), false)
+		"usina":
+			_factory(mb, glass, look, r, _c(look, "brick"), _c(look, "roof_brown"), true)
+		"chiqueiro":
+			_pen(mb, look, r, "chiqueiro", _c(look, "crop_soil_wet"))
+		"ovelhas":
+			_pen(mb, look, r, "ovelhas", look.color("colors", "grass_c"))
+		"quadro":
+			_order_board(mb, look, r)
+		"barraca":
+			_stall(mb, look, r)
 		"roupas":
 			_clothes(mb, glass, look, r)
 		"restaurante":
@@ -83,6 +101,8 @@ static func site(look: WorldLook, id: String) -> ArrayMesh:
 ## Top of the chimney of lot [param id] (for smoke), or Vector3.INF when it has none.
 static func chimney_top(look: WorldLook, id: String) -> Vector3:
 	var r: Rect2i = TownPlan.lot_rect(look, id)
+	if id in ["fabrica_racao", "padaria", "usina"]:
+		return Vector3(float(r.end.x) - 1.0, WALL_H + ROOF_RISE + 0.9, float(r.position.y) + 1.0)
 	if id == "restaurante" or id == "oficina":
 		return Vector3(float(r.end.x) - 1.0, WALL_H + ROOF_RISE + 0.9, float(r.position.y) + 1.3)
 	return Vector3.INF
@@ -371,6 +391,78 @@ static func city_gate(look: WorldLook) -> ArrayMesh:
 	mb.add_box(s + Vector3(0.35, 1.4, 0.0), Vector3(0.9, 0.3, 0.06), _c(look, "sign_color"))
 	mb.add_triangle(s + Vector3(0.8, 1.25, 0.0), s + Vector3(0.8, 1.55, 0.0), s + Vector3(1.0, 1.4, 0.0), _c(look, "sign_color"), Vector3.BACK)
 	return mb.build()
+
+
+# --- production buildings (2026-11-21) ---
+
+## A round grain silo with a cone roof and a ladder.
+static func _silo(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	var c := Vector3(float(r.position.x) + float(r.size.x) * 0.5, 0.0, float(r.position.y) + float(r.size.y) * 0.5)
+	var radius: float = minf(float(r.size.x), float(r.size.y)) * 0.42
+	mb.add_cone(c, radius, radius, 4.2, _c(look, "wall_cream").darkened(0.05), _c(look, "wall_cream"), 16, false, true)
+	for k in 4:
+		mb.add_cone(c + Vector3(0.0, 0.6 + float(k) * 1.0, 0.0), radius + 0.03, radius + 0.03, 0.12, _c(look, "metal"), _c(look, "metal"), 16)
+	mb.add_cone(c + Vector3(0.0, 4.2, 0.0), radius + 0.15, 0.1, 1.3, _c(look, "roof_tile_a"), _c(look, "roof_tile_b"), 16, false, true)
+	var front: float = c.z + radius + 0.03
+	for k in 12:
+		mb.add_box(Vector3(c.x + 0.3, 0.3 + float(k) * 0.32, front), Vector3(0.4, 0.05, 0.05), _c(look, "metal"))
+	mb.add_box(Vector3(c.x, 0.6, front), Vector3(0.6, 1.2, 0.06), look.color("colors", "door"))
+
+
+## A workshop building with a door on the south and, when [param chimney], a smoking chimney.
+static func _factory(mb: MeshBuilder, glass: MeshBuilder, look: WorldLook, r: Rect2i, wall: Color, roof: Color, chimney: bool) -> void:
+	_body(mb, glass, look, r, true, wall, roof, look.color("colors", "door"), WALL_H)
+	if chimney:
+		_chimney(mb, look, Vector3(float(r.end.x) - 1.0, WALL_H + ROOF_RISE + 0.9, float(r.position.y) + 1.0))
+	var x: float = float(r.end.x) - 0.5
+	var z: float = float(r.end.y) + 0.4
+	for k in 2:
+		mb.add_box(Vector3(x - float(k) * 0.55, 0.25, z), Vector3(0.5, 0.5, 0.5), _c(look, "plank_light"))
+
+
+## A fenced animal pen with a gate, a small shelter, a trough and [param ground] floor.
+static func _pen(mb: MeshBuilder, look: WorldLook, r: Rect2i, id: String, ground: Color) -> void:
+	_lot_fence(mb, look, r, id)
+	EstateMeshes._box(mb, float(r.position.x) + 0.3, 0.0, float(r.position.y) + 0.3, float(r.end.x) - 0.3, 0.04, float(r.end.y) - 0.3, ground)
+	var x0: float = float(r.position.x) + 0.6
+	var z0: float = float(r.position.y) + 0.6
+	if id == "chiqueiro":
+		z0 = float(r.end.y) - 2.4
+	EstateMeshes._box(mb, x0, 0.0, z0, x0 + 2.6, 1.5, z0 + 1.8, look.color("colors", "wood_a"))
+	EstateMeshes._gable(mb, x0, x0 + 2.6, z0, z0 + 1.8, 1.5, 0.7, 0.2, 6, look.color("colors", "roof_a"), look.color("colors", "roof_b"), look.color("colors", "roof_ridge"), look.color("colors", "wood_a"), look.color("colors", "wood_dark"))
+	mb.add_box(Vector3(float(r.end.x) - 1.2, 0.22, float(r.position.y) + 1.0), Vector3(1.4, 0.3, 0.5), _c(look, "trough"))
+
+
+## The order board: two posts, a board with paper notes and a little roof.
+static func _order_board(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	var c := Vector3(float(r.position.x) + float(r.size.x) * 0.5, 0.0, float(r.position.y) + float(r.size.y) * 0.5)
+	var wood: Color = look.color("colors", "wood_dark")
+	for dx: float in [-0.8, 0.8]:
+		mb.add_box(c + Vector3(dx, 1.0, 0.0), Vector3(0.12, 2.0, 0.12), wood)
+	mb.add_box(c + Vector3(0.0, 1.3, 0.0), Vector3(1.8, 1.1, 0.08), look.color("colors", "sign_board"))
+	mb.add_box(c + Vector3(0.0, 2.05, 0.0), Vector3(2.1, 0.08, 0.4), look.color("colors", "roof_a"))
+	var papers: Array[Color] = [look.color("estate", "paper_a"), look.color("estate", "paper_b"), look.color("estate", "paper_c")]
+	for k in 6:
+		mb.add_box(c + Vector3(-0.55 + float(k % 3) * 0.55, 1.55 - float(k / 3) * 0.5, 0.06), Vector3(0.4, 0.35, 0.02), papers[k % 3])
+
+
+## The roadside stall: counter, striped awning on posts, crates and a price sign.
+static func _stall(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
+	var x0: float = float(r.position.x) + 0.3
+	var z0: float = float(r.position.y) + 0.3
+	var x1: float = float(r.end.x) - 0.3
+	var z1: float = float(r.end.y) - 0.3
+	EstateMeshes._box(mb, x0, 0.0, z0 + 0.6, x0 + 0.7, 0.9, z1 - 0.6, _c(look, "plank"))
+	EstateMeshes._box(mb, x0 - 0.05, 0.9, z0 + 0.55, x0 + 0.75, 0.98, z1 - 0.55, _c(look, "plank_light"))
+	for p: Vector2 in [Vector2(x0, z0), Vector2(x0, z1), Vector2(x1, z0), Vector2(x1, z1)]:
+		mb.add_box(Vector3(p.x, 1.1, p.y), Vector3(0.1, 2.2, 0.1), look.color("colors", "wood_dark"))
+	var stripes: int = 6
+	for k in stripes:
+		var za: float = lerpf(z0, z1, float(k) / float(stripes))
+		var zb: float = lerpf(z0, z1, float(k + 1) / float(stripes))
+		mb.add_quad(Vector3(x1, 2.2, za), Vector3(x1, 2.2, zb), Vector3(x0 - 0.3, 1.9, zb), Vector3(x0 - 0.3, 1.9, za), look.color("estate", "awning_blue") if k % 2 == 0 else look.color("estate", "awning_white"), Vector3(-0.3, 1.0, 0.0))
+	for k in 3:
+		mb.add_box(Vector3(x0 + 0.35, 1.1, z0 + 0.9 + float(k) * 0.5), Vector3(0.35, 0.22, 0.35), [_c(look, "cloth_c"), _c(look, "flag_red"), _c(look, "crop_leaf")][k])
 
 
 static func _c(look: WorldLook, key: String) -> Color:

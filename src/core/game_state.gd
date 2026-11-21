@@ -162,6 +162,22 @@ var chopped: Dictionary = {}
 var milker: bool = false
 ## The farmer holds the fishing rod (false: walking with it put away).
 var rod_out: bool = true
+
+# --- Real-time production (2026-11-21). Saved by [SaveGame] format 4 (new keys). ---
+## Field plots: {"crop": crop id or "", "ready_at": Unix time}.
+var crop_plots: Array[Dictionary] = []
+## The starting crops were given.
+var prod_started: bool = false
+## Upgrades bought: "silo" / "barn" -> count.
+var storage_levels: Dictionary = {}
+## Factories: id -> {"slots": int, "queue": [{"item", "out", "xp", "ready_at"}]}.
+var factories: Dictionary = {}
+## Order board: {"items": {id: count}, "coins", "xp", "wait_until"}.
+var order_board: Array[Dictionary] = []
+## Roadside stall slots: {} or {"item", "count", "price", "sell_at", "sold"}.
+var stall: Array = []
+## Land expansions opened.
+var expanded: PackedStringArray = PackedStringArray()
 ## Settings: sound on, FPS counter shown (Story 006).
 var sound_on: bool = true
 var show_fps: bool = false

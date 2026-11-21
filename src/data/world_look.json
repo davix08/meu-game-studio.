@@ -740,6 +740,12 @@
 				20,
 				11,
 				2
+			],
+			[
+				5,
+				30,
+				9,
+				2
 			]
 		],
 		"plaza": [
@@ -776,6 +782,69 @@
 				24,
 				6,
 				1
+			],
+			"silo": [
+				12,
+				4,
+				3,
+				4,
+				0
+			],
+			"fabrica_racao": [
+				33,
+				4,
+				5,
+				4,
+				0
+			],
+			"quadro": [
+				45,
+				7,
+				2,
+				2,
+				0
+			],
+			"barraca": [
+				52,
+				13,
+				3,
+				3,
+				3
+			],
+			"padaria": [
+				3,
+				24,
+				6,
+				5,
+				2
+			],
+			"laticinios": [
+				43,
+				24,
+				5,
+				5,
+				2
+			],
+			"usina": [
+				53,
+				28,
+				5,
+				5,
+				3
+			],
+			"chiqueiro": [
+				3,
+				33,
+				8,
+				5,
+				1
+			],
+			"ovelhas": [
+				48,
+				2,
+				8,
+				5,
+				0
 			]
 		},
 		"river": [
@@ -889,8 +958,8 @@
 				25
 			]
 		],
-		"field_plot_cols": 2,
-		"field_plot_rows": 4,
+		"field_plot_cols": 11,
+		"field_plot_rows": 2,
 		"field_plot_length": 5,
 		"garden_plots_west_gap": 0.6,
 		"interact_radius": 1.8,
@@ -947,10 +1016,47 @@
 			55.2,
 			18.6
 		],
-		"locked_lots": {
-			"plantacao": "Plantação · Nível 8"
+		"locked_lots": {},
+		"city_label": "Cidade (em breve)",
+		"expansions": {
+			"leste": {
+				"rect": [
+					52,
+					25,
+					7,
+					13
+				],
+				"sign": [
+					51.0,
+					26.5
+				]
+			},
+			"sudoeste": {
+				"rect": [
+					1,
+					31,
+					12,
+					9
+				],
+				"sign": [
+					12.5,
+					30.0
+				]
+			},
+			"nordeste": {
+				"rect": [
+					46,
+					1,
+					13,
+					8
+				],
+				"sign": [
+					47.0,
+					9.0
+				]
+			}
 		},
-		"city_label": "Cidade (em breve)"
+		"ready_marker": "#7ad86a"
 	},
 	"daynight": {
 		"hours": [

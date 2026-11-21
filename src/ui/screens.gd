@@ -41,6 +41,10 @@ var _viewer: SubViewport
 var _viewer_model: Fisherman
 var _sleep_left: float = 0.0
 var _sleep: Control
+## The open screen shows timers: it rebuilds itself every second.
+var _live: bool = false
+var _live_timer: float = 0.0
+var _refreshing: bool = false
 
 
 ## Builds the toast and connects the level-up screen.
@@ -95,6 +99,11 @@ func _process(delta: float) -> void:
 		_toast.visible = _toast_left > 0.0
 	if _viewer_model != null:
 		_viewer_model.rotation.y += delta * 0.8
+	if _live and _layer != null:
+		_live_timer -= delta
+		if _live_timer <= 0.0:
+			_live_timer = 1.0
+			_refresh()
 	if _sleep != null:
 		_sleep_left -= delta
 		_sleep.modulate.a = clampf(_sleep_left, 0.0, 1.0)
@@ -107,13 +116,14 @@ func _process(delta: float) -> void:
 
 func _sheet(title: String, rebuild: Callable) -> VBoxContainer:
 	var keep_scroll: int = 0
-	var same: bool = _layer != null and _rebuild == rebuild
+	var same: bool = _layer != null and (_rebuild == rebuild or _refreshing)
 	if same and _scroll != null:
 		keep_scroll = _scroll.scroll_vertical
 	if _layer != null:
 		_layer.queue_free()
 		_layer = null
 	_rebuild = rebuild
+	_live = false
 	_layer = Control.new()
 	_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_layer.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -165,7 +175,9 @@ func _restore_scroll(value: int) -> void:
 
 func _refresh() -> void:
 	if _rebuild.is_valid():
+		_refreshing = true
 		_rebuild.call()
+		_refreshing = false
 
 
 func _click() -> void:
@@ -855,47 +867,276 @@ func open_plot(i: int) -> void:
 
 # --- Ranch (Story 016) ---
 
-## The animal home [param home_id] (coop or corral): animals and their joy, trough, products,
-## feed, collect and milk. Animals are bought at the auction (shop).
+## The animal home [param home_id] in real time: each animal hungry, producing (with time left)
+## or ready; feed all with their feed from the barn; collect the products. Cows are milked here
+## (by hand) unless the milking machine is installed. Animals are bought at the auction.
 func open_ranch(home_id: String) -> void:
 	var s: GameState = _ctx.state
-	var t: Town = _ctx.town
-	var f: Farm = _ctx.farm
+	var p: Production = _ctx.production
 	var td: TownData = _ctx.town_data
 	var title: String = str(td.lot(home_id).get("name", home_id))
 	var body: VBoxContainer = _sheet(title, open_ranch.bind(home_id))
+	_live = true
+	var list: Array[int] = p.animals_of(home_id)
 	var capacity: int = 0
 	for h: Variant in td.homes():
 		if str((h as Dictionary)["id"]) == home_id:
 			capacity = int((h as Dictionary)["capacity"])
-	body.add_child(UiKit.label(Texts.fmt("ranch_home", [title, t.animals_in(home_id), capacity]), 26))
-	for a: Dictionary in s.animals:
-		var info: Dictionary = td.animal(str(a["kind"]))
-		if str(info["home"]) != home_id:
-			continue
-		var line: String = Texts.fmt("animal_joy", [str(info["name"]), int(float(a["joy"]))])
-		if info.has("grows_into"):
-			line = Texts.fmt("calf_age", [str(info["name"]), int(info["grow_days"]) - int(a.get("age", 0))])
-		body.add_child(UiKit.label(line, _look.integer("ui", "small_size")))
-	body.add_child(UiKit.label(Texts.fmt("ranch_trough", [s.troughs.get(home_id, 0), int(td.num("ranch", "trough_capacity"))])))
-	var _feed: Callable = func() -> void:
-		var r: Farm.Result = f.feed(home_id)
-		_result(r == Farm.Result.OK, Texts.get_text("filled") if r == Farm.Result.OK else (Texts.get_text("full") if r == Farm.Result.FULL else Texts.get_text("no_feed")))
-	body.add_child(UiKit.button(_look, Texts.get_text("fill_trough"), _feed))
-	var pending: int = t.pending_count(home_id)
-	body.add_child(UiKit.label(Texts.fmt("ranch_pending", [pending])))
+	body.add_child(UiKit.label(Texts.fmt("ranch_home", [title, list.size(), capacity]), 26))
+	for i: int in list:
+		var a: Dictionary = s.animals[i]
+		var st: int = p.animal_stage(i)
+		var status: String = Texts.get_text("animal_hungry") if st == 0 else (Texts.get_text("animal_ready") if st == 2 else Texts.fmt("animal_making", [_ptime(p.seconds_left(float(a.get("ready_at", 0.0))))]))
+		body.add_child(UiKit.label(Texts.fmt("animals_status", [str(td.animal(str(a["kind"])).get("name", "")), status]), _look.integer("ui", "small_size")))
+	var feed_id: String = p.feed_of(home_id)
+	if feed_id != "":
+		var _feed: Callable = func() -> void:
+			var n: int = p.feed_home(home_id)
+			_result(n > 0, Texts.fmt("fed_n", [n]) if n > 0 else Texts.fmt("no_feed2", [_gname(feed_id)]))
+		body.add_child(UiKit.button(_look, Texts.fmt("feed_all", [_gname(feed_id), p.count(feed_id)]), _feed))
+	var ready: int = p.ready_in(home_id)
 	var _collect: Callable = func() -> void:
-		var r: Farm.Result = f.collect(home_id)
-		_result(r == Farm.Result.OK, Texts.get_text("collected") if r == Farm.Result.OK else (Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("nothing")))
-	body.add_child(UiKit.button(_look, Texts.get_text("collect"), _collect, pending > 0))
-	if home_id == "curral" and not s.milker:
-		var cows: int = f.cows_to_milk()
-		body.add_child(UiKit.label(Texts.fmt("ranch_milk_ready", [cows])))
-		var _milk: Callable = func() -> void:
-			var r: Farm.Result = f.milk()
-			_result(r == Farm.Result.OK, Texts.get_text("milked") if r == Farm.Result.OK else (Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy")))
-		body.add_child(UiKit.button(_look, Texts.fmt("act_milk", [cows]), _milk, cows > 0))
+		var r: Production.Result = p.collect_home(home_id)
+		_result(r == Production.Result.OK, Texts.get_text("collected") if r == Production.Result.OK else Texts.get_text("barn_full"))
+	body.add_child(UiKit.button(_look, Texts.fmt("act_milk", [ready]) if home_id == "curral" else Texts.fmt("collect_animals", [ready]), _collect, ready > 0))
 	body.add_child(UiKit.label(Texts.get_text("ranch_buy_hint"), 0, _look.color("ui", "muted")))
+
+
+# --- Real-time production screens (2026-11-21) ---
+
+func _ptime(seconds: int) -> String:
+	if seconds >= 3600:
+		return "%dh %02dm" % [seconds / 3600, (seconds % 3600) / 60]
+	return "%d:%02d" % [seconds / 60, seconds % 60]
+
+
+func _gname(id: String) -> String:
+	return _ctx.town_data.good_name(id)
+
+
+func _items_text(items: Dictionary) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for id: Variant in items:
+		parts.append("%s ×%d (%d)" % [_gname(str(id)), int(items[id]), _ctx.production.count(str(id))])
+	return ", ".join(parts)
+
+
+func _prod_msg(r: Production.Result, ok_text: String) -> void:
+	var text: String = ok_text
+	match r:
+		Production.Result.LOW_LEVEL:
+			text = Texts.get_text("low_level")
+		Production.Result.MISSING:
+			text = Texts.get_text("missing_items")
+		Production.Result.FULL:
+			text = Texts.get_text("queue_full")
+		Production.Result.NOT_ENOUGH_COINS:
+			text = Texts.get_text("no_coins")
+	_result(r == Production.Result.OK, text)
+
+
+## The field: plot summary, harvest everything, plant a crop in every empty plot, buy plots.
+func open_field() -> void:
+	var p: Production = _ctx.production
+	var s: GameState = _ctx.state
+	var body: VBoxContainer = _sheet(Texts.get_text("field"), open_field)
+	_live = true
+	var ready: int = 0
+	var empty: int = 0
+	for i in s.crop_plots.size():
+		var st: int = p.plot_stage(i)
+		ready += 1 if st == 2 else 0
+		empty += 1 if st == 0 else 0
+	body.add_child(UiKit.label(Texts.fmt("field_plots", [s.crop_plots.size(), ready, empty]), 24))
+	body.add_child(UiKit.label(Texts.fmt("storage_used", [Texts.get_text("silo_name"), p.used("silo"), p.capacity("silo")]), 0, _look.color("ui", "muted")))
+	var _harvest: Callable = func() -> void:
+		var n: int = p.harvest_all()
+		_result(n > 0, Texts.fmt("harvested_n", [n]) if n > 0 else Texts.get_text("silo_full"))
+	body.add_child(UiKit.button(_look, Texts.fmt("harvest_all", [ready]), _harvest, ready > 0))
+	for c: Variant in p.crops():
+		var crop: Dictionary = c
+		var id: String = str(crop["id"])
+		var lvl: int = int(crop["level"])
+		if _ctx.farm.level() < lvl:
+			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(crop["color"])), UiKit.label(Texts.fmt("crop_locked", [str(crop["name"]), lvl]), 0, _look.color("ui", "muted"))]))
+			continue
+		var _plant: Callable = func() -> void:
+			var n: int = p.plant_all(id)
+			_result(n > 0, Texts.fmt("planted_n", [n]) if n > 0 else Texts.get_text("missing_items"))
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(crop["color"])), UiKit.label(Texts.fmt("crop_have", [str(crop["name"]), p.count(id), _ptime(int(crop["seconds"]))])), UiKit.button(_look, Texts.get_text("plant"), _plant, empty > 0 and p.count(id) > 0)]))
+	for i in s.crop_plots.size():
+		var st: int = p.plot_stage(i)
+		if st == 0:
+			continue
+		var name: String = str(p.crop(str(s.crop_plots[i]["crop"]))["name"])
+		var state_text: String = Texts.get_text("plot_ready") if st == 2 else _ptime(p.seconds_left(float(s.crop_plots[i]["ready_at"])))
+		body.add_child(UiKit.label(Texts.fmt("plot_growing2", [name, state_text]), _look.integer("ui", "small_size")))
+	var price: int = p.plot_price()
+	var _buy: Callable = func() -> void:
+		var r: Production.Result = p.buy_plot()
+		_prod_msg(r, Texts.get_text("bought"))
+	body.add_child(UiKit.button(_look, Texts.fmt("buy_plot", [price]) if price >= 0 else Texts.get_text("plots_max"), _buy, price >= 0 and s.coins >= price))
+
+
+## A factory: its queue with timers, collect, the recipes and buying more queue slots.
+func open_factory(id: String) -> void:
+	var p: Production = _ctx.production
+	var f: Dictionary = p.factory(id)
+	var body: VBoxContainer = _sheet(str(f["name"]), open_factory.bind(id))
+	_live = true
+	var fs: Dictionary = p.factory_state(id)
+	var queue: Array = fs["queue"]
+	body.add_child(UiKit.label(Texts.fmt("factory_queue", [queue.size(), int(fs["slots"])]) + "   " + Texts.fmt("storage_used", [Texts.get_text("barn"), p.used("barn"), p.capacity("barn")]), 22))
+	for q: Variant in queue:
+		var left: int = p.seconds_left(float((q as Dictionary)["ready_at"]))
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(_ctx.town_data.good(str((q as Dictionary)["item"])).get("color", "#ffffff"))), UiKit.label("%s ×%d · %s" % [_gname(str((q as Dictionary)["item"])), int((q as Dictionary)["out"]), Texts.get_text("ready") if left == 0 else _ptime(left)])]))
+	var done: int = p.factory_done(id)
+	var _collect: Callable = func() -> void:
+		var r: Production.Result = p.collect_factory(id)
+		_result(r == Production.Result.OK, Texts.get_text("collected") if r == Production.Result.OK else Texts.get_text("barn_full"))
+	body.add_child(UiKit.button(_look, Texts.fmt("collect_done", [done]), _collect, done > 0))
+	for r: Variant in f["recipes"]:
+		var recipe: Dictionary = r
+		var rid: String = str(recipe["id"])
+		var lvl: int = int(recipe["level"])
+		var title: String = "%s ×%d" % [_gname(rid), int(recipe["out"])]
+		if _ctx.farm.level() < lvl:
+			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(_ctx.town_data.good(rid).get("color", "#ffffff"))), UiKit.label(Texts.fmt("crop_locked", [title, lvl]), 0, _look.color("ui", "muted"))]))
+			continue
+		var _make: Callable = func() -> void:
+			_prod_msg(p.produce(id, rid), Texts.get_text("queued"))
+		var info: String = "%s\n%s" % [Texts.fmt("recipe_time", [title, _ptime(int(recipe["seconds"]))]), Texts.fmt("recipe_in", [_items_text(recipe["in"])])]
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(_ctx.town_data.good(rid).get("color", "#ffffff"))), UiKit.label(info, _look.integer("ui", "small_size")), UiKit.button(_look, Texts.get_text("produce"), _make, queue.size() < int(fs["slots"]) and p._has_all(recipe["in"]))]))
+	var price: int = p.slot_price(id)
+	var _slot: Callable = func() -> void:
+		_prod_msg(p.buy_slot(id), Texts.get_text("bought"))
+	body.add_child(UiKit.button(_look, Texts.fmt("buy_slot", [price]) if price >= 0 else Texts.get_text("slots_max"), _slot, price >= 0 and _ctx.state.coins >= price))
+
+
+## The barn and the silo: what is stored, how full, and the upgrades paid in materials.
+func open_storage() -> void:
+	var p: Production = _ctx.production
+	var s: GameState = _ctx.state
+	var body: VBoxContainer = _sheet(Texts.get_text("storage"), open_storage)
+	for kind: String in ["barn", "silo"]:
+		var name: String = Texts.get_text("barn") if kind == "barn" else Texts.get_text("silo_name")
+		body.add_child(UiKit.label(Texts.fmt("storage_used", [name, p.used(kind), p.capacity(kind)]), 26))
+		for id: Variant in s.shed:
+			var n: int = int(s.shed[id])
+			if n > 0 and p.storage_of(str(id)) == kind:
+				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(_ctx.town_data.good(str(id)).get("color", "#ffffff"))), UiKit.label("%s × %d" % [_gname(str(id)), n])]))
+		var needs: Dictionary = p.upgrade_needs(kind)
+		var _up: Callable = func() -> void:
+			var r: Production.Result = p.upgrade_storage(kind)
+			_result(r == Production.Result.OK, Texts.get_text("upgraded_storage") if r == Production.Result.OK else Texts.get_text("missing_items"))
+		var step: int = int(((p.data()["storage"] as Dictionary)[kind] as Dictionary)["step"])
+		body.add_child(UiKit.label(Texts.fmt("upgrade_need", [_items_text(needs)]), _look.integer("ui", "small_size"), _look.color("ui", "muted")))
+		body.add_child(UiKit.button(_look, Texts.fmt("upgrade_storage", [name, step]), _up, p._has_all(needs)))
+	body.add_child(UiKit.label(Texts.fmt("bag_fish", [s.bag.size(), int(_ctx.data.tune("bag_size"))]), 22))
+	for i in s.bag.size():
+		body.add_child(UiKit.row(_look, [_fish_icon(s.bag[i].id), UiKit.label(_fish_line(s.bag[i]))], i % 2 == 1))
+
+
+## The order board: each order with its items (and how many you have), reward, Entregar and
+## Trocar; empty slots show when the next order comes.
+func open_orders() -> void:
+	var p: Production = _ctx.production
+	var s: GameState = _ctx.state
+	var body: VBoxContainer = _sheet(Texts.get_text("orders"), open_orders)
+	_live = true
+	for i in s.order_board.size():
+		var o: Dictionary = s.order_board[i]
+		var items: Dictionary = o["items"]
+		if items.is_empty():
+			body.add_child(UiKit.label(Texts.fmt("order_wait", [_ptime(p.seconds_left(float(o["wait_until"])))]), 0, _look.color("ui", "muted")))
+			continue
+		var can: bool = p._has_all(items)
+		var _deliver: Callable = func() -> void:
+			var r: Production.Result = p.deliver(i)
+			_result(r == Production.Result.OK, Texts.get_text("order_done") if r == Production.Result.OK else Texts.get_text("order_missing"))
+		var _discard: Callable = func() -> void:
+			p.discard(i)
+			_click()
+			_refresh()
+		var text: String = "%s\n%s" % [_items_text(items), Texts.fmt("order_reward", [int(o["coins"]), int(o["xp"])])]
+		body.add_child(UiKit.row(_look, [UiKit.label(text, _look.integer("ui", "small_size"), _look.color("ui", "good") if can else _look.color("ui", "ink")), UiKit.button(_look, Texts.get_text("order_deliver"), _deliver, can), UiKit.button(_look, Texts.get_text("order_discard"), _discard)], i % 2 == 1))
+
+
+## The roadside stall: 4 slots. Empty slots let you pick a product, quantity and price.
+func open_stall(pick_slot: int = -1, pick_id: String = "", qty: int = 1, price: int = -1) -> void:
+	var p: Production = _ctx.production
+	var s: GameState = _ctx.state
+	var body: VBoxContainer = _sheet(Texts.get_text("stall"), open_stall.bind(pick_slot, pick_id, qty, price))
+	_live = pick_slot < 0
+	var slots: Array = p.stall()
+	if pick_slot >= 0:
+		if pick_id == "":
+			body.add_child(UiKit.label(Texts.get_text("stall_pick"), 24))
+			for id: Variant in s.shed:
+				var n: int = int(s.shed[id])
+				if n > 0:
+					body.add_child(UiKit.button(_look, "%s × %d" % [_gname(str(id)), n], open_stall.bind(pick_slot, str(id), 1, -1)))
+			return
+		var max_n: int = mini(p.count(pick_id), int((p.data()["stall"] as Dictionary)["max_count"]))
+		qty = clampi(qty, 1, maxi(1, max_n))
+		var base: int = p.base_price(pick_id, qty)
+		if price < 0:
+			price = int(float(base) * float((p.data()["stall"] as Dictionary)["price_start"]))
+		var lo: int = maxi(1, int(float(base) * float((p.data()["stall"] as Dictionary)["price_min"])))
+		var hi: int = int(float(base) * float((p.data()["stall"] as Dictionary)["price_max"]))
+		price = clampi(price, lo, hi)
+		body.add_child(UiKit.label(_gname(pick_id), 28))
+		var qrow := HBoxContainer.new()
+		qrow.add_child(UiKit.button(_look, " − ", open_stall.bind(pick_slot, pick_id, qty - 1, -1)))
+		qrow.add_child(UiKit.label(Texts.fmt("stall_qty", [qty]), 24))
+		qrow.add_child(UiKit.button(_look, " + ", open_stall.bind(pick_slot, pick_id, qty + 1, -1)))
+		body.add_child(qrow)
+		var prow := HBoxContainer.new()
+		var step: int = maxi(1, base / 10)
+		prow.add_child(UiKit.button(_look, " − ", open_stall.bind(pick_slot, pick_id, qty, price - step)))
+		prow.add_child(UiKit.label(Texts.fmt("stall_price", [price]), 24))
+		prow.add_child(UiKit.button(_look, " + ", open_stall.bind(pick_slot, pick_id, qty, price + step)))
+		body.add_child(prow)
+		var _put: Callable = func() -> void:
+			var r: Production.Result = p.put_on_stall(pick_slot, pick_id, qty, price)
+			_result(r == Production.Result.OK, Texts.get_text("stall_put") if r == Production.Result.OK else Texts.get_text("missing_items"))
+			if r == Production.Result.OK:
+				open_stall()
+		body.add_child(UiKit.button(_look, Texts.get_text("stall_put"), _put))
+		return
+	for i in slots.size():
+		var slot: Dictionary = slots[i]
+		if slot.is_empty():
+			body.add_child(UiKit.row(_look, [UiKit.label(Texts.get_text("stall_empty"), 0, _look.color("ui", "muted")), UiKit.button(_look, Texts.get_text("stall_put"), open_stall.bind(i, "", 1, -1), not s.shed.is_empty())]))
+			continue
+		var sold: bool = bool(slot["sold"])
+		var _clear: Callable = func() -> void:
+			p.clear_stall(i)
+			_result(true, Texts.get_text("stall_sold_ok") if sold else Texts.get_text("stall_back"))
+		var line: String = Texts.fmt("stall_sold" if sold else "stall_selling", [_gname(str(slot["item"])), int(slot["count"]), int(slot["price"])])
+		body.add_child(UiKit.row(_look, [UiKit.label(line, 0, _look.color("ui", "good") if sold else _look.color("ui", "ink")), UiKit.button(_look, Texts.get_text("stall_collect") if sold else Texts.get_text("stall_back"), _clear)]))
+
+
+## An expansion area: what it needs (farm level, materials, coins) and the Expandir button.
+func open_expand(id: String) -> void:
+	var p: Production = _ctx.production
+	var e: Dictionary = p.expansion(id)
+	var body: VBoxContainer = _sheet(Texts.fmt("expand_title", [str(e["name"])]), open_expand.bind(id))
+	var good: Color = _look.color("ui", "good")
+	var bad: Color = _look.color("ui", "bad")
+	var lvl: int = int(e["level"])
+	body.add_child(UiKit.label(Texts.fmt("build_need_level", [lvl, _ctx.farm.level()]), 24, good if _ctx.farm.level() >= lvl else bad))
+	var items: Dictionary = e["items"]
+	for item: Variant in items:
+		var n: int = int(items[item])
+		body.add_child(UiKit.label(Texts.fmt("build_need", [_gname(str(item)), p.count(str(item)), n]), 0, good if p.count(str(item)) >= n else bad))
+	body.add_child(UiKit.label(Texts.fmt("build_coins", [_ctx.state.coins, int(e["coins"])]), 0, good if _ctx.state.coins >= int(e["coins"]) else bad))
+	var _go: Callable = func() -> void:
+		var r: Production.Result = p.expand(id)
+		_result(r == Production.Result.OK, Texts.get_text("expand_ok") if r == Production.Result.OK else Texts.get_text("build_missing"))
+		if r == Production.Result.OK:
+			close()
+	body.add_child(UiKit.button(_look, Texts.get_text("expand"), _go))
 
 
 # --- Clothes (Story 017) ---

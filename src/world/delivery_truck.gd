@@ -43,6 +43,7 @@ var _speed: float = 5.0
 var _box_root: Node3D
 var _box_mesh: ArrayMesh
 var _material: ShaderMaterial
+var _pickups: int = 0
 
 
 ## Builds the truck, the barrier arm and the box drawing.
@@ -70,6 +71,11 @@ func setup(look: WorldLook, town: TownData, state: GameState, farm: Farm, grid: 
 	_body.visible = false
 	state.town_changed.connect(_draw_boxes)
 	_draw_boxes()
+
+
+## An order of the board was delivered: the truck comes to take its box (2026-11-21).
+func pickup() -> void:
+	_pickups += 1
 
 
 ## Where each waiting box is (meters, x z), in [member GameState.boxes] order.
@@ -100,18 +106,22 @@ func _process(delta: float) -> void:
 	_update_arm(delta)
 	match _mode:
 		Mode.IDLE:
-			if _farm.order_destinations().is_empty():
+			if _farm.order_destinations().is_empty() and _pickups == 0:
 				_wait = 0.0
 				return
 			_wait += delta
 			if _wait >= _town.num("farm_life", "truck_delay_seconds"):
 				_wait = 0.0
 				_stops = _farm.order_destinations()
+				var pickup_now: bool = _pickups > 0
+				if pickup_now:
+					_stops.append("@quadro")
 				_pos = _start
 				_heading = -PI * 0.5
 				_body.visible = true
-				for c: Node3D in _cargo:
-					c.visible = true
+				var delivering: int = _stops.size() - (1 if pickup_now else 0)
+				for k in _cargo.size():
+					_cargo[k].visible = k < delivering
 				_go_to(_stop_cell(_stops[0]))
 				_mode = Mode.DRIVE
 		Mode.DRIVE, Mode.LEAVE:
@@ -128,11 +138,18 @@ func _process(delta: float) -> void:
 			var total: float = _town.num("farm_life", "truck_unload_seconds")
 			if not _dropped and _unload_t >= total * 0.5:
 				_dropped = true
-				_farm.drop_box(_stops[0])
-				for c: Node3D in _cargo:
-					if c.visible:
-						c.visible = false
-						break
+				if _stops[0].begins_with("@"):
+					_pickups = 0
+					for c: Node3D in _cargo:
+						if not c.visible:
+							c.visible = true
+							break
+				else:
+					_farm.drop_box(_stops[0])
+					for c: Node3D in _cargo:
+						if c.visible:
+							c.visible = false
+							break
 			if _unload_t >= total:
 				_stops.remove_at(0)
 				if _stops.is_empty():
@@ -182,6 +199,7 @@ func _go_to(target: Vector2i) -> void:
 
 ## The road cell where the truck stops for [param dest]: one block past the door, on the road.
 func _stop_cell(dest: String) -> Vector2i:
+	dest = dest.trim_prefix("@")
 	var door: Vector2i = TownPlan.door_cell(_look, dest)
 	var best: Vector2i = door
 	var best_d: float = INF

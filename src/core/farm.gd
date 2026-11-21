@@ -41,6 +41,8 @@ var _data: GameData
 var _town_data: TownData
 var _state: GameState
 var _town: Town
+## Real-time production: storage room for wood and stone (set by the main scene).
+var production: Production
 
 
 ## Builds the rules over the data, the state and the town rules (animals and products).
@@ -165,13 +167,19 @@ func gather(index: int, rock: bool) -> Result:
 	if _state.chopped.has(key):
 		return Result.ALREADY
 	var yield_amount: int = int(_n("stone_yield" if rock else "wood_yield"))
-	if bag_room() < yield_amount:
+	var item: String = "pedra" if rock else "madeira"
+	if production != null and production.room_for(item) < yield_amount:
+		return Result.BAG_FULL
+	if production == null and bag_room() < yield_amount:
 		return Result.BAG_FULL
 	var cost: float = _n("rock_energy" if rock else "chop_energy")
 	if _state.energy < cost:
 		return Result.NO_ENERGY
 	_state.energy -= cost
-	_state.add_good("pedra" if rock else "madeira", yield_amount)
+	if production != null:
+		_state.shed[item] = int(_state.shed.get(item, 0)) + yield_amount
+	else:
+		_state.add_good(item, yield_amount)
 	_state.chopped[key] = _state.day + int(_n("regrow_days"))
 	add_xp(xp_for("rock" if rock else "chop"))
 	return Result.OK

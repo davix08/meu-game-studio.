@@ -71,6 +71,8 @@ class Placement:
 	var flag: bool = false
 	## Trees and rocks the player can cut or break (inside the farm, not the border forest).
 	var choppable: bool = false
+	## Expansion area the placement belongs to ("" outside them): its trees go when it opens.
+	var zone: String = ""
 
 
 ## Props and decorations, in the order the 2D rules produce them.

@@ -54,11 +54,16 @@ func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerra
 	_meshes["ovelha"] = [_sheep()]
 	_meshes["vaca"] = [_cow()]
 	_meshes["bezerro"] = [_cow()]
+	_meshes["porco"] = [_pig()]
 	# Where each home's animals walk: the coop yard in front of the coop, the corral east of the
 	# milking stall (lots of the farm map).
 	if TownPlan.has_lot(look, "galinheiro"):
 		var coop: Rect2i = TownPlan.lot_rect(look, "galinheiro")
 		_areas["galinheiro"] = Rect2(float(coop.position.x) + 0.7, float(coop.position.y) + 3.0, float(coop.size.x) - 1.4, float(coop.size.y) - 3.6)
+	for pen: String in ["chiqueiro", "ovelhas"]:
+		if TownPlan.has_lot(look, pen):
+			var pr: Rect2i = TownPlan.lot_rect(look, pen)
+			_areas[pen] = Rect2(float(pr.position.x) + 0.8, float(pr.position.y) + 0.8, float(pr.size.x) - 4.0, float(pr.size.y) - 1.6) if pen == "ovelhas" else Rect2(float(pr.position.x) + 0.8, float(pr.position.y) + 0.8, float(pr.size.x) - 1.6, float(pr.size.y) - 3.4)
 	if TownPlan.has_lot(look, "curral"):
 		var corral: Rect2i = TownPlan.lot_rect(look, "curral")
 		_areas["curral"] = Rect2(float(corral.position.x) + 4.2, float(corral.position.y) + 1.0, float(corral.size.x) - 5.6, float(corral.size.y) - 2.0)
@@ -91,7 +96,8 @@ func refresh() -> void:
 	var signature: String = ""
 	for a: Dictionary in _state.animals:
 		signature += str(a["kind"]) + ","
-	signature += "|" + str(_state.is_built("galinheiro")) + str(_state.is_built("curral"))
+	for home: Variant in _areas:
+		signature += "|" + str(_state.is_built(str(home)))
 	if signature != _signature:
 		_signature = signature
 		for c: Critter in _critters:
@@ -202,6 +208,19 @@ func _sheep() -> ArrayMesh:
 	mb.add_ellipsoid(Vector3(0.45, 0.62, 0.0), Vector3(0.15, 0.14, 0.13), dark, dark, 6, 4, true)
 	for p: Vector2 in [Vector2(-0.25, -0.15), Vector2(-0.25, 0.15), Vector2(0.25, -0.15), Vector2(0.25, 0.15)]:
 		mb.add_box(Vector3(p.x, 0.15, p.y), Vector3(0.08, 0.3, 0.08), dark)
+	return mb.build()
+
+
+func _pig() -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var pink := Color(0.96, 0.72, 0.74)
+	mb.add_ellipsoid(Vector3(0.0, 0.42, 0.0), Vector3(0.48, 0.3, 0.3), pink.darkened(0.1), pink, 8, 5, true)
+	mb.add_ellipsoid(Vector3(0.45, 0.5, 0.0), Vector3(0.18, 0.18, 0.18), pink, pink, 6, 4, true)
+	mb.add_box(Vector3(0.62, 0.48, 0.0), Vector3(0.08, 0.12, 0.16), pink.darkened(0.2))
+	for side: float in [-1.0, 1.0]:
+		mb.add_box(Vector3(0.45, 0.68, side * 0.1), Vector3(0.06, 0.1, 0.08), pink.darkened(0.15))
+	for p: Vector2 in [Vector2(-0.25, -0.15), Vector2(-0.25, 0.15), Vector2(0.25, -0.15), Vector2(0.25, 0.15)]:
+		mb.add_box(Vector3(p.x, 0.12, p.y), Vector3(0.1, 0.24, 0.1), pink.darkened(0.2))
 	return mb.build()
 
 

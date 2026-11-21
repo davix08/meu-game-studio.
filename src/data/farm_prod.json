@@ -1,0 +1,461 @@
+{
+	"level_xp": [
+		0,
+		30,
+		80,
+		150,
+		250,
+		380,
+		550,
+		760,
+		1000,
+		1300,
+		1650,
+		2050,
+		2500,
+		3000,
+		3600,
+		4300,
+		5100,
+		6000,
+		7000,
+		8200
+	],
+	"start_silo": {
+		"trigo": 3,
+		"milho": 3
+	},
+	"crops": [
+		{
+			"id": "trigo",
+			"name": "Trigo",
+			"level": 1,
+			"seconds": 120,
+			"xp": 1,
+			"color": "#e8c860"
+		},
+		{
+			"id": "milho",
+			"name": "Milho",
+			"level": 1,
+			"seconds": 300,
+			"xp": 1,
+			"color": "#f0c830"
+		},
+		{
+			"id": "soja",
+			"name": "Soja",
+			"level": 3,
+			"seconds": 1200,
+			"xp": 2,
+			"color": "#b8c860"
+		},
+		{
+			"id": "cenoura",
+			"name": "Cenoura",
+			"level": 5,
+			"seconds": 600,
+			"xp": 2,
+			"color": "#f08a2a"
+		},
+		{
+			"id": "cana",
+			"name": "Cana",
+			"level": 7,
+			"seconds": 1800,
+			"xp": 3,
+			"color": "#88b850"
+		}
+	],
+	"field": {
+		"start_plots": 6,
+		"max_plots": 22,
+		"plot_price_base": 40,
+		"plot_price_step": 25,
+		"harvest_yield": 2
+	},
+	"factories": {
+		"fabrica_racao": {
+			"name": "Fábrica de ração",
+			"slots": 2,
+			"max_slots": 5,
+			"slot_price": 150,
+			"recipes": [
+				{
+					"id": "racao_galinha",
+					"level": 2,
+					"seconds": 300,
+					"out": 3,
+					"xp": 2,
+					"in": {
+						"trigo": 2,
+						"milho": 1
+					}
+				},
+				{
+					"id": "racao_vaca",
+					"level": 5,
+					"seconds": 600,
+					"out": 3,
+					"xp": 3,
+					"in": {
+						"milho": 2,
+						"soja": 1
+					}
+				},
+				{
+					"id": "racao_porco",
+					"level": 10,
+					"seconds": 1200,
+					"out": 3,
+					"xp": 4,
+					"in": {
+						"cenoura": 2,
+						"soja": 1
+					}
+				},
+				{
+					"id": "racao_ovelha",
+					"level": 12,
+					"seconds": 1800,
+					"out": 3,
+					"xp": 5,
+					"in": {
+						"trigo": 3,
+						"soja": 1
+					}
+				}
+			]
+		},
+		"padaria": {
+			"name": "Padaria",
+			"slots": 2,
+			"max_slots": 5,
+			"slot_price": 200,
+			"recipes": [
+				{
+					"id": "pao",
+					"level": 3,
+					"seconds": 300,
+					"out": 1,
+					"xp": 5,
+					"in": {
+						"trigo": 3
+					}
+				},
+				{
+					"id": "pao_milho",
+					"level": 4,
+					"seconds": 1800,
+					"out": 1,
+					"xp": 12,
+					"in": {
+						"milho": 2,
+						"ovo": 2
+					}
+				},
+				{
+					"id": "biscoito",
+					"level": 9,
+					"seconds": 3600,
+					"out": 1,
+					"xp": 18,
+					"in": {
+						"trigo": 2,
+						"ovo": 2,
+						"acucar": 1
+					}
+				}
+			]
+		},
+		"laticinios": {
+			"name": "Laticínios",
+			"slots": 2,
+			"max_slots": 5,
+			"slot_price": 300,
+			"recipes": [
+				{
+					"id": "creme",
+					"level": 6,
+					"seconds": 1200,
+					"out": 1,
+					"xp": 6,
+					"in": {
+						"leite": 1
+					}
+				},
+				{
+					"id": "manteiga",
+					"level": 7,
+					"seconds": 1800,
+					"out": 1,
+					"xp": 10,
+					"in": {
+						"leite": 2
+					}
+				},
+				{
+					"id": "queijo",
+					"level": 8,
+					"seconds": 3600,
+					"out": 1,
+					"xp": 15,
+					"in": {
+						"leite": 3
+					}
+				}
+			]
+		},
+		"usina": {
+			"name": "Usina de açúcar",
+			"slots": 2,
+			"max_slots": 5,
+			"slot_price": 350,
+			"recipes": [
+				{
+					"id": "acucar",
+					"level": 8,
+					"seconds": 1200,
+					"out": 1,
+					"xp": 5,
+					"in": {
+						"cana": 1
+					}
+				}
+			]
+		}
+	},
+	"animals": {
+		"galinha": {
+			"feed": "racao_galinha",
+			"seconds": 1200,
+			"product": "ovo",
+			"xp": 2
+		},
+		"vaca": {
+			"feed": "racao_vaca",
+			"seconds": 3600,
+			"product": "leite",
+			"xp": 4
+		},
+		"bezerro": {
+			"feed": "racao_vaca",
+			"seconds": 3600,
+			"product": "",
+			"xp": 2,
+			"grows_into": "vaca",
+			"feeds_to_grow": 3
+		},
+		"porco": {
+			"feed": "racao_porco",
+			"seconds": 14400,
+			"product": "bacon",
+			"xp": 8
+		},
+		"ovelha": {
+			"feed": "racao_ovelha",
+			"seconds": 21600,
+			"product": "la",
+			"xp": 10
+		}
+	},
+	"storage": {
+		"silo": {
+			"name": "Silo",
+			"base": 50,
+			"step": 25,
+			"materials": [
+				"prego",
+				"painel",
+				"tinta"
+			]
+		},
+		"barn": {
+			"name": "Celeiro",
+			"base": 50,
+			"step": 25,
+			"materials": [
+				"parafuso",
+				"tabua",
+				"fita"
+			]
+		}
+	},
+	"silo_items": [
+		"trigo",
+		"milho",
+		"soja",
+		"cenoura",
+		"cana"
+	],
+	"drops": {
+		"harvest": 0.08,
+		"factory": 0.1,
+		"animal": 0.08,
+		"fish": 0.05,
+		"weights": {
+			"parafuso": 3,
+			"tabua": 3,
+			"fita": 3,
+			"prego": 3,
+			"painel": 3,
+			"tinta": 3,
+			"escritura": 2,
+			"marreta": 2,
+			"estaca": 2
+		}
+	},
+	"orders": {
+		"size": 6,
+		"new_seconds": 60,
+		"discard_seconds": 300,
+		"coin_mult": 1.3,
+		"xp_mult": 0.45,
+		"pool": [
+			{
+				"id": "trigo",
+				"level": 1,
+				"min": 3,
+				"max": 6
+			},
+			{
+				"id": "milho",
+				"level": 1,
+				"min": 2,
+				"max": 5
+			},
+			{
+				"id": "ovo",
+				"level": 2,
+				"min": 1,
+				"max": 4
+			},
+			{
+				"id": "pao",
+				"level": 3,
+				"min": 1,
+				"max": 3
+			},
+			{
+				"id": "racao_galinha",
+				"level": 3,
+				"min": 2,
+				"max": 4
+			},
+			{
+				"id": "soja",
+				"level": 3,
+				"min": 2,
+				"max": 5
+			},
+			{
+				"id": "pao_milho",
+				"level": 4,
+				"min": 1,
+				"max": 2
+			},
+			{
+				"id": "cenoura",
+				"level": 5,
+				"min": 2,
+				"max": 5
+			},
+			{
+				"id": "leite",
+				"level": 5,
+				"min": 1,
+				"max": 3
+			},
+			{
+				"id": "creme",
+				"level": 6,
+				"min": 1,
+				"max": 2
+			},
+			{
+				"id": "manteiga",
+				"level": 7,
+				"min": 1,
+				"max": 2
+			},
+			{
+				"id": "cana",
+				"level": 7,
+				"min": 2,
+				"max": 4
+			},
+			{
+				"id": "queijo",
+				"level": 8,
+				"min": 1,
+				"max": 2
+			},
+			{
+				"id": "acucar",
+				"level": 8,
+				"min": 1,
+				"max": 3
+			},
+			{
+				"id": "biscoito",
+				"level": 9,
+				"min": 1,
+				"max": 2
+			},
+			{
+				"id": "bacon",
+				"level": 10,
+				"min": 1,
+				"max": 2
+			},
+			{
+				"id": "la",
+				"level": 12,
+				"min": 1,
+				"max": 2
+			}
+		],
+		"max_kinds": 3
+	},
+	"stall": {
+		"slots": 4,
+		"max_count": 10,
+		"sell_min": 60,
+		"sell_max": 300,
+		"price_min": 0.5,
+		"price_max": 2.0,
+		"price_start": 1.2
+	},
+	"expansions": {
+		"leste": {
+			"name": "Área leste",
+			"level": 8,
+			"coins": 800,
+			"items": {
+				"escritura": 1,
+				"marreta": 1,
+				"estaca": 1
+			}
+		},
+		"sudoeste": {
+			"name": "Área sudoeste",
+			"level": 10,
+			"coins": 1500,
+			"items": {
+				"escritura": 2,
+				"marreta": 2,
+				"estaca": 2
+			}
+		},
+		"nordeste": {
+			"name": "Área nordeste",
+			"level": 12,
+			"coins": 2500,
+			"items": {
+				"escritura": 3,
+				"marreta": 3,
+				"estaca": 3
+			}
+		}
+	}
+}

@@ -55,6 +55,10 @@ var _sfx: Sfx
 var _town_view: TownView
 var _farm: Farm
 var _truck: DeliveryTruck
+var _production: Production
+var _field_view: CropFieldView
+var _prod_timer: float = 0.0
+var _opened: Dictionary = {}
 var _ranch: RanchView
 var _npcs: NpcView
 var _cycle: DayNight
@@ -94,6 +98,11 @@ func _ready() -> void:
 	add_child(_town_view)
 	_town_view.setup(_look, _town_data, _state, _world.grid)
 	_farm = Farm.new(_data, _town_data, _state, _town)
+	_production = Production.new(_data, _town_data, _state, _farm, Production.load_data())
+	_farm.production = _production
+	_field_view = CropFieldView.new()
+	add_child(_field_view)
+	_field_view.setup(_look, _state, _production)
 	_ranch = RanchView.new()
 	add_child(_ranch)
 	_ranch.setup(_look, _town_data, _state, _world.terrain)
@@ -174,6 +183,7 @@ func _build_interface() -> void:
 	ctx.energy = _energy
 	ctx.clock = _clock
 	ctx.farm = _farm
+	ctx.production = _production
 	_top = TopBar.new()
 	root.add_child(_top)
 	_top.setup(_look, _data, _state, _clock, _progression, _farm)
@@ -206,6 +216,13 @@ func _connect_events() -> void:
 	_economy.fish_sold.connect(_on_fish_sold)
 	_machine.fish_bit.connect(_on_fish_bit)
 	_farm.farm_level_up.connect(_on_farm_level_up)
+	_production.material_dropped.connect(_on_material)
+	_production.order_shipped.connect(_truck.pickup)
+
+
+func _on_material(id: String) -> void:
+	_sfx.play(&"level")
+	_screens.toast(Texts.fmt("material_drop", [_town_data.good_name(id)]))
 
 
 func _on_farm_level_up(level: int) -> void:
@@ -221,6 +238,7 @@ func _open_settings() -> void:
 func _on_fish_caught(fish: GameState.Catch, _is_new: bool, _is_record: bool) -> void:
 	_sfx.play(&"catch")
 	_farm.add_xp(_farm.xp_for_catch(_data.species_by_id(fish.id).rarity))
+	_production.roll_drop("fish")
 	_save_soon = true
 
 
@@ -246,6 +264,11 @@ func _begin(fresh: bool) -> void:
 		_state.town_changed.emit()
 	for key: Variant in _state.chopped:
 		_set_cut(int(str(key)), true)
+	_production.setup_state()
+	_town_view.set_production(_production)
+	for zone: String in _state.expanded:
+		_open_area(zone)
+	_state.town_changed.connect(_check_areas)
 	_town.ensure_requests()
 	_dress()
 	_apply_rod()
@@ -341,6 +364,10 @@ func _physics_process(delta: float) -> void:
 	_clock.step(delta)
 	if _machine.phase == FishingMachine.Phase.FIGHT:
 		_fishing_hud.on_fight_step(delta)
+	_prod_timer -= delta
+	if _prod_timer <= 0.0:
+		_prod_timer = 1.0
+		_production.tick()
 	_save_timer -= delta
 	if _save_timer <= 0.0 or _save_soon:
 		_save()
@@ -483,18 +510,31 @@ func _on_lights(on: bool) -> void:
 
 func _build_spots() -> void:
 	var reach: float = _look.num("town", "door_reach")
-	if TownPlan.has_lot(_look, "galpao"):
-		_add_spot(TownPlan.lot_door(_look, "galpao"), reach, _label_fixed.bind("act_shed"), _screens.open_shed)
-	for home: String in ["galinheiro", "curral"]:
+	for id: String in ["galpao", "silo"]:
+		if TownPlan.has_lot(_look, id):
+			_add_spot(TownPlan.lot_door(_look, id), reach, _label_fixed.bind("act_storage"), _screens.open_storage)
+	for home: String in ["galinheiro", "curral", "chiqueiro", "ovelhas"]:
 		if TownPlan.has_lot(_look, home):
 			_add_spot(TownPlan.lot_door(_look, home), reach, _label_home.bind(home), _use_home.bind(home))
+	for id: Variant in _production.factory_ids():
+		var fid: String = str(id)
+		if TownPlan.has_lot(_look, fid):
+			_add_spot(TownPlan.lot_door(_look, fid), reach, _label_factory.bind(fid), _use_factory.bind(fid))
 	if TownPlan.has_lot(_look, "plantacao"):
-		_add_spot(TownPlan.lot_door(_look, "plantacao"), reach, _label_fixed.bind("act_field"), _screens.toast.bind(Texts.get_text("field_soon")))
+		_add_spot(TownPlan.lot_door(_look, "plantacao"), reach + 1.0, _label_fixed.bind("act_field"), _screens.open_field)
+	if TownPlan.has_lot(_look, "quadro"):
+		_add_spot(TownPlan.lot_door(_look, "quadro"), reach, _label_fixed.bind("act_orders"), _screens.open_orders)
+	if TownPlan.has_lot(_look, "barraca"):
+		_add_spot(TownPlan.lot_door(_look, "barraca"), reach, _label_fixed.bind("act_stall"), _screens.open_stall.bind(-1, "", 1, -1))
+	for id: String in TownPlan.expansion_ids(_look):
+		_add_spot(TownPlan.expansion_sign(_look, id), reach + 0.5, _label_expand.bind(id), _screens.open_expand.bind(id))
 	if _look.has("town", "city_gate"):
 		var g: Array = _look.raw("town", "city_gate")
 		_add_spot(Vector2(float(g[0]) - 0.5, float(g[1]) + float(g[3]) * 0.5), 2.5, _label_fixed.bind("act_city"), _screens.toast.bind(Texts.get_text("city_soon")))
 	for index: int in _world.props.cuttable():
 		var p: WorldGrid.Placement = _world.grid.placements[index]
+		if p.zone != "":
+			continue
 		var rock: bool = p.kind == &"rock"
 		_add_spot(Vector2(p.cell) + Vector2(0.5, 0.5), 1.35, _label_cut.bind(index, rock), _cut.bind(index, rock))
 
@@ -503,32 +543,62 @@ func _label_fixed(key: String) -> String:
 	return Texts.get_text(key)
 
 
+func _label_expand(id: String) -> String:
+	if _state.expanded.has(id):
+		return ""
+	return Texts.fmt("act_expand", [str(_production.expansion(id).get("name", id))])
+
+
+## True when lot [param id] sits in an expansion area that is still closed.
+func _in_closed_area(id: String) -> bool:
+	for zone: String in TownPlan.expansion_ids(_look):
+		if not _state.expanded.has(zone) and TownPlan.expansion_rect(_look, zone).intersects(TownPlan.lot_rect(_look, id)):
+			return true
+	return false
+
+
+func _label_factory(id: String) -> String:
+	if _in_closed_area(id):
+		return ""
+	var name: String = str(_town_data.lot(id).get("name", id))
+	if not _state.is_built(id):
+		return Texts.fmt("act_build", [name])
+	var done: int = _production.factory_done(id)
+	return Texts.fmt("act_collect", [done]) if done > 0 else name
+
+
+func _use_factory(id: String) -> void:
+	_sfx.play(&"click")
+	if not _state.is_built(id):
+		_screens.open_build(id)
+	elif _production.factory_done(id) > 0 and _production.collect_factory(id) == Production.Result.OK:
+		_sfx.play(&"coin")
+		_screens.toast(Texts.get_text("collected"))
+	else:
+		_screens.open_factory(id)
+
+
 func _label_home(home: String) -> String:
+	if _in_closed_area(home):
+		return ""
 	var name: String = str(_town_data.lot(home).get("name", home))
 	if not _state.is_built(home):
 		return Texts.fmt("act_build", [name])
-	if home == "galinheiro" and _town.pending_count(home) > 0:
-		return Texts.fmt("act_eggs", [_town.pending_count(home)])
-	if home == "curral" and _farm.cows_to_milk() > 0:
-		return Texts.fmt("act_milk", [_farm.cows_to_milk()])
-	if home == "curral" and _town.pending_count(home) > 0:
-		return Texts.fmt("act_milk_bucket", [_town.pending_count(home)])
+	var ready: int = _production.ready_in(home)
+	if ready > 0:
+		return Texts.fmt("act_milk", [ready]) if home == "curral" else Texts.fmt("act_collect", [ready])
 	return name
 
 
-## The coop or corral door: build it, collect eggs, milk, or open its screen.
+## An animal home door: build it, collect (or milk) what is ready, or open its screen.
 func _use_home(home: String) -> void:
 	if not _state.is_built(home):
 		_sfx.play(&"click")
 		_screens.open_build(home)
-	elif _town.pending_count(home) > 0 and (home == "galinheiro" or _state.milker):
-		var r: Farm.Result = _farm.collect(home)
-		_sfx.play(&"coin" if r == Farm.Result.OK else &"error")
-		_screens.toast(Texts.get_text("eggs_ok" if home == "galinheiro" else "collected") if r == Farm.Result.OK else Texts.get_text("bag_full"))
-	elif home == "curral" and _farm.cows_to_milk() > 0:
-		var r: Farm.Result = _farm.milk()
-		_sfx.play(&"coin" if r == Farm.Result.OK else &"error")
-		_screens.toast(Texts.get_text("milked") if r == Farm.Result.OK else (Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy")))
+	elif _production.ready_in(home) > 0:
+		var r: Production.Result = _production.collect_home(home)
+		_sfx.play(&"coin" if r == Production.Result.OK else &"error")
+		_screens.toast(Texts.get_text("collected") if r == Production.Result.OK else Texts.get_text("barn_full"))
 	else:
 		_sfx.play(&"click")
 		_screens.open_ranch(home)
@@ -550,6 +620,21 @@ func _cut(index: int, rock: bool) -> void:
 	else:
 		_sfx.play(&"error")
 		_screens.toast(Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy"))
+
+
+## Opens the trees of an expansion area that was just bought (or loaded as bought).
+func _check_areas() -> void:
+	for zone: String in _state.expanded:
+		if not _opened.has(zone):
+			_open_area(zone)
+
+
+func _open_area(zone: String) -> void:
+	_opened[zone] = true
+	for index in _world.grid.placements.size():
+		if _world.grid.placements[index].zone == zone:
+			_world.props.set_cut(index, true)
+	TownPlan.open_expansion(_world.grid, _look, zone)
 
 
 ## Hides or shows a cut tree or rock and frees or blocks its block.

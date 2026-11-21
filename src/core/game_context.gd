@@ -29,3 +29,5 @@ var energy: Energy
 var clock: GameClock
 ## Farm rules (level, shed, buildings, orders, milking).
 var farm: Farm
+## Real-time production (field, factories, animals, storage, orders, stall, expansions).
+var production: Production

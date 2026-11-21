@@ -514,3 +514,20 @@ New:
 - calves that grow into cows.
 
 The village systems (neighbors, restaurant, workshop, clothes, city hall) wait in the code for the city.
+
+
+## Change after play (2026-11-21): real-time farm production
+
+The user asked for the systems of a well-known farm builder (rules only, our own names and look), on top of the game we already have.
+
+New:
+- **Levels**: farm levels 1 to 20.
+- **Field**: real-time plots.
+- **Storage**: silo and barn with limits, raised with dropped materials.
+- **Factories**: feed mill, bakery, dairy and sugar mill, each with a queue.
+- **Animals**: each eats its own feed: chicken, cow, calf, pig and sheep.
+- **Order board**: delivered by the truck.
+- **Roadside stall**: with player prices.
+- **Land expansion**: three closed areas.
+
+Timers are real time and keep running with the game closed. Real money and online play stay out of scope.

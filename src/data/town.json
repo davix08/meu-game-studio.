@@ -146,6 +146,18 @@
 					"racao",
 					"milho"
 				]
+			},
+			{
+				"id": "chiqueiro",
+				"name": "Chiqueiro",
+				"capacity": 6,
+				"lot": "chiqueiro"
+			},
+			{
+				"id": "ovelhas",
+				"name": "Cercado de ovelhas",
+				"capacity": 6,
+				"lot": "ovelhas"
 			}
 		],
 		"animals": [
@@ -175,6 +187,22 @@
 				"home": "curral",
 				"feed": 2,
 				"milk": true
+			},
+			{
+				"id": "porco",
+				"name": "Porco",
+				"price": 700,
+				"product": "bacon",
+				"home": "chiqueiro",
+				"feed": 1
+			},
+			{
+				"id": "ovelha",
+				"name": "Ovelha",
+				"price": 900,
+				"product": "la",
+				"home": "ovelhas",
+				"feed": 1
 			}
 		]
 	},
@@ -189,28 +217,28 @@
 		{
 			"id": "leite",
 			"name": "Leite",
-			"sell": 45,
+			"sell": 32,
 			"price": 0,
 			"color": "#ffffff"
 		},
 		{
 			"id": "la",
 			"name": "Lã",
-			"sell": 35,
+			"sell": 54,
 			"price": 0,
 			"color": "#f2ead8"
 		},
 		{
 			"id": "cenoura",
 			"name": "Cenoura",
-			"sell": 32,
+			"sell": 8,
 			"price": 0,
 			"color": "#f08a2a"
 		},
 		{
 			"id": "trigo",
 			"name": "Trigo",
-			"sell": 10,
+			"sell": 3,
 			"price": 0,
 			"color": "#e8c860"
 		},
@@ -238,8 +266,8 @@
 		{
 			"id": "milho",
 			"name": "Milho",
-			"sell": 1,
-			"price": 3,
+			"sell": 7,
+			"price": 0,
 			"color": "#f0c830"
 		},
 		{
@@ -255,6 +283,167 @@
 			"sell": 2,
 			"price": 10,
 			"color": "#9a9ea6"
+		},
+		{
+			"id": "soja",
+			"name": "Soja",
+			"sell": 10,
+			"price": 0,
+			"color": "#b8c860"
+		},
+		{
+			"id": "cana",
+			"name": "Cana",
+			"sell": 14,
+			"price": 0,
+			"color": "#88b850"
+		},
+		{
+			"id": "racao_galinha",
+			"name": "Ração de galinha",
+			"sell": 7,
+			"price": 0,
+			"color": "#d8b070"
+		},
+		{
+			"id": "racao_vaca",
+			"name": "Ração de vaca",
+			"sell": 14,
+			"price": 0,
+			"color": "#a8c870"
+		},
+		{
+			"id": "racao_porco",
+			"name": "Ração de porco",
+			"sell": 14,
+			"price": 0,
+			"color": "#e0a0a0"
+		},
+		{
+			"id": "racao_ovelha",
+			"name": "Ração de ovelha",
+			"sell": 21,
+			"price": 0,
+			"color": "#c0c0e0"
+		},
+		{
+			"id": "bacon",
+			"name": "Bacon",
+			"sell": 50,
+			"price": 0,
+			"color": "#e07a70"
+		},
+		{
+			"id": "pao",
+			"name": "Pão",
+			"sell": 21,
+			"price": 0,
+			"color": "#d8a050"
+		},
+		{
+			"id": "pao_milho",
+			"name": "Pão de milho",
+			"sell": 72,
+			"price": 0,
+			"color": "#f0c040"
+		},
+		{
+			"id": "biscoito",
+			"name": "Biscoito",
+			"sell": 104,
+			"price": 0,
+			"color": "#c88a40"
+		},
+		{
+			"id": "creme",
+			"name": "Creme",
+			"sell": 50,
+			"price": 0,
+			"color": "#fff4d8"
+		},
+		{
+			"id": "manteiga",
+			"name": "Manteiga",
+			"sell": 82,
+			"price": 0,
+			"color": "#f8e070"
+		},
+		{
+			"id": "queijo",
+			"name": "Queijo",
+			"sell": 122,
+			"price": 0,
+			"color": "#f0c838"
+		},
+		{
+			"id": "acucar",
+			"name": "Açúcar",
+			"sell": 32,
+			"price": 0,
+			"color": "#f8f8f8"
+		},
+		{
+			"id": "parafuso",
+			"name": "Parafuso",
+			"sell": 20,
+			"price": 60,
+			"color": "#9aa0a8"
+		},
+		{
+			"id": "tabua",
+			"name": "Tábua",
+			"sell": 20,
+			"price": 60,
+			"color": "#b88a50"
+		},
+		{
+			"id": "fita",
+			"name": "Fita adesiva",
+			"sell": 20,
+			"price": 60,
+			"color": "#c8c8c8"
+		},
+		{
+			"id": "prego",
+			"name": "Prego",
+			"sell": 20,
+			"price": 60,
+			"color": "#8a8e96"
+		},
+		{
+			"id": "painel",
+			"name": "Painel de madeira",
+			"sell": 20,
+			"price": 60,
+			"color": "#a87840"
+		},
+		{
+			"id": "tinta",
+			"name": "Tinta",
+			"sell": 20,
+			"price": 60,
+			"color": "#4a90d0"
+		},
+		{
+			"id": "escritura",
+			"name": "Escritura",
+			"sell": 25,
+			"price": 90,
+			"color": "#f0e0b0"
+		},
+		{
+			"id": "marreta",
+			"name": "Marreta",
+			"sell": 25,
+			"price": 90,
+			"color": "#7a6a5a"
+		},
+		{
+			"id": "estaca",
+			"name": "Estaca",
+			"sell": 25,
+			"price": 90,
+			"color": "#c89a60"
 		}
 	],
 	"clothes": {
@@ -352,13 +541,94 @@
 		"food_start": 0.5,
 		"lots": [
 			{
-				"id": "galpao",
-				"name": "Galpão de itens",
+				"id": "barraca",
+				"name": "Barraca de venda",
 				"cost": 0,
 				"min_city_level": 1,
 				"start_built": true,
 				"service": false,
-				"about": "Baú da fazenda"
+				"about": "Venda na beira da estrada"
+			},
+			{
+				"id": "quadro",
+				"name": "Quadro de pedidos",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Pedidos de entrega"
+			},
+			{
+				"id": "ovelhas",
+				"name": "Cercado de ovelhas",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Ovelhas e lã"
+			},
+			{
+				"id": "chiqueiro",
+				"name": "Chiqueiro",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Porcos e bacon"
+			},
+			{
+				"id": "usina",
+				"name": "Usina de açúcar",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Açúcar da cana"
+			},
+			{
+				"id": "laticinios",
+				"name": "Laticínios",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Creme, manteiga e queijo"
+			},
+			{
+				"id": "padaria",
+				"name": "Padaria",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Pães e biscoitos"
+			},
+			{
+				"id": "fabrica_racao",
+				"name": "Fábrica de ração",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": false,
+				"service": false,
+				"about": "Ração para os animais"
+			},
+			{
+				"id": "silo",
+				"name": "Silo",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Guarda as colheitas"
+			},
+			{
+				"id": "galpao",
+				"name": "Celeiro",
+				"cost": 0,
+				"min_city_level": 1,
+				"start_built": true,
+				"service": false,
+				"about": "Guarda produtos e materiais"
 			},
 			{
 				"id": "galinheiro",
@@ -383,9 +653,9 @@
 				"name": "Plantação",
 				"cost": 0,
 				"min_city_level": 1,
-				"start_built": false,
+				"start_built": true,
 				"service": false,
-				"about": "Em breve"
+				"about": "Plantações"
 			},
 			{
 				"id": "prefeitura",
@@ -550,7 +820,17 @@
 			550,
 			760,
 			1000,
-			1300
+			1300,
+			1650,
+			2050,
+			2500,
+			3000,
+			3600,
+			4300,
+			5100,
+			6000,
+			7000,
+			8200
 		],
 		"xp_catch": [
 			4,
@@ -590,17 +870,60 @@
 				"coins": 900
 			},
 			"plantacao": {
-				"level": 8,
+				"level": 1,
 				"madeira": 0,
 				"pedra": 0,
 				"coins": 0
+			},
+			"fabrica_racao": {
+				"level": 2,
+				"madeira": 10,
+				"pedra": 5,
+				"coins": 150
+			},
+			"padaria": {
+				"level": 3,
+				"madeira": 15,
+				"pedra": 10,
+				"coins": 300
+			},
+			"laticinios": {
+				"level": 6,
+				"madeira": 25,
+				"pedra": 15,
+				"coins": 800
+			},
+			"usina": {
+				"level": 8,
+				"madeira": 30,
+				"pedra": 20,
+				"coins": 1200
+			},
+			"chiqueiro": {
+				"level": 10,
+				"madeira": 40,
+				"pedra": 25,
+				"coins": 2000
+			},
+			"ovelhas": {
+				"level": 12,
+				"madeira": 45,
+				"pedra": 30,
+				"coins": 3000
 			}
 		},
 		"shop_goods": [
-			"milho",
-			"racao",
 			"madeira",
-			"pedra"
+			"pedra",
+			"parafuso",
+			"tabua",
+			"fita",
+			"prego",
+			"painel",
+			"tinta",
+			"escritura",
+			"marreta",
+			"estaca"
 		],
 		"truck_speed": 5.0,
 		"truck_unload_seconds": 2.5,
