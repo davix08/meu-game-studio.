@@ -1190,9 +1190,10 @@ func open_chests() -> void:
 	var p: Production = _ctx.production
 	var body: VBoxContainer = _sheet(Texts.get_text("chests_title"), open_chests)
 	body.add_child(UiKit.label(Texts.get_text("chest_next"), _look.integer("ui", "small_size"), _look.color("ui", "muted")))
-	for i in p.chest_count():
+	var last: int = p.chest_count() + (1 if p.house_chest_room() > 0 else 0)
+	for i in last:
 		var fill: Vector2i = p.chest_fill(i)
-		var text: String = Texts.fmt("chest_line", [i + 1, fill.x, fill.y])
+		var text: String = Texts.fmt("chest_line", [i + 1, fill.x, fill.y]) if i < p.chest_count() else Texts.fmt("house_chest_line", [fill.x, fill.y])
 		if fill.x >= fill.y:
 			text += "  (%s)" % Texts.get_text("chest_full")
 		var bar := ProgressBar.new()

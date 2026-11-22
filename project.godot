@@ -16,7 +16,10 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+; Landscape on phones, either way up (the HUD is laid out for 16:9 landscape).
+window/handheld/orientation=4
 
 [rendering]
 
 renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true

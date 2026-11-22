@@ -273,8 +273,8 @@
 	"storage": {
 		"silo": {
 			"name": "Silo",
-			"base": 50,
-			"step": 25,
+			"base": 100,
+			"step": 50,
 			"materials": [
 				"prego",
 				"painel",
@@ -283,15 +283,16 @@
 		},
 		"barn": {
 			"name": "Celeiro",
-			"base": 50,
-			"step": 25,
+			"base": 150,
+			"step": 50,
 			"materials": [
 				"parafuso",
 				"tabua",
 				"fita"
 			],
 			"chests_min": 2,
-			"chests_max": 6
+			"chests_max": 8,
+			"house_chest": 120
 		}
 	},
 	"silo_items": [

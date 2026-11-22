@@ -1830,7 +1830,9 @@
 		"armchair": "#7c7f88",
 		"lie_height": 0.78,
 		"lie_seconds": 1.6,
-		"wake_seconds": 3.0
+		"wake_seconds": 3.0,
+		"chest": "#9a6a3a",
+		"lock": "#e0b040"
 	},
 	"painted": {
 		"shader": "res://src/world/painted_prop.gdshader",

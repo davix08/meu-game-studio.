@@ -106,6 +106,13 @@ func build(look: WorldLook) -> void:
 	_furniture(mb, Rect2(0.2, 1.4, 0.6, 1.2), 1.6, _c("wood"))
 	for k in 3:
 		_box(mb, Vector3(0.82, 0.5 + float(k) * 0.45, 2.0), Vector3(0.02, 0.35, 1.0), _c("wood_dark"))
+	# The house chest (2026-11-22): more room for the barn goods, by the north wall.
+	var chest: Rect2 = chest_rect()
+	_furniture(mb, chest, 0.55, _c("chest"))
+	_box(mb, Vector3(chest.get_center().x, 0.6, chest.get_center().y), Vector3(chest.size.x + 0.04, 0.12, chest.size.y + 0.04), _c("chest").darkened(0.15))
+	for dx: float in [-0.25, 0.25]:
+		_box(mb, Vector3(chest.get_center().x + dx, 0.35, chest.get_center().y), Vector3(0.06, 0.66, chest.size.y + 0.05), _c("metal"))
+	_box(mb, Vector3(chest.get_center().x, 0.48, chest.end.y + 0.02), Vector3(0.12, 0.14, 0.03), _c("lock"))
 	# Armchair by the sofa corner.
 	var arm := Rect2(7.2, 6.6, 0.9, 0.9)
 	_furniture(mb, arm, 0.42, _c("armchair"))
@@ -227,6 +234,11 @@ func lie_spot(body_height: float) -> Array:
 	return [feet, Vector2(-1.0, 0.0)]
 
 
+## The chest (room meters).
+func chest_rect() -> Rect2:
+	return Rect2(9.0, 0.25, 0.8, 0.55)
+
+
 ## The sofa (room meters).
 func sofa_rect() -> Rect2:
 	return Rect2(3.0, 6.6, 2.4, 0.9)
@@ -242,6 +254,8 @@ func spot(name: String) -> Vector2:
 			return o + Vector2(bed_rect().end.x + 0.4, bed_rect().get_center().y)
 		"sofa":
 			return o + Vector2(sofa_rect().get_center().x, sofa_rect().position.y - 0.5)
+		"chest":
+			return o + Vector2(chest_rect().get_center().x, chest_rect().end.y + 0.6)
 	return o
 
 

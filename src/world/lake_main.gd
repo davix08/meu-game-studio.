@@ -873,7 +873,7 @@ func _build_spots() -> void:
 		_add_spot(TownPlan.lot_door(_look, "plantacao"), reach + 1.0, _label_fixed.bind("act_field"), _screens.open_field)
 	_add_spot(Vector2(WorldGrid.DOOR) + Vector2(0.5, 1.2), reach, _label_fixed.bind("act_enter"), _enter_house)
 	_indoor_spots.clear()
-	for entry: Array in [["door", "act_exit", _exit_house], ["bed", "act_sleep", _sleep_in_bed], ["sofa", "act_sofa", _toggle_rest]]:
+	for entry: Array in [["door", "act_exit", _exit_house], ["bed", "act_sleep", _sleep_in_bed], ["sofa", "act_sofa", _toggle_rest], ["chest", "act_house_chest", _screens.open_chests]]:
 		var spot := Spot.new()
 		spot.pos = _house.spot(str(entry[0]))
 		spot.radius = 1.3

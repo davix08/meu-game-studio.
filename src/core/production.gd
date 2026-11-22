@@ -98,7 +98,8 @@ func storage_of(id: String) -> String:
 ## Capacity of the silo or barn.
 func capacity(kind: String) -> int:
 	var s: Dictionary = (_p["storage"] as Dictionary)[kind]
-	return int(s["base"]) + int(s["step"]) * int(_state.storage_levels.get(kind, 0))
+	# The barn also counts the chest in the house (2026-11-22).
+	return int(s["base"]) + int(s["step"]) * int(_state.storage_levels.get(kind, 0)) + int(s.get("house_chest", 0))
 
 
 ## Chests upstairs in the barn (2026-11-22): storage.barn.chests_min, one more per barn
@@ -108,16 +109,26 @@ func chest_count() -> int:
 	return clampi(int(b.get("chests_min", 2)) + int(_state.storage_levels.get("barn", 0)), int(b.get("chests_min", 2)), int(b.get("chests_max", 6)))
 
 
-## Chest [param i] as (units inside, room). Chests fill in order: the next one only starts
-## when the one before is full. The first chests take the leftover of an uneven split.
+## Chest [param i] as (units inside, room). Indices 0..[method chest_count]-1 are the barn
+## chests (the barn part of the capacity split between them), index [method chest_count] is
+## the chest in the house. Chests fill in order: the next one only starts when the one before
+## is full, the house chest last.
 func chest_fill(i: int) -> Vector2i:
 	var n: int = chest_count()
-	var total: int = capacity("barn")
-	var room: int = total / n + (1 if i < total % n else 0)
+	var house: int = house_chest_room()
+	var barn_total: int = capacity("barn") - house
 	var before: int = 0
-	for k in i:
-		before += total / n + (1 if k < total % n else 0)
+	var room: int = 0
+	for k in i + 1:
+		room = house if k == n else barn_total / n + (1 if k < barn_total % n else 0)
+		if k < i:
+			before += room
 	return Vector2i(clampi(used("barn") - before, 0, room), room)
+
+
+## Room of the chest in the house (0 when the data has none).
+func house_chest_room() -> int:
+	return int(((_p["storage"] as Dictionary)["barn"] as Dictionary).get("house_chest", 0))
 
 
 ## Units stored in the silo or barn.

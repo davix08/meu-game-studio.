@@ -301,6 +301,8 @@
 	"chests_title": "Baús do celeiro",
 	"chest_line": "Baú %d: %d/%d",
 	"chest_full": "cheio",
+	"house_chest_line": "Baú da casa: %d/%d",
+	"act_house_chest": "Baú",
 	"chest_next": "Quando um baú enche, as coisas vão para o próximo.",
 	"act_chests": "Baús",
 	"act_ride": "Montar no cavalo",
