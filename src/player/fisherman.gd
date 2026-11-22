@@ -367,12 +367,12 @@ func _build_from_split(look: WorldLook) -> bool:
 	if look.text("player", "model_kind") != "split":
 		return false
 	var path: String = look.text("player", "split_model_path")
-	if not ResourceLoader.exists(path):
-		return false
 	if not _split_cache.has(path):
-		_split_cache[path] = _cut_model(look, path)
+		var baked: Dictionary = load_baked_parts(look)
+		_split_cache[path] = baked if not baked.is_empty() else (_cut_model(look, path) if ResourceLoader.exists(path) else {})
 	var cut: Dictionary = _split_cache[path]
 	if cut.is_empty():
+		push_warning("Fisherman: the farmer model could not be loaded (%s); using the simple model" % path)
 		return false
 	var parts: Dictionary = cut["parts"]
 	var texture: Texture2D = cut["texture"]
@@ -424,6 +424,26 @@ func _build_from_split(look: WorldLook) -> bool:
 	_model_kind = "split"
 	_dress_split()
 	return true
+
+
+## The model already cut into parts, saved in the folder [code]split_baked_dir[/code] (one
+## ArrayMesh .res per part plus [code]texture.png[/code]). Baked once with Godot so the phone
+## does not depend on importing and cutting the .glb. Returns {} when the folder is missing.
+static func load_baked_parts(look: WorldLook) -> Dictionary:
+	if not look.has("player", "split_baked_dir"):
+		return {}
+	var dir: String = look.text("player", "split_baked_dir")
+	var texture_path: String = dir + "/texture.png"
+	if not ResourceLoader.exists(texture_path):
+		return {}
+	var parts: Dictionary = {}
+	for part_name: String in ["hat", "head", "torso", "arm_l", "arm_r", "leg_l", "leg_r", "boot_l", "boot_r"]:
+		var mesh_path: String = "%s/%s.res" % [dir, part_name]
+		if ResourceLoader.exists(mesh_path):
+			parts[part_name] = load(mesh_path) as ArrayMesh
+	if parts.is_empty():
+		return {}
+	return {"parts": parts, "texture": load(texture_path) as Texture2D}
 
 
 ## Cuts the mesh of [param path] into the parts named in [method _build_from_split]; each

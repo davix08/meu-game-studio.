@@ -131,6 +131,17 @@ func add_ellipsoid(center: Vector3, radii: Vector3, color_low: Color, color_high
 				add_quad(center + u00 * radii, center + u01 * radii, center + u11 * radii, center + u10 * radii, color, outward)
 
 
+## Adds everything of [param other], moved by [param xform] (to lay a shape on its side).
+func append_transformed(other: MeshBuilder, xform: Transform3D) -> void:
+	var first: int = _vertices.size()
+	for i in other._vertices.size():
+		_vertices.append(xform * other._vertices[i])
+		_normals.append((xform.basis * other._normals[i]).normalized())
+		_colors.append(other._colors[i])
+	for index: int in other._indices:
+		_indices.append(first + index)
+
+
 ## Builds the mesh from everything added so far.
 func build() -> ArrayMesh:
 	var arrays: Array = []

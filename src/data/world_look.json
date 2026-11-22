@@ -22,7 +22,9 @@
 		"margin_east": 10.0,
 		"margin_north": 8.0,
 		"margin_south": 8.0,
-		"indoor_size": 9.0
+		"indoor_size": 9.0,
+		"menu_size": 9.0,
+		"menu_shift_x": -3.0
 	},
 	"joystick": {
 		"radius": 100.0,
@@ -98,6 +100,7 @@
 		"model_colors_srgb": 0,
 		"model_kind": "split",
 		"split_model_path": "res://assets/characters/fazendeiro.glb",
+		"split_baked_dir": "res://assets/characters/fazendeiro_partes",
 		"split_shader": "res://src/player/spatial_char_textured.gdshader",
 		"split_units_tall": 0.986,
 		"split_floor": -0.4925,
@@ -286,16 +289,16 @@
 		"skirt": "#4a9a2e",
 		"trunk": "#7a4c2a",
 		"trunk_dark": "#55341c",
-		"leaf_dark": "#2f8f34",
-		"leaf_mid": "#4eb53a",
-		"leaf_light": "#86d24a",
-		"pine_dark": "#1f6b45",
-		"pine_light": "#3f9a52",
+		"leaf_dark": "#2e7a2e",
+		"leaf_mid": "#4fa83a",
+		"leaf_light": "#9bd651",
+		"pine_dark": "#2a6e48",
+		"pine_light": "#5aae58",
 		"bush_dark": "#3d9a35",
 		"bush_light": "#6fc444",
 		"berry": "#e0443a",
-		"rock_dark": "#7c8088",
-		"rock_light": "#b4b8bc",
+		"rock_dark": "#6f7378",
+		"rock_light": "#b9bcb8",
 		"wood_a": "#a8743f",
 		"wood_b": "#c08a50",
 		"wood_dark": "#5d3a1e",
@@ -310,8 +313,8 @@
 		"sign_board": "#c99a5c",
 		"sign_blue": "#4aa0e8",
 		"lantern_glass": "#ffe08a",
-		"tuft_a": "#5fae33",
-		"tuft_b": "#8acb4a",
+		"tuft_a": "#5aa832",
+		"tuft_b": "#9ad04e",
 		"reed": "#5c9a35",
 		"reed_top": "#7a4a22",
 		"lily": "#3fa045",
@@ -334,7 +337,12 @@
 		"hat_dark": "#c8902a",
 		"boat_hull": "#7a4a26",
 		"boat_inner": "#c99a5c",
-		"smoke": "#f0f0f0"
+		"smoke": "#f0f0f0",
+		"bark": "#6e4428",
+		"bark_dark": "#4a2c18",
+		"wood_end": "#d9b07a",
+		"wood_ring": "#a8794a",
+		"tuft_c": "#3f8a2a"
 	},
 	"estate": {
 		"clear_margin": 1,
@@ -1071,7 +1079,15 @@
 		"ghost_ok": "#58d85880",
 		"ghost_bad": "#e8484880",
 		"ghost_door": "#ffe060c0",
-		"ghost_ahead": 1.5
+		"ghost_ahead": 1.5,
+		"crop_ridges": 3,
+		"crop_stalks_per_ridge": 7,
+		"crop_ridge_color": "#6b4429",
+		"crop_furrow_color": "#3e2617",
+		"crop_clod_color": "#82573a",
+		"crop_sprout": "#5fc23e",
+		"crop_growing": "#9cc23a",
+		"crop_ripe_stalk": "#d9a93a"
 	},
 	"daynight": {
 		"hours": [
@@ -1258,7 +1274,20 @@
 		"context_width": 250,
 		"context_height": 62,
 		"context_fill": "#f6a93bee",
-		"fish_body_light": 0.25
+		"fish_body_light": 0.25,
+		"menu_logo_size": 96,
+		"menu_logo_color": "#fff3d6",
+		"menu_logo_outline": "#5a3418",
+		"menu_logo_outline_size": 18,
+		"menu_tag_size": 28,
+		"menu_card_fill": "#fbefd2f2",
+		"menu_card_radius": 30,
+		"menu_card_width": 360,
+		"menu_item_size": 34,
+		"menu_pill": "#f2cf8e",
+		"menu_pill_pressed": "#e8b866",
+		"menu_margin": 48,
+		"menu_shade": "#1e140c55"
 	},
 	"sfx": {
 		"mix_rate": 22050,
@@ -1734,5 +1763,35 @@
 		"blanket": "#4a7ab0",
 		"light": "#ffb060",
 		"window_light": "#c8d8ff"
+	},
+	"painted": {
+		"shader": "res://src/world/painted_prop.gdshader",
+		"outline_shader": "res://src/world/outline.gdshader",
+		"outline_color": "#2a1c12",
+		"outline_width": 0.04,
+		"brush_scale": 0.55,
+		"brush_strength": 0.16,
+		"sun_tint": "#fff0a0",
+		"sun_amount": 0.25,
+		"moss_color": "#5e8f30",
+		"rock_moss": 0.85,
+		"wood_moss": 0.55,
+		"stump_chance": 0.12,
+		"log_chance": 0.08,
+		"shade_fill": 0.15
+	},
+	"log": {
+		"scale_min": 0.85,
+		"scale_max": 1.2,
+		"height_min": 0.9,
+		"height_max": 1.1,
+		"shadow": 1
+	},
+	"stump": {
+		"scale_min": 0.8,
+		"scale_max": 1.2,
+		"height_min": 0.8,
+		"height_max": 1.2,
+		"shadow": 1
 	}
 }

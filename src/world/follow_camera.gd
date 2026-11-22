@@ -59,8 +59,12 @@ func set_bounds(rect: Rect2, view_size: float) -> void:
 	_focus = _clamped_target()
 
 
+## Extra move of the view (meters), e.g. the start menu puts the farm to the right of its card.
+var focus_shift: Vector3 = Vector3.ZERO
+
+
 func _process(delta: float) -> void:
-	_focus = _focus.lerp(_clamped_target(), 1.0 - exp(-_smoothing * delta))
+	_focus = _focus.lerp(_clamped_target() + focus_shift, 1.0 - exp(-_smoothing * delta))
 	position = _focus + _offset
 
 

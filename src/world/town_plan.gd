@@ -159,13 +159,27 @@ static func lot_ids(look: WorldLook) -> Array[String]:
 
 ## The cell rectangle of lot [param id].
 static func lot_rect(look: WorldLook, id: String) -> Rect2i:
-	var e: Array = placed[id] if placed.has(id) else (look.raw(GROUP, "lots") as Dictionary)[id]
+	var e: Array = _lot_entry(look, id)
 	return Rect2i(int(e[0]), int(e[1]), int(e[2]), int(e[3]))
+
+
+## The data of lot [param id]: placed first, then the fixed lots, then the old default spot of a
+## placeable building; a 1x1 lot at the house door when it is unknown (never an error).
+static func _lot_entry(look: WorldLook, id: String) -> Array:
+	if placed.has(id):
+		return placed[id]
+	var lots: Dictionary = look.raw(GROUP, "lots")
+	if lots.has(id):
+		return lots[id]
+	if look.has(GROUP, "placeable") and (look.raw(GROUP, "placeable") as Dictionary).has(id):
+		return (look.raw(GROUP, "placeable") as Dictionary)[id]
+	push_warning("TownPlan: unknown lot \"%s\"" % id)
+	return [WorldGrid.DOOR.x, WorldGrid.DOOR.y - 1, 1, 1, 0]
 
 
 ## The side of the lot where the door is.
 static func lot_side(look: WorldLook, id: String) -> Side:
-	var e: Array = placed[id] if placed.has(id) else (look.raw(GROUP, "lots") as Dictionary)[id]
+	var e: Array = _lot_entry(look, id)
 	return int(e[4]) as Side
 
 

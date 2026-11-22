@@ -15,22 +15,36 @@ static func tree(look: WorldLook) -> ArrayMesh:
 	var dark: Color = look.color("colors", "leaf_dark")
 	var mid: Color = look.color("colors", "leaf_mid")
 	var light: Color = look.color("colors", "leaf_light")
-	mb.add_cone(Vector3.ZERO, 0.17, 0.11, 1.0, look.color("colors", "trunk_dark"), look.color("colors", "trunk"), 6)
-	mb.add_ellipsoid(Vector3(0.0, 1.55, 0.0), Vector3(0.95, 0.8, 0.95), dark, mid, 8, 6, true)
-	mb.add_ellipsoid(Vector3(0.5, 1.3, 0.25), Vector3(0.6, 0.5, 0.6), dark, mid, 7, 5, true)
-	mb.add_ellipsoid(Vector3(-0.45, 1.4, -0.3), Vector3(0.6, 0.5, 0.6), dark, mid, 7, 5, true)
-	mb.add_ellipsoid(Vector3(0.0, 2.05, 0.0), Vector3(0.55, 0.4, 0.55), mid, light, 7, 5, true)
+	var bark: Color = look.color("colors", "bark")
+	var bark_dark: Color = look.color("colors", "bark_dark")
+	mb.add_cone(Vector3.ZERO, 0.2, 0.11, 1.05, bark_dark, bark, 7)
+	# Roots and two branches into the crown.
+	for k in 3:
+		var a: float = float(k) * TAU / 3.0 + 0.4
+		mb.add_cone(Vector3(cos(a) * 0.12, 0.0, sin(a) * 0.12), 0.08, 0.02, 0.22, bark_dark, bark, 4)
+	mb.add_cone(Vector3(0.05, 0.85, 0.0), 0.06, 0.03, 0.45, bark, bark, 4)
+	# Round crown of overlapping blobs: darker below, sunlit on top (the painted diorama trees).
+	mb.add_ellipsoid(Vector3(0.0, 1.5, 0.0), Vector3(0.95, 0.75, 0.95), dark, mid, 9, 6, true)
+	mb.add_ellipsoid(Vector3(0.55, 1.35, 0.3), Vector3(0.58, 0.5, 0.58), dark, mid, 8, 5, true)
+	mb.add_ellipsoid(Vector3(-0.5, 1.4, -0.3), Vector3(0.6, 0.52, 0.6), dark, mid, 8, 5, true)
+	mb.add_ellipsoid(Vector3(-0.2, 1.35, 0.55), Vector3(0.5, 0.45, 0.5), dark, mid, 8, 5, true)
+	mb.add_ellipsoid(Vector3(0.1, 2.0, 0.05), Vector3(0.62, 0.48, 0.62), mid, light, 8, 5, true)
+	mb.add_ellipsoid(Vector3(0.35, 1.8, -0.35), Vector3(0.42, 0.36, 0.42), mid, light, 7, 5, true)
 	return mb.build()
 
 
-## A three-tier pine, about 2.6 m tall.
+## A pine of four drooping tiers, about 2.8 m tall.
 static func pine(look: WorldLook) -> ArrayMesh:
 	var mb := MeshBuilder.new()
 	var dark: Color = look.color("colors", "pine_dark")
 	var light: Color = look.color("colors", "pine_light")
-	mb.add_cone(Vector3.ZERO, 0.14, 0.1, 0.7, look.color("colors", "trunk_dark"), look.color("colors", "trunk"), 6)
-	for k in 3:
-		mb.add_cone(Vector3(0.0, 0.45 + float(k) * 0.62, 0.0), 0.9 - float(k) * 0.2, 0.0, 1.15 - float(k) * 0.1, dark, light, 8)
+	mb.add_cone(Vector3.ZERO, 0.15, 0.1, 0.7, look.color("colors", "bark_dark"), look.color("colors", "bark"), 6)
+	for k in 4:
+		var y: float = 0.4 + float(k) * 0.52
+		var r: float = 0.95 - float(k) * 0.2
+		# Each tier: a skirt that flares out and down, then the cone up to the next tier.
+		mb.add_cone(Vector3(0.0, y - 0.12, 0.0), r * 1.05, r * 0.75, 0.16, dark.darkened(0.15), dark, 9)
+		mb.add_cone(Vector3(0.0, y + 0.04, 0.0), r * 0.78, 0.0, 0.95 - float(k) * 0.1, dark, light, 9)
 	return mb.build()
 
 
@@ -41,19 +55,54 @@ static func bush(look: WorldLook) -> ArrayMesh:
 	var light: Color = look.color("colors", "bush_light")
 	var berry: Color = look.color("colors", "berry")
 	mb.add_ellipsoid(Vector3(0.0, 0.3, 0.0), Vector3(0.5, 0.38, 0.5), dark, light, 8, 5, true)
-	mb.add_ellipsoid(Vector3(0.3, 0.25, 0.2), Vector3(0.32, 0.28, 0.32), dark, light, 7, 4, true)
-	for spot: Vector3 in [Vector3(0.2, 0.6, 0.25), Vector3(-0.3, 0.6, 0.12), Vector3(0.05, 0.63, -0.25)]:
+	mb.add_ellipsoid(Vector3(0.32, 0.25, 0.2), Vector3(0.34, 0.28, 0.32), dark, light, 7, 4, true)
+	mb.add_ellipsoid(Vector3(-0.3, 0.22, -0.18), Vector3(0.32, 0.26, 0.3), dark, light, 7, 4, true)
+	for spot: Vector3 in [Vector3(0.2, 0.6, 0.25), Vector3(-0.3, 0.55, 0.12), Vector3(0.05, 0.63, -0.25)]:
 		mb.add_ellipsoid(spot, Vector3(0.07, 0.07, 0.07), berry, berry, 5, 3, true)
 	return mb.build()
 
 
-## A faceted gray rock.
+## A rounded gray rock (the painted shader adds moss on its top).
 static func rock(look: WorldLook) -> ArrayMesh:
 	var mb := MeshBuilder.new()
 	var dark: Color = look.color("colors", "rock_dark")
 	var light: Color = look.color("colors", "rock_light")
-	mb.add_ellipsoid(Vector3(0.0, 0.25, 0.0), Vector3(0.55, 0.38, 0.5), dark, light, 6, 4, false)
-	mb.add_ellipsoid(Vector3(0.35, 0.15, 0.2), Vector3(0.3, 0.2, 0.28), dark, light, 6, 3, false)
+	mb.add_ellipsoid(Vector3(0.0, 0.22, 0.0), Vector3(0.58, 0.4, 0.5), dark, light, 7, 4, false)
+	mb.add_ellipsoid(Vector3(0.38, 0.14, 0.22), Vector3(0.32, 0.22, 0.3), dark, light, 6, 3, false)
+	mb.add_ellipsoid(Vector3(-0.3, 0.1, 0.28), Vector3(0.22, 0.15, 0.2), dark, light, 6, 3, false)
+	return mb.build()
+
+
+## A fallen log lying along x, with light cut ends and a broken branch (decoration).
+static func fallen_log(look: WorldLook) -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var bark: Color = look.color("colors", "bark")
+	var bark_dark: Color = look.color("colors", "bark_dark")
+	var end: Color = look.color("colors", "wood_end")
+	var ring: Color = look.color("colors", "wood_ring")
+	var basis := Basis(Vector3.BACK, -PI * 0.5)
+	var at := Vector3(-0.8, 0.2, 0.0)
+	var mb_log := MeshBuilder.new()
+	mb_log.add_cone(Vector3.ZERO, 0.2, 0.18, 1.6, bark_dark, bark, 8)
+	mb_log.add_cone(Vector3(0.0, 1.6, 0.0), 0.18, 0.18, 0.002, end, end, 8, true)
+	mb_log.add_cone(Vector3(0.0, -0.002, 0.0), 0.2, 0.2, 0.002, end, end, 8, false, true)
+	mb_log.add_cone(Vector3(0.0, -0.006, 0.0), 0.1, 0.1, 0.004, ring, ring, 8, false, true)
+	mb.append_transformed(mb_log, Transform3D(basis, at))
+	mb.add_cone(Vector3(0.2, 0.3, 0.05), 0.05, 0.02, 0.35, bark_dark, bark, 4)
+	return mb.build()
+
+
+## A cut tree stump with a light top and roots (decoration).
+static func stump(look: WorldLook) -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var bark: Color = look.color("colors", "bark")
+	var bark_dark: Color = look.color("colors", "bark_dark")
+	mb.add_cone(Vector3.ZERO, 0.28, 0.22, 0.38, bark_dark, bark, 8)
+	mb.add_cone(Vector3(0.0, 0.38, 0.0), 0.22, 0.22, 0.002, look.color("colors", "wood_end"), look.color("colors", "wood_end"), 8, true)
+	mb.add_cone(Vector3(0.0, 0.382, 0.0), 0.1, 0.1, 0.004, look.color("colors", "wood_ring"), look.color("colors", "wood_ring"), 8, true)
+	for k in 4:
+		var a: float = float(k) * TAU / 4.0 + 0.3
+		mb.add_cone(Vector3(cos(a) * 0.2, 0.0, sin(a) * 0.2), 0.1, 0.02, 0.16, bark_dark, bark, 4)
 	return mb.build()
 
 
@@ -64,17 +113,18 @@ static func flower(_look: WorldLook) -> ArrayMesh:
 	return mb.build()
 
 
-## A grass tuft made of four crossed blades.
+## A grass tuft of seven blades in three greens.
 static func tuft(look: WorldLook) -> ArrayMesh:
 	var mb := MeshBuilder.new()
-	for k in 4:
-		var angle: float = float(k) * PI * 0.5 + 0.4
+	var names: Array[String] = ["tuft_c", "tuft_a", "tuft_b"]
+	for k in 7:
+		var angle: float = float(k) * TAU / 7.0 + 0.4
 		var dir := Vector3(cos(angle), 0.0, sin(angle))
 		var side := Vector3(-dir.z, 0.0, dir.x)
-		var base: Vector3 = dir * 0.04
-		var tip: Vector3 = base + dir * 0.07 + Vector3(0.0, 0.3 + 0.05 * float(k), 0.0)
-		var color: Color = look.color("colors", "tuft_a" if k % 2 == 0 else "tuft_b")
-		mb.add_triangle(base - side * 0.05, base + side * 0.05, tip, color)
+		var base: Vector3 = dir * 0.05
+		var tip: Vector3 = base + dir * (0.08 + 0.03 * float(k % 3)) + Vector3(0.0, 0.26 + 0.05 * float(k % 3), 0.0)
+		var color: Color = look.color("colors", names[k % 3])
+		mb.add_triangle(base - side * 0.045, base + side * 0.045, tip, color)
 	return mb.build()
 
 

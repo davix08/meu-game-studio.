@@ -169,7 +169,16 @@ func _ready() -> void:
 		_fresh_start = false
 		_begin(true)
 	else:
+		_set_menu_mode(true)
 		_screens.show_start(FileAccess.file_exists(SaveGame.DEFAULT_PATH))
+
+
+## The start menu shows the live farm close up with no HUD; the game restores both.
+func _set_menu_mode(on: bool) -> void:
+	for node: Control in [_top, _actions, _stick, _fishing_hud]:
+		node.visible = not on
+	_camera.size = _look.num("camera", "menu_size") if on else _look.num("camera", "size")
+	_camera.focus_shift = _camera.basis.x * _look.num("camera", "menu_shift_x") if on else Vector3.ZERO
 
 
 func _build_interface() -> void:
@@ -266,6 +275,7 @@ func _restore_placements() -> void:
 	for id: Variant in _state.placed:
 		var e: Array = _state.placed[id]
 		TownPlan.place(_world.grid, str(id), Rect2i(int(e[0]), int(e[1]), int(e[2]), int(e[3])), int(e[4]))
+		_world.props.hide_decor_in(Rect2i(int(e[0]), int(e[1]), int(e[2]), int(e[3])))
 		_town_view.add_lot(str(id))
 	_after_placement()
 
@@ -342,6 +352,7 @@ func _loose_prop_at(cell: Vector2i) -> bool:
 
 ## Removes the loose trees and rocks under [param rect] (and its door) for good.
 func _clear_under(rect: Rect2i) -> void:
+	_world.props.hide_decor_in(rect)
 	var door := Vector2i(rect.position.x + rect.size.x / 2, rect.end.y)
 	for index: int in _world.props.cuttable():
 		var p: WorldGrid.Placement = _world.grid.placements[index]
@@ -472,15 +483,17 @@ func _mark_save() -> void:
 
 ## Starts play: a new game ([param fresh]) or the saved one.
 func _begin(fresh: bool) -> void:
+	_set_menu_mode(false)
 	if not fresh:
 		SaveGame.apply(_state, _data, SaveGame.read())
 		var pos := Vector2(_state.position.x, _state.position.z) / WorldGrid.PIXELS_PER_BLOCK
 		if _state.position != Vector3.ZERO and _world.grid.box_free(pos.x, pos.y, 0.25, 0.16):
 			_fisherman.teleport(pos)
-		_state.town_changed.emit()
+	# Placed buildings first: boxes, animals and spots of a loaded save look their lots up.
 	for key: Variant in _state.chopped:
 		_set_cut(int(str(key)), true)
 	_restore_placements()
+	_state.town_changed.emit()
 	_production.setup_state()
 	_apply_space()
 	if _state.map == GameState.MAP_INDOOR:
@@ -537,9 +550,9 @@ func _process(delta: float) -> void:
 		_update_ghost()
 	# During the minigame only PUXAR matters: the side buttons and the joystick step aside.
 	var fighting: bool = phase == FishingMachine.Phase.FIGHT or phase == FishingMachine.Phase.CAUGHT
-	_actions.visible = not fighting and _placing == ""
+	_actions.visible = not fighting and _placing == "" and _started
 	_fishing_hud.pull.visible = _placing == "" and not _fishing_hud.card_open
-	_stick.visible = not fighting
+	_stick.visible = not fighting and _started
 	_update_spot()
 	var e_down: bool = Input.is_physical_key_pressed(KEY_E)
 	if e_down and not _e_was_down and _started and not _screens.is_open():

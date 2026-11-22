@@ -9,6 +9,9 @@ extends Node3D
 ## split into square chunks (town.chunk_size blocks) so the camera culls what is off screen, and the
 ## small decorations (tufts, flowers, reeds, lilies) stop drawing beyond town.small_prop_range.
 ## Story 005: big boulders along the river, and one tree in five gets a warm autumn tint.
+## 2026-11-22 (the user's diorama picture): trees, pines, bushes, rocks, fallen logs and stumps
+## use the hand-painted shader (painted_prop.gdshader, moss on rocks and wood) with a dark
+## outline (outline.gdshader, a second node on the same MultiMesh); logs and stumps are decorations next to some trees.
 
 var _grid: WorldGrid
 var _terrain: LakeTerrain
@@ -18,6 +21,10 @@ var _material: StandardMaterial3D
 ## cut (2026-11-19 farm map).
 var _where: Dictionary = {}
 var _ids: Array[int] = []
+var _outline: ShaderMaterial
+## Decoration (logs, stumps) -> [MultiMesh, instance index, Transform3D, cell], hidden under
+## the buildings the player places.
+var _decor: Array = []
 
 
 ## Builds all props for [param grid], standing on [param terrain], styled by [param look].
@@ -29,15 +36,90 @@ func build(grid: WorldGrid, terrain: LakeTerrain, look: WorldLook) -> void:
 	_add_static(PropMeshes.wood(look, grid))
 	if look.integer("boat", "enabled") == 1:
 		_add_static(PropMeshes.boat(look))
-	_scatter(&"tree", PropMeshes.tree(look))
-	_scatter(&"pine", PropMeshes.pine(look))
-	_scatter(&"bush", PropMeshes.bush(look))
-	_scatter(&"rock", PropMeshes.rock(look))
-	_scatter(&"boulder", PropMeshes.rock(look))
-	_scatter(&"tuft", PropMeshes.tuft(look))
-	_scatter(&"reed", PropMeshes.reed(look))
-	_scatter(&"lily", PropMeshes.lily(look))
+	_outline = ShaderMaterial.new()
+	_outline.shader = load(look.text("painted", "outline_shader")) as Shader
+	_outline.set_shader_parameter("outline_color", look.color("painted", "outline_color"))
+	_outline.set_shader_parameter("width", look.num("painted", "outline_width"))
+	var foliage: ShaderMaterial = _painted(0.0)
+	var stone: ShaderMaterial = _painted(look.num("painted", "rock_moss"))
+	var wood: ShaderMaterial = _painted(look.num("painted", "wood_moss"))
+	_scatter(&"tree", PropMeshes.tree(look), foliage)
+	_scatter(&"pine", PropMeshes.pine(look), foliage)
+	_scatter(&"bush", PropMeshes.bush(look), foliage)
+	_scatter(&"rock", PropMeshes.rock(look), stone)
+	_scatter(&"boulder", PropMeshes.rock(look), stone)
+	_scatter(&"tuft", PropMeshes.tuft(look), _material)
+	_scatter(&"reed", PropMeshes.reed(look), _material)
+	_scatter(&"lily", PropMeshes.lily(look), _material)
 	_add_flowers()
+	_add_wood_decor(wood)
+
+
+## A painted-prop material with [param moss] (0 = none); [method _add_chunk] adds the outline.
+func _painted(moss: float) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = load(_look.text("painted", "shader")) as Shader
+	m.set_shader_parameter("brush_scale", _look.num("painted", "brush_scale"))
+	m.set_shader_parameter("brush_strength", _look.num("painted", "brush_strength"))
+	m.set_shader_parameter("sun_tint", _look.color("painted", "sun_tint"))
+	m.set_shader_parameter("sun_amount", _look.num("painted", "sun_amount"))
+	m.set_shader_parameter("moss_color", _look.color("painted", "moss_color"))
+	m.set_shader_parameter("moss_amount", moss)
+	m.set_shader_parameter("shade_fill", _look.num("painted", "shade_fill"))
+	return m
+
+
+## Stumps and fallen logs next to some trees and pines (painted.stump_chance / log_chance),
+## only on grass outside the farm lots. They do not block walking.
+func _add_wood_decor(material: Material) -> void:
+	var lots: Array[Rect2i] = []
+	for id: String in TownPlan.lot_ids(_look):
+		lots.append(TownPlan.lot_rect(_look, id).grow(1))
+	var stump_chance: float = _look.num("painted", "stump_chance")
+	var log_chance: float = _look.num("painted", "log_chance")
+	var sets: Dictionary = {&"stump": [[], [], []], &"log": [[], [], []]}
+	for p: WorldGrid.Placement in _grid.placements:
+		if p.kind != &"tree" and p.kind != &"pine":
+			continue
+		var roll: float = WorldGrid.hash2(p.cell.x, p.cell.y, 31)
+		var kind: StringName = &"stump" if roll < stump_chance else (&"log" if roll < stump_chance + log_chance else &"")
+		if kind == &"":
+			continue
+		var a: float = WorldGrid.hash2(p.cell.x, p.cell.y, 32) * TAU
+		var pos: Vector2 = p.pos + Vector2(cos(a), sin(a)) * 1.2
+		var cell := Vector2i(floori(pos.x), floori(pos.y))
+		if _grid.tile_at(cell.x, cell.y) != WorldGrid.Tile.GRASS:
+			continue
+		var inside: bool = false
+		for r: Rect2i in lots:
+			if r.has_point(cell):
+				inside = true
+				break
+		if inside:
+			continue
+		var entry: Array = sets[kind]
+		(entry[0] as Array).append(_instance_transform(String(kind), cell, Vector3(pos.x, _terrain.ground_height_at(pos.x, pos.y), pos.y)))
+		(entry[1] as Array).append(Color.WHITE)
+		(entry[2] as Array).append(cell)
+	for kind: StringName in [&"stump", &"log"]:
+		var entry: Array = sets[kind]
+		if (entry[0] as Array).is_empty():
+			continue
+		var transforms: Array[Transform3D] = []
+		transforms.assign(entry[0])
+		var colors: Array[Color] = []
+		colors.assign(entry[1])
+		var multi: MultiMesh = _add_chunk(PropMeshes.stump(_look) if kind == &"stump" else PropMeshes.fallen_log(_look), transforms, colors, true, false, material)
+		for i in transforms.size():
+			_decor.append([multi, i, transforms[i], (entry[2] as Array)[i]])
+
+
+## Hides the logs and stumps inside [param rect] (blocks), under a building being placed.
+func hide_decor_in(rect: Rect2i) -> void:
+	for d: Array in _decor:
+		if rect.grow(1).has_point(d[3] as Vector2i):
+			var base: Transform3D = d[2]
+			(d[0] as MultiMesh).set_instance_transform(int(d[1]), Transform3D(base.basis.scaled(Vector3.ONE * 0.001), base.origin))
 
 
 func _add_static(mesh: ArrayMesh) -> void:
@@ -48,7 +130,7 @@ func _add_static(mesh: ArrayMesh) -> void:
 
 
 ## Instances every placement of [param kind] with a hash-based yaw, size and tint.
-func _scatter(kind: StringName, mesh: ArrayMesh) -> void:
+func _scatter(kind: StringName, mesh: ArrayMesh, material: Material) -> void:
 	var group: String = String(kind)
 	var transforms: Array[Transform3D] = []
 	var colors: Array[Color] = []
@@ -67,7 +149,7 @@ func _scatter(kind: StringName, mesh: ArrayMesh) -> void:
 		if kind == &"tree" and WorldGrid.hash2(p.cell.x, p.cell.y, 16) > 0.8:
 			color = Color(tint * 1.12, tint * 0.86, tint * 0.5, 1.0)
 		colors.append(color)
-	_add_multimesh(mesh, transforms, colors, _look.integer(group, "shadow") == 1)
+	_add_multimesh(mesh, transforms, colors, _look.integer(group, "shadow") == 1, material)
 	_ids.clear()
 
 
@@ -94,7 +176,7 @@ func _add_flowers() -> void:
 		if p.kind == &"lily" and p.flag:
 			transforms.append(_instance_transform("flower", p.cell, Vector3(p.pos.x, lily_y, p.pos.y)))
 			colors.append(_look.color("flower", "lily_flower_color"))
-	_add_multimesh(PropMeshes.flower(_look), transforms, colors, false)
+	_add_multimesh(PropMeshes.flower(_look), transforms, colors, false, _material)
 
 
 ## A transform with a hash-based yaw and size from the [param group] ranges of the data file.
@@ -106,7 +188,7 @@ func _instance_transform(group: String, cell: Vector2i, origin: Vector3) -> Tran
 	return Transform3D(rot, origin)
 
 
-func _add_multimesh(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool) -> void:
+func _add_multimesh(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool, material: Material) -> void:
 	if transforms.is_empty():
 		return
 	var chunk: float = _look.num("town", "chunk_size")
@@ -125,13 +207,13 @@ func _add_multimesh(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Arr
 			part_t.append(transforms[int(i)])
 			part_c.append(colors[int(i)])
 			part_ids.append(_ids[int(i)] if int(i) < _ids.size() else -1)
-		var multi: MultiMesh = _add_chunk(mesh, part_t, part_c, casts_shadow, small)
+		var multi: MultiMesh = _add_chunk(mesh, part_t, part_c, casts_shadow, small, material)
 		for k in part_ids.size():
 			if part_ids[k] >= 0:
 				_where[part_ids[k]] = [multi, k, part_t[k]]
 
 
-func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool, small: bool) -> MultiMesh:
+func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[Color], casts_shadow: bool, small: bool, material: Material) -> MultiMesh:
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
 	multi.use_colors = true
@@ -142,11 +224,19 @@ func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[C
 		multi.set_instance_color(i, colors[i])
 	var node := MultiMeshInstance3D.new()
 	node.multimesh = multi
-	node.material_override = _material
+	node.material_override = material
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if casts_shadow else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if small:
 		node.visibility_range_end = _look.num("town", "small_prop_range")
 	add_child(node)
+	if material != _material:
+		# The outline is its own node with no shadow: as a material pass its hull would also
+		# cast a shadow that covers the prop itself.
+		var line := MultiMeshInstance3D.new()
+		line.multimesh = multi
+		line.material_override = _outline
+		line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(line)
 	return multi
 
 

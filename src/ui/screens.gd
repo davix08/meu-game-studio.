@@ -37,6 +37,8 @@ var _sfx: Sfx
 var _layer: Control
 var _scroll: ScrollContainer
 var _rebuild: Callable
+## While the start menu is up: 1 with a save, 0 without; -1 in the game (Ajustes is then shorter).
+var _start_save: int = -1
 var _toast: Label
 var _toast_left: float = 0.0
 var _viewer: SubViewport
@@ -94,6 +96,7 @@ func toast(text: String) -> void:
 
 ## Closes the open screen.
 func close() -> void:
+	_start_save = -1
 	if _layer != null:
 		_layer.queue_free()
 		_layer = null
@@ -319,6 +322,12 @@ func open_settings() -> void:
 		_click()
 		_refresh()
 	body.add_child(UiKit.button(_look, "%s: %s" % [Texts.get_text("show_fps"), Texts.get_text("on") if s.show_fps else Texts.get_text("off")], _act5))
+	if _start_save >= 0:
+		# Opened from the start menu: the game has not begun, so only the options and Voltar.
+		body.add_child(UiKit.button(_look, Texts.get_text("back"), show_start.bind(_start_save == 1)))
+		var header: Control = (body.get_parent().get_parent() as VBoxContainer).get_child(0)
+		(header.get_child(1) as Control).visible = false
+		return
 	body.add_child(UiKit.button(_look, Texts.get_text("continue"), _close_clicked))
 	body.add_child(UiKit.button(_look, Texts.get_text("new_game"), _confirm_new.bind(open_settings)))
 	if AdminTools.available():
@@ -1411,28 +1420,122 @@ func open_cityhall() -> void:
 
 # --- Start and sleep (Story 008) ---
 
-## The start screen: title, Continuar (when a save exists) and Novo jogo (confirmed if a save
-## would be lost). Emits [signal start_chosen].
+## The start menu (redone 2026-11-22 after the user's menu picture): the live farm behind,
+## the "Lakebound" logo top-left and a cream card with Continuar (when a save exists), Novo jogo
+## (confirmed if a save would be lost), Ajustes and Sair. The hovered or focused item sits on a
+## highlight pill; the first item starts focused so keyboard and gamepad work. Emits
+## [signal start_chosen].
 func show_start(has_save: bool) -> void:
-	var body: VBoxContainer = _sheet(Texts.get_text("title"), func() -> void: show_start(has_save))
-	body.add_child(UiKit.label(Texts.get_text("subtitle"), 30, _look.color("ui", "muted")))
-	if has_save:
-		var _act27: Callable = func() -> void:
-			_click()
-			close()
-			start_chosen.emit(false)
-		body.add_child(UiKit.button(_look, Texts.get_text("start_continue"), _act27))
-	var _act28: Callable = func() -> void:
+	_start_save = 1 if has_save else 0
+	if _layer != null:
+		_layer.queue_free()
+	_rebuild = show_start.bind(has_save)
+	_live = false
+	_layer = Control.new()
+	_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_layer)
+	open_changed.emit(true)
+	var shade := TextureRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var grad := Gradient.new()
+	grad.set_color(0, _look.color("ui", "menu_shade"))
+	grad.set_color(1, Color(0, 0, 0, 0))
+	var grad_tex := GradientTexture2D.new()
+	grad_tex.gradient = grad
+	grad_tex.fill_to = Vector2(0.6, 0.0)
+	shade.texture = grad_tex
+	shade.stretch_mode = TextureRect.STRETCH_SCALE
+	_layer.add_child(shade)
+	var margin: float = _look.num("ui", "menu_margin")
+	var column := VBoxContainer.new()
+	column.position = Vector2(margin, margin * 0.6)
+	column.add_theme_constant_override(&"separation", 6)
+	_layer.add_child(column)
+	var logo: Label = UiKit.label(Texts.get_text("title"), _look.integer("ui", "menu_logo_size"), _look.color("ui", "menu_logo_color"))
+	logo.autowrap_mode = TextServer.AUTOWRAP_OFF
+	logo.add_theme_color_override(&"font_outline_color", _look.color("ui", "menu_logo_outline"))
+	logo.add_theme_constant_override(&"outline_size", _look.integer("ui", "menu_logo_outline_size"))
+	logo.add_theme_color_override(&"font_shadow_color", Color(0, 0, 0, 0.35))
+	logo.add_theme_constant_override(&"shadow_offset_y", 6)
+	column.add_child(logo)
+	var tag: Label = UiKit.label(Texts.get_text("subtitle"), _look.integer("ui", "menu_tag_size"), _look.color("ui", "menu_logo_color"))
+	tag.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tag.add_theme_color_override(&"font_outline_color", _look.color("ui", "menu_logo_outline"))
+	tag.add_theme_constant_override(&"outline_size", 10)
+	column.add_child(tag)
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(0, margin * 0.6)
+	column.add_child(gap)
+	var card := PanelContainer.new()
+	var card_style: StyleBoxFlat = UiKit.flat(_look.color("ui", "menu_card_fill"), _look.integer("ui", "menu_card_radius"))
+	card_style.content_margin_left = 18
+	card_style.content_margin_right = 18
+	card_style.content_margin_top = 18
+	card_style.content_margin_bottom = 18
+	card_style.shadow_color = Color(0, 0, 0, 0.25)
+	card_style.shadow_size = 12
+	card_style.shadow_offset = Vector2(0, 6)
+	card.add_theme_stylebox_override(&"panel", card_style)
+	card.custom_minimum_size = Vector2(_look.num("ui", "menu_card_width"), 0)
+	card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	column.add_child(card)
+	var items := VBoxContainer.new()
+	items.add_theme_constant_override(&"separation", 6)
+	card.add_child(items)
+	var go_continue: Callable = func() -> void:
+		_click()
+		close()
+		start_chosen.emit(false)
+	var go_new: Callable = func() -> void:
 		_click()
 		if has_save:
 			_confirm_start()
 		else:
 			close()
 			start_chosen.emit(true)
-	body.add_child(UiKit.button(_look, Texts.get_text("start_new"), _act28))
-	# The start screen has no Fechar: the game waits for a choice.
-	var header: Control = (body.get_parent().get_parent() as VBoxContainer).get_child(0)
-	(header.get_child(1) as Control).visible = false
+	var go_settings: Callable = func() -> void:
+		_click()
+		open_settings()
+	var go_quit: Callable = func() -> void:
+		get_tree().quit()
+	var first: Button = null
+	if has_save:
+		first = _menu_item(items, Texts.get_text("start_continue"), go_continue)
+	var new_button: Button = _menu_item(items, Texts.get_text("start_new"), go_new)
+	if first == null:
+		first = new_button
+	_menu_item(items, Texts.get_text("settings"), go_settings)
+	_menu_item(items, Texts.get_text("quit"), go_quit)
+	first.call_deferred(&"grab_focus")
+
+
+## One item of the start menu card: plain text, a highlight pill when hovered or focused.
+func _menu_item(parent: Control, text: String, action: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.custom_minimum_size = Vector2(0, _look.num("ui", "button_height") + 8.0)
+	b.add_theme_font_size_override(&"font_size", _look.integer("ui", "menu_item_size"))
+	var ink: Color = _look.color("ui", "ink")
+	for key: StringName in [&"font_color", &"font_hover_color", &"font_focus_color", &"font_pressed_color", &"font_hover_pressed_color"]:
+		b.add_theme_color_override(key, ink)
+	var plain: StyleBoxFlat = UiKit.flat(Color(0, 0, 0, 0), 22)
+	plain.content_margin_left = 22
+	var pill: StyleBoxFlat = UiKit.flat(_look.color("ui", "menu_pill"), 22)
+	pill.content_margin_left = 22
+	var pressed: StyleBoxFlat = UiKit.flat(_look.color("ui", "menu_pill_pressed"), 22)
+	pressed.content_margin_left = 22
+	b.add_theme_stylebox_override(&"normal", plain)
+	b.add_theme_stylebox_override(&"hover", pill)
+	b.add_theme_stylebox_override(&"focus", pill)
+	b.add_theme_stylebox_override(&"pressed", pressed)
+	b.pressed.connect(action)
+	# Hover moves the focus too, so only one pill shows at a time.
+	b.mouse_entered.connect(b.grab_focus)
+	parent.add_child(b)
+	return b
 
 
 func _confirm_start() -> void:
