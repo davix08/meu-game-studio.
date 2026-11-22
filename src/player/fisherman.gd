@@ -101,6 +101,13 @@ var _water_level: float = -0.1
 var _swim_depth: float = 0.55
 var _swim_speed: float = 0.6
 var _rod_visible: bool = true
+## True while lying in bed (sleep animation, 2026-11-22); [method step] only breathes then.
+var lying: bool = false
+var _lie_blend: float = 0.0
+var _lie_feet: Vector3 = Vector3.ZERO
+var _lie_rot: Quaternion = Quaternion.IDENTITY
+var _stand_yaw: float = 0.0
+var _body_scale: float = 1.0
 ## Clothing group -> its shader material, when the 3D model file is used.
 var _model_materials: Dictionary = {}
 ## Clothing group -> brightness of the model's own color (keeps highlights when re-dressed).
@@ -162,6 +169,9 @@ func setup(look: WorldLook, grid: WorldGrid, terrain: LakeTerrain, walk_speed: f
 ## Advances one frame. [param dir] is the wanted direction on the ground (x east, y south; any
 ## length above 0 means "move"); [param run] picks the run speed.
 func step(delta: float, dir: Vector2, run: bool) -> void:
+	if lying or _lie_blend > 0.0:
+		_step_lying(delta)
+		return
 	var dt: float = minf(delta, _max_step)
 	var before: Vector2 = ground_pos
 	var wants_move: bool = dir.length_squared() > 0.0001
@@ -754,10 +764,55 @@ func set_rod_visible(on: bool) -> void:
 		_rod_holder.visible = on
 
 
-## Moves the fisherman to [param pos] (blocks x, z) at once (new day, loading a save).
+## Moves the fisherman to [param pos] (blocks x, z) at once (new day, loading a save). While
+## lying in bed only the spot where he will stand up changes.
 func teleport(pos: Vector2) -> void:
 	ground_pos = pos
+	if lying or _lie_blend > 0.0:
+		return
 	position = Vector3(pos.x, _terrain.ground_height_at(pos.x, pos.y), pos.y)
+
+
+## Lies down in bed: feet at [param feet] (world), head toward [param head_dir] (x, z), face
+## up. The body turns over in about half a second ([method stand_up] gets him back up).
+func lie_down(feet: Vector3, head_dir: Vector2) -> void:
+	if not lying and _lie_blend <= 0.0:
+		_stand_yaw = rotation.y
+		_body_scale = scale.x
+	lying = true
+	_lie_feet = feet
+	var up := Vector3(head_dir.x, 0.0, head_dir.y).normalized()
+	var front := Vector3.UP
+	_lie_rot = Basis(up.cross(front), up, front).get_rotation_quaternion()
+	if _rod_holder != null:
+		_rod_holder.visible = false
+
+
+## Gets up from the bed and stands at [member ground_pos].
+func stand_up() -> void:
+	lying = false
+
+
+func _step_lying(delta: float) -> void:
+	_lie_blend = move_toward(_lie_blend, 1.0 if lying else 0.0, delta * 2.0)
+	var k: float = smoothstep(0.0, 1.0, _lie_blend)
+	var stand_pos: Vector3 = position if lying else Vector3(ground_pos.x, _stand_height(), ground_pos.y)
+	if not lying and _lie_blend <= 0.0:
+		transform = Transform3D(Basis(Vector3.UP, _stand_yaw).scaled(Vector3.ONE * _body_scale), stand_pos)
+		if _rod_holder != null:
+			_rod_holder.visible = _rod_visible
+		return
+	var stand_rot := Quaternion(Vector3.UP, _stand_yaw)
+	var rot: Quaternion = stand_rot.slerp(_lie_rot, k)
+	var from: Vector3 = Vector3(ground_pos.x, _stand_height(), ground_pos.y)
+	transform = Transform3D(Basis(rot).scaled(Vector3.ONE * _body_scale), from.lerp(_lie_feet, k))
+	# Idle breathing and arms at rest while lying.
+	_animate(delta, false, false)
+	_apply_pose(delta)
+
+
+func _stand_height() -> float:
+	return height_fn.call(ground_pos.x, ground_pos.y) if height_fn.is_valid() else _terrain.ground_height_at(ground_pos.x, ground_pos.y)
 
 
 ## Turns the fisherman toward [param world_pos] while standing still (walking overrides it).

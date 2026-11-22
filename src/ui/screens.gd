@@ -1174,10 +1174,42 @@ func open_factory(id: String) -> void:
 
 ## The barn and the silo: what is stored, how full, and the upgrades paid in materials.
 func open_storage() -> void:
+	var body: VBoxContainer = _sheet(Texts.get_text("storage"), open_storage)
+	_storage_body(body, ["barn", "silo"])
+
+
+## The silo only (its door on the farm).
+func open_silo() -> void:
+	var body: VBoxContainer = _sheet(Texts.get_text("silo_name"), open_silo)
+	_storage_body(body, ["silo"])
+
+
+## The barn chests (upstairs in the barn, 2026-11-22): each chest with its fill, in order (when
+## one is full the goods go to the next), then the barn goods, the upgrade and the fish bag.
+func open_chests() -> void:
+	var p: Production = _ctx.production
+	var body: VBoxContainer = _sheet(Texts.get_text("chests_title"), open_chests)
+	body.add_child(UiKit.label(Texts.get_text("chest_next"), _look.integer("ui", "small_size"), _look.color("ui", "muted")))
+	for i in p.chest_count():
+		var fill: Vector2i = p.chest_fill(i)
+		var text: String = Texts.fmt("chest_line", [i + 1, fill.x, fill.y])
+		if fill.x >= fill.y:
+			text += "  (%s)" % Texts.get_text("chest_full")
+		var bar := ProgressBar.new()
+		bar.max_value = fill.y
+		bar.value = fill.x
+		bar.show_percentage = false
+		bar.custom_minimum_size = Vector2(220, 22)
+		bar.add_theme_stylebox_override(&"background", UiKit.flat(_look.color("ui", "energy_back"), 8))
+		bar.add_theme_stylebox_override(&"fill", UiKit.flat(_look.color("ui", "bad") if fill.x >= fill.y else _look.color("ui", "good"), 8))
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, "#9a6a3a"), UiKit.label(text), bar], i % 2 == 1))
+	_storage_body(body, ["barn"])
+
+
+func _storage_body(body: VBoxContainer, kinds: Array) -> void:
 	var p: Production = _ctx.production
 	var s: GameState = _ctx.state
-	var body: VBoxContainer = _sheet(Texts.get_text("storage"), open_storage)
-	for kind: String in ["barn", "silo"]:
+	for kind: String in kinds:
 		var name: String = Texts.get_text("barn") if kind == "barn" else Texts.get_text("silo_name")
 		body.add_child(UiKit.label(Texts.fmt("storage_used", [name, p.used(kind), p.capacity(kind)]), 26))
 		for id: Variant in s.shed:

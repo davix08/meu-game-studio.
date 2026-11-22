@@ -1,7 +1,7 @@
 class_name LakeTerrain
 extends MeshInstance3D
 ## The ground of the lake world as ONE mesh with vertex colors, built from the [WorldGrid]:
-## grass (with color variation), dirt paths, sand, the lake bed (darker where deeper) and the
+## grass (with color variation), dirt paths (the road texture, terrain.gdshader), sand, the lake bed (darker where deeper) and the
 ## islands. Vertices sit every half block (center of a block = pure color, edge = blend of the
 ## two blocks, corner = blend of four), which gives soft margins between kinds. Land gets a
 ## light relief; the lake bed dips below the water level. A flat "skirt" quad around the map
@@ -72,6 +72,8 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 			var tile: int = grid.tile_under(cx, cy)
 			var i: int = cy * WorldGrid.WIDTH + cx
 			cell_colors[i] = _cell_color(tile, cx, cy)
+			# Alpha marks the road (dirt) blocks for the terrain shader's road texture.
+			cell_colors[i].a = 1.0 if tile == WorldGrid.Tile.DIRT else 0.0
 			if tile == WorldGrid.Tile.SHALLOW:
 				cell_heights[i] = shallow_h
 				cell_land[i] = 0
@@ -97,7 +99,7 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 			var count: int = 0
 			var land_count: int = 0
 			var h_sum: float = 0.0
-			var c_sum := Color(0.0, 0.0, 0.0, 1.0)
+			var c_sum := Color(0.0, 0.0, 0.0, 0.0)
 			for cy in range(y_lo, y_hi + 1):
 				for cx in range(x_lo, x_hi + 1):
 					if cx < 0 or cy < 0 or cx >= WorldGrid.WIDTH or cy >= WorldGrid.HEIGHT:
@@ -118,7 +120,7 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 			var n: int = j * cols + i
 			_heights[n] = h
 			vertices[n] = Vector3(x, h, z)
-			colors[n] = Color(c_sum.r / float(count), c_sum.g / float(count), c_sum.b / float(count), 1.0)
+			colors[n] = Color(c_sum.r / float(count), c_sum.g / float(count), c_sum.b / float(count), c_sum.a / float(count))
 
 	# Normals from the height field, then triangles (two per half-block quad).
 	var normals: PackedVector3Array = PackedVector3Array()
@@ -153,7 +155,13 @@ func build(grid: WorldGrid, look: WorldLook) -> void:
 	ground.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	mesh = ground
 	var material: StandardMaterial3D = MeshBuilder.make_material(look.num("terrain", "roughness"))
-	material_override = material
+	var ground_material := ShaderMaterial.new()
+	ground_material.shader = load(look.text("terrain", "shader")) as Shader
+	ground_material.set_shader_parameter("road_tex", load(look.text("terrain", "road_texture")) as Texture2D)
+	ground_material.set_shader_parameter("road_tile", look.num("terrain", "road_tile"))
+	ground_material.set_shader_parameter("edge_noise", look.num("terrain", "road_edge_noise"))
+	ground_material.set_shader_parameter("road_tint", look.color("terrain", "road_tint"))
+	material_override = ground_material
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 	# Skirt: four flat strips OUTSIDE the 48x34 grid (north, south, west, east) at the land

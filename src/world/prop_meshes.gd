@@ -106,6 +106,42 @@ static func stump(look: WorldLook) -> ArrayMesh:
 	return mb.build()
 
 
+## A clump of tall shore grass (about 1 m): long leaning blades in three greens, a few with a
+## brown seed head on top, like the reeds around a pond (2026-11-22, lakeside picture).
+static func tall_grass(look: WorldLook) -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var greens: Array[Color] = [look.color("colors", "shore_grass_a"), look.color("colors", "shore_grass_b"), look.color("colors", "shore_grass_c")]
+	var head: Color = look.color("colors", "reed_top")
+	for k in 22:
+		var a: float = float(k) * 2.39996
+		var r: float = 0.04 + 0.26 * fmod(float(k) * 0.618, 1.0)
+		var base := Vector3(cos(a) * r, 0.0, sin(a) * r)
+		var out := Vector3(cos(a), 0.0, sin(a))
+		var side := Vector3(-out.z, 0.0, out.x)
+		var h: float = 0.55 + 0.45 * fmod(float(k) * 0.37, 1.0)
+		var tip: Vector3 = base + out * (0.12 + 0.18 * fmod(float(k) * 0.29, 1.0)) + Vector3(0.0, h, 0.0)
+		var mid: Vector3 = base.lerp(tip, 0.5) + Vector3(0.0, 0.04, 0.0)
+		var c: Color = greens[k % 3]
+		mb.add_triangle(base - side * 0.035, base + side * 0.035, mid, c.darkened(0.15))
+		mb.add_triangle(mid - side * 0.025, mid + side * 0.025, tip, c)
+		mb.add_triangle(base - side * 0.035, mid + side * 0.025, mid - side * 0.025, c.darkened(0.1))
+		if k % 4 == 0:
+			mb.add_cone(tip - Vector3(0.0, 0.02, 0.0), 0.006, 0.006, 0.22, c, c, 3)
+			mb.add_ellipsoid(tip + Vector3(0.0, 0.26, 0.0), Vector3(0.03, 0.08, 0.03), head.darkened(0.2), head, 5, 3, true)
+	return mb.build()
+
+
+## A few small pebbles lying together on the shore.
+static func pebbles(look: WorldLook) -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var dark: Color = look.color("colors", "pebble_dark")
+	var light: Color = look.color("colors", "pebble_light")
+	for p: Vector3 in [Vector3(0.0, 0.0, 0.0), Vector3(0.22, 0.0, 0.1), Vector3(-0.15, 0.0, 0.18), Vector3(0.05, 0.0, -0.2)]:
+		var size: float = 0.07 + 0.05 * fmod(absf(p.x * 7.0 + p.z * 13.0), 1.0)
+		mb.add_ellipsoid(p + Vector3(0.0, size * 0.4, 0.0), Vector3(size * 1.3, size * 0.7, size), dark, light, 6, 3, false)
+	return mb.build()
+
+
 ## A tiny white bloom (tinted per instance).
 static func flower(_look: WorldLook) -> ArrayMesh:
 	var mb := MeshBuilder.new()

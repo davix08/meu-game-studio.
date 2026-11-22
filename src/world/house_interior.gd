@@ -2,7 +2,8 @@ class_name HouseInterior
 extends Node3D
 ## The inside of the farmer's house (2026-11-22), a separate little space far from the farm: a
 ## warm room seen from the isometric camera with two walls cut away. It has a checkered floor
-## and wainscoted walls, a kitchen corner (fridge, stove with hood, counters, cabinets), a table
+## and wainscoted walls, a kitchen corner (fridge, sink, stove with oven, microwave, washing
+## machine, counters, cabinets), all in a pixel-art furniture shader (2026-11-22), a table
 ## with chairs, a rug, a sofa, a floor lamp with a warm light, a window, the bed and the door.
 ## The fisherman walks here through [member Fisherman.blocked_fn] / [member Fisherman.height_fn];
 ## the bed is where he sleeps, the sofa where he rests. Sizes and colors: "interior" group.
@@ -66,6 +67,7 @@ func build(look: WorldLook) -> void:
 	for k in 3:
 		_box(mb, Vector3(1.6 + float(k) * 0.9, 2.0, 0.51), Vector3(0.8, 0.6, 0.02), _c("wood_dark"))
 	_box(mb, Vector3(5.6, 1.7, 0.03), Vector3(0.5, 0.5, 0.04), _c("metal"))
+	_kitchen_details(mb)
 	# Table with four chairs, a jug and cups.
 	var t := Vector2(5.4, 4.6)
 	_furniture(mb, Rect2(t.x - 1.0, t.y - 0.5, 2.0, 1.0), 0.78, _c("wood_dark"))
@@ -104,9 +106,16 @@ func build(look: WorldLook) -> void:
 	_furniture(mb, Rect2(0.2, 1.4, 0.6, 1.2), 1.6, _c("wood"))
 	for k in 3:
 		_box(mb, Vector3(0.82, 0.5 + float(k) * 0.45, 2.0), Vector3(0.02, 0.35, 1.0), _c("wood_dark"))
+	# Armchair by the sofa corner.
+	var arm := Rect2(7.2, 6.6, 0.9, 0.9)
+	_furniture(mb, arm, 0.42, _c("armchair"))
+	_box(mb, Vector3(arm.get_center().x, 0.8, arm.end.y - 0.1), Vector3(arm.size.x, 0.8, 0.2), _c("armchair").darkened(0.12))
+	for k in 2:
+		_box(mb, Vector3(arm.position.x + 0.08 + float(k) * (arm.size.x - 0.16), 0.58, arm.get_center().y), Vector3(0.16, 0.32, arm.size.y), _c("armchair").darkened(0.08))
+	_box(mb, Vector3(arm.get_center().x, 0.46, arm.get_center().y - 0.05), Vector3(arm.size.x - 0.32, 0.1, arm.size.y - 0.3), _c("armchair").lightened(0.1))
 	var node := MeshInstance3D.new()
 	node.mesh = mb.build()
-	node.material_override = MeshBuilder.make_material(0.8)
+	node.material_override = pixel_material(look)
 	node.position = _origin
 	add_child(node)
 	_lamp = OmniLight3D.new()
@@ -121,6 +130,61 @@ func build(look: WorldLook) -> void:
 	window_light.omni_range = 4.0
 	window_light.position = _origin + Vector3(1.2, 1.5, 3.4)
 	add_child(window_light)
+
+
+## The pixel-art furniture material (pixel_furniture.gdshader), shared with the barn.
+static func pixel_material(look: WorldLook) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = load(look.text("interior", "pixel_shader")) as Shader
+	m.set_shader_parameter("pixel_size", look.num("interior", "pixel_size"))
+	m.set_shader_parameter("pixel_noise", look.num("interior", "pixel_noise"))
+	m.set_shader_parameter("border_dark", look.num("interior", "border_dark"))
+	return m
+
+
+## Details that make the kitchen read like real furniture (2026-11-22, after the user's voxel
+## furniture picture): fridge doors and handles, sink with faucet and water, cutting board,
+## cabinet doors, stove burners, oven window and knobs, a microwave and a washing machine.
+func _kitchen_details(mb: MeshBuilder) -> void:
+	var metal: Color = _c("metal")
+	var dark: Color = _c("appliance_dark")
+	# Fridge: freezer line and two handles.
+	_box(mb, Vector3(0.75, 1.25, 1.005), Vector3(0.9, 0.04, 0.01), dark)
+	_box(mb, Vector3(1.05, 1.6, 1.02), Vector3(0.05, 0.35, 0.04), metal)
+	_box(mb, Vector3(1.05, 0.75, 1.02), Vector3(0.05, 0.45, 0.04), metal)
+	# Counter front: three cabinet doors with knobs.
+	for k in 3:
+		var x: float = 1.65 + float(k) * 0.85
+		_box(mb, Vector3(x, 0.45, 0.91), Vector3(0.74, 0.7, 0.02), _c("wood_dark"))
+		_box(mb, Vector3(x + 0.28, 0.62, 0.93), Vector3(0.05, 0.05, 0.03), metal)
+	# Sink: metal basin, water, faucet.
+	_box(mb, Vector3(2.0, 0.93, 0.55), Vector3(0.62, 0.02, 0.44), metal.darkened(0.25))
+	_box(mb, Vector3(2.0, 0.945, 0.55), Vector3(0.5, 0.01, 0.32), _c("water"))
+	_box(mb, Vector3(2.0, 1.1, 0.27), Vector3(0.06, 0.3, 0.06), metal)
+	_box(mb, Vector3(2.0, 1.24, 0.36), Vector3(0.06, 0.05, 0.22), metal)
+	# Cutting board with a knife.
+	_box(mb, Vector3(3.15, 0.965, 0.55), Vector3(0.55, 0.03, 0.38), _c("board"))
+	_box(mb, Vector3(3.2, 0.985, 0.5), Vector3(0.32, 0.01, 0.05), metal.lightened(0.3))
+	_box(mb, Vector3(2.98, 0.99, 0.5), Vector3(0.12, 0.025, 0.06), _c("wood_dark"))
+	# Microwave on the counter.
+	_box(mb, Vector3(1.55, 1.12, 0.45), Vector3(0.5, 0.3, 0.36), _c("fridge"))
+	_box(mb, Vector3(1.5, 1.12, 0.635), Vector3(0.3, 0.2, 0.01), dark)
+	_box(mb, Vector3(1.74, 1.12, 0.635), Vector3(0.06, 0.2, 0.01), metal)
+	# Stove: four burners, oven window, knobs.
+	for p: Vector2 in [Vector2(-0.18, -0.15), Vector2(0.18, -0.15), Vector2(-0.18, 0.15), Vector2(0.18, 0.15)]:
+		_box(mb, Vector3(4.2 + p.x, 0.91, 0.55 + p.y), Vector3(0.24, 0.02, 0.22), dark)
+		_box(mb, Vector3(4.2 + p.x, 0.925, 0.55 + p.y), Vector3(0.1, 0.01, 0.1), metal.darkened(0.3))
+	_box(mb, Vector3(4.2, 0.45, 0.905), Vector3(0.55, 0.35, 0.02), dark)
+	_box(mb, Vector3(4.2, 0.42, 0.915), Vector3(0.42, 0.12, 0.01), _c("oven_glow"))
+	for k in 4:
+		_box(mb, Vector3(3.95 + float(k) * 0.17, 0.78, 0.92), Vector3(0.07, 0.07, 0.04), metal.lightened(0.2))
+	# Washing machine with a round window.
+	var wm := Rect2(6.3, 0.2, 0.8, 0.75)
+	_furniture(mb, wm, 0.95, _c("fridge"))
+	_box(mb, Vector3(wm.get_center().x, 0.85, wm.end.y + 0.005), Vector3(0.8, 0.12, 0.01), metal)
+	_box(mb, Vector3(wm.get_center().x, 0.45, wm.end.y + 0.01), Vector3(0.46, 0.46, 0.02), dark)
+	_box(mb, Vector3(wm.get_center().x, 0.45, wm.end.y + 0.02), Vector3(0.3, 0.3, 0.01), _c("water"))
+	_box(mb, Vector3(wm.position.x + 0.15, 0.85, wm.end.y + 0.015), Vector3(0.08, 0.06, 0.02), _c("door"))
 
 
 ## True when the fisherman box at (x, z) (world meters) hits a wall or furniture.
@@ -153,6 +217,14 @@ func door_spot() -> Vector2:
 ## The bed (room meters).
 func bed_rect() -> Rect2:
 	return Rect2(0.2, 5.0, 2.2, 1.4)
+
+
+## Where the fisherman lies when he sleeps: [feet (world Vector3), head direction (x, z)].
+## The head rests on the pillow (west end of the bed).
+func lie_spot(body_height: float) -> Array:
+	var bed: Rect2 = bed_rect()
+	var feet := Vector3(_origin.x + bed.position.x + 0.3 + body_height, _look.num("interior", "lie_height"), _origin.z + bed.get_center().y)
+	return [feet, Vector2(-1.0, 0.0)]
 
 
 ## The sofa (room meters).

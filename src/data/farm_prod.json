@@ -283,7 +283,9 @@
 				"parafuso",
 				"tabua",
 				"fita"
-			]
+			],
+			"chests_min": 2,
+			"chests_max": 6
 		}
 	},
 	"silo_items": [

@@ -101,6 +101,25 @@ func capacity(kind: String) -> int:
 	return int(s["base"]) + int(s["step"]) * int(_state.storage_levels.get(kind, 0))
 
 
+## Chests upstairs in the barn (2026-11-22): storage.barn.chests_min, one more per barn
+## level, up to chests_max. The barn capacity is split between them.
+func chest_count() -> int:
+	var b: Dictionary = (_p["storage"] as Dictionary)["barn"]
+	return clampi(int(b.get("chests_min", 2)) + int(_state.storage_levels.get("barn", 0)), int(b.get("chests_min", 2)), int(b.get("chests_max", 6)))
+
+
+## Chest [param i] as (units inside, room). Chests fill in order: the next one only starts
+## when the one before is full. The first chests take the leftover of an uneven split.
+func chest_fill(i: int) -> Vector2i:
+	var n: int = chest_count()
+	var total: int = capacity("barn")
+	var room: int = total / n + (1 if i < total % n else 0)
+	var before: int = 0
+	for k in i:
+		before += total / n + (1 if k < total % n else 0)
+	return Vector2i(clampi(used("barn") - before, 0, room), room)
+
+
 ## Units stored in the silo or barn.
 func used(kind: String) -> int:
 	var n: int = 0

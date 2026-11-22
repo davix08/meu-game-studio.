@@ -131,7 +131,12 @@
 		"skirt_margin": 80.0,
 		"skirt_height": -0.25,
 		"roughness": 1.0,
-		"dry_margin": 0.05
+		"dry_margin": 0.05,
+		"shader": "res://src/world/terrain.gdshader",
+		"road_texture": "res://assets/terrain/estrada.png",
+		"road_tile": 3.0,
+		"road_edge_noise": 0.35,
+		"road_tint": "#ffffff"
 	},
 	"water": {
 		"shallow_color": "#4fa8a4",
@@ -342,7 +347,12 @@
 		"bark_dark": "#4a2c18",
 		"wood_end": "#d9b07a",
 		"wood_ring": "#a8794a",
-		"tuft_c": "#3f8a2a"
+		"tuft_c": "#3f8a2a",
+		"shore_grass_a": "#6a9a34",
+		"shore_grass_b": "#8cb048",
+		"shore_grass_c": "#4e7e2c",
+		"pebble_dark": "#8a8c88",
+		"pebble_light": "#d8d8d0"
 	},
 	"estate": {
 		"clear_margin": 1,
@@ -1762,7 +1772,19 @@
 		"pillow": "#ffffff",
 		"blanket": "#4a7ab0",
 		"light": "#ffb060",
-		"window_light": "#c8d8ff"
+		"window_light": "#c8d8ff",
+		"pixel_shader": "res://src/world/pixel_furniture.gdshader",
+		"pixel_size": 0.0625,
+		"pixel_noise": 0.07,
+		"border_dark": 0.6,
+		"appliance_dark": "#2e3036",
+		"water": "#6ab4e0",
+		"board": "#c8905a",
+		"oven_glow": "#e8a040",
+		"armchair": "#7c7f88",
+		"lie_height": 0.78,
+		"lie_seconds": 1.6,
+		"wake_seconds": 3.0
 	},
 	"painted": {
 		"shader": "res://src/world/painted_prop.gdshader",
@@ -1778,7 +1800,10 @@
 		"wood_moss": 0.55,
 		"stump_chance": 0.12,
 		"log_chance": 0.08,
-		"shade_fill": 0.15
+		"shade_fill": 0.15,
+		"shore_grass_chance": 0.85,
+		"shore_pebble_chance": 0.35,
+		"shore_bush_chance": 0.2
 	},
 	"log": {
 		"scale_min": 0.85,
@@ -1792,6 +1817,65 @@
 		"scale_max": 1.2,
 		"height_min": 0.8,
 		"height_max": 1.2,
+		"shadow": 1
+	},
+	"barn": {
+		"origin": [
+			180,
+			45
+		],
+		"size": [
+			12,
+			9
+		],
+		"wall_height": 5.2,
+		"loft_height": 2.4,
+		"stair_steps": 12,
+		"camera_size": 11.0,
+		"lamp_energy": 3.0,
+		"lamp_range": 12.0,
+		"floor_a": "#b08458",
+		"floor_b": "#9a7048",
+		"hay": "#e0c060",
+		"hay_bale": "#d8b448",
+		"wall": "#a8402e",
+		"trim": "#f0e6d0",
+		"wood": "#8a5a34",
+		"wood_dark": "#5e3a20",
+		"door": "#8a3424",
+		"window": "#a8c8e0",
+		"metal": "#8a8c92",
+		"water": "#6ab4e0",
+		"chest": "#9a6a3a",
+		"lock": "#e0b040",
+		"chest_used": "#ffe08a",
+		"chest_full": "#ff8a6a",
+		"horse_0": "#8a5232",
+		"horse_1": "#d8d0c4",
+		"horse_2": "#4a3426",
+		"hoof": "#3a3030",
+		"eye": "#1a1410",
+		"light": "#ffc070"
+	},
+	"shore_grass": {
+		"scale_min": 1.2,
+		"scale_max": 1.8,
+		"height_min": 0.8,
+		"height_max": 1.3,
+		"shadow": 0
+	},
+	"pebbles": {
+		"scale_min": 0.8,
+		"scale_max": 1.4,
+		"height_min": 0.8,
+		"height_max": 1.2,
+		"shadow": 0
+	},
+	"shore_bush": {
+		"scale_min": 0.55,
+		"scale_max": 0.85,
+		"height_min": 0.8,
+		"height_max": 1.1,
 		"shadow": 1
 	}
 }

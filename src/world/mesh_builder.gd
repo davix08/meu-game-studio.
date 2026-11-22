@@ -17,6 +17,11 @@ var _vertices: PackedVector3Array = PackedVector3Array()
 var _normals: PackedVector3Array = PackedVector3Array()
 var _colors: PackedColorArray = PackedColorArray()
 var _indices: PackedInt32Array = PackedInt32Array()
+## Per-vertex face coordinates in meters (UV) and the face size (UV2), filled by
+## [method add_box] only; the pixel furniture shader draws edges and pixels from them.
+var _uvs: PackedVector2Array = PackedVector2Array()
+var _uv2s: PackedVector2Array = PackedVector2Array()
+var _has_uv: bool = false
 
 
 ## A material that shows the vertex colors, lit, with no specular and no face culling (so a
@@ -68,12 +73,22 @@ func add_box(center: Vector3, size: Vector3, color: Color) -> void:
 	var p101 := Vector3(hi.x, lo.y, hi.z)
 	var p110 := Vector3(hi.x, hi.y, lo.z)
 	var p111 := Vector3(hi.x, hi.y, hi.z)
-	add_quad(p100, p110, p111, p101, color, Vector3.RIGHT)
-	add_quad(p000, p001, p011, p010, color, Vector3.LEFT)
-	add_quad(p010, p011, p111, p110, color, Vector3.UP)
-	add_quad(p000, p100, p101, p001, color, Vector3.DOWN)
-	add_quad(p001, p101, p111, p011, color, Vector3.BACK)
-	add_quad(p000, p010, p110, p100, color, Vector3.FORWARD)
+	var faces: Array = [
+		[p100, p110, p111, p101, Vector3.RIGHT, 2, 1], [p000, p001, p011, p010, Vector3.LEFT, 2, 1],
+		[p010, p011, p111, p110, Vector3.UP, 0, 2], [p000, p100, p101, p001, Vector3.DOWN, 0, 2],
+		[p001, p101, p111, p011, Vector3.BACK, 0, 1], [p000, p010, p110, p100, Vector3.FORWARD, 0, 1],
+	]
+	_has_uv = true
+	for f: Array in faces:
+		var first: int = _vertices.size()
+		add_quad(f[0], f[1], f[2], f[3], color, f[4])
+		var u: int = f[5]
+		var v: int = f[6]
+		var face_size := Vector2(size[u], size[v])
+		for i in range(first, _vertices.size()):
+			var local: Vector3 = _vertices[i] - lo
+			_uvs[i] = Vector2(local[u], local[v])
+			_uv2s[i] = face_size
 
 
 ## Adds a smooth-shaded vertical cone or cylinder (a frustum) standing on [param base]. The
@@ -138,6 +153,9 @@ func append_transformed(other: MeshBuilder, xform: Transform3D) -> void:
 		_vertices.append(xform * other._vertices[i])
 		_normals.append((xform.basis * other._normals[i]).normalized())
 		_colors.append(other._colors[i])
+		_uvs.append(other._uvs[i])
+		_uv2s.append(other._uv2s[i])
+	_has_uv = _has_uv or other._has_uv
 	for index: int in other._indices:
 		_indices.append(first + index)
 
@@ -150,6 +168,9 @@ func build() -> ArrayMesh:
 	arrays[Mesh.ARRAY_NORMAL] = _normals
 	arrays[Mesh.ARRAY_COLOR] = _colors
 	arrays[Mesh.ARRAY_INDEX] = _indices
+	if _has_uv:
+		arrays[Mesh.ARRAY_TEX_UV] = _uvs
+		arrays[Mesh.ARRAY_TEX_UV2] = _uv2s
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
@@ -159,6 +180,8 @@ func _add_vertex(pos: Vector3, normal: Vector3, color: Color) -> int:
 	_vertices.append(pos)
 	_normals.append(normal)
 	_colors.append(color)
+	_uvs.append(Vector2.ZERO)
+	_uv2s.append(Vector2.ZERO)
 	return _vertices.size() - 1
 
 

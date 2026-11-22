@@ -22,6 +22,8 @@ var _material: StandardMaterial3D
 var _where: Dictionary = {}
 var _ids: Array[int] = []
 var _outline: ShaderMaterial
+## Painted material with no outline (thin blades would turn into dark blobs).
+var _shore_grass: ShaderMaterial
 ## Decoration (logs, stumps) -> [MultiMesh, instance index, Transform3D, cell], hidden under
 ## the buildings the player places.
 var _decor: Array = []
@@ -53,6 +55,8 @@ func build(grid: WorldGrid, terrain: LakeTerrain, look: WorldLook) -> void:
 	_scatter(&"lily", PropMeshes.lily(look), _material)
 	_add_flowers()
 	_add_wood_decor(wood)
+	_shore_grass = _painted(0.0)
+	_add_shore(stone, foliage)
 
 
 ## A painted-prop material with [param moss] (0 = none); [method _add_chunk] adds the outline.
@@ -114,7 +118,66 @@ func _add_wood_decor(material: Material) -> void:
 			_decor.append([multi, i, transforms[i], (entry[2] as Array)[i]])
 
 
-## Hides the logs and stumps inside [param rect] (blocks), under a building being placed.
+## The lakeside (2026-11-22, the user's pond picture): on land blocks next to the water, tall
+## grass clumps with seed heads, pebbles and small bushes (painted.shore_* chances), never by the
+## pier, the bridges or in the farm lots. Decoration: they do not block walking.
+func _add_shore(stone: Material, foliage: Material) -> void:
+	var lots: Array[Rect2i] = []
+	for id: String in TownPlan.lot_ids(_look):
+		lots.append(TownPlan.lot_rect(_look, id).grow(1))
+	var kinds: Array[StringName] = [&"shore_grass", &"pebbles", &"shore_bush"]
+	var chances: Array[float] = [_look.num("painted", "shore_grass_chance"), _look.num("painted", "shore_pebble_chance"), _look.num("painted", "shore_bush_chance")]
+	var sets: Array = [[[], [], []], [[], [], []], [[], [], []]]
+	for cy in WorldGrid.HEIGHT:
+		for cx in WorldGrid.WIDTH:
+			var tile: int = _grid.tile_at(cx, cy)
+			if tile != WorldGrid.Tile.GRASS and tile != WorldGrid.Tile.SAND and tile != WorldGrid.Tile.FLOWERS:
+				continue
+			var water := Vector2.ZERO
+			var near_wood: bool = false
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					var t: int = _grid.tile_at(cx + dx, cy + dy)
+					if t == WorldGrid.Tile.SHALLOW or t == WorldGrid.Tile.DEEP:
+						water += Vector2(dx, dy)
+					elif t == WorldGrid.Tile.DOCK or t == WorldGrid.Tile.BRIDGE:
+						near_wood = true
+			if water == Vector2.ZERO or near_wood:
+				continue
+			var cell := Vector2i(cx, cy)
+			var inside: bool = false
+			for r: Rect2i in lots:
+				if r.has_point(cell):
+					inside = true
+					break
+			if inside:
+				continue
+			for k in kinds.size():
+				if WorldGrid.hash2(cx, cy, 40 + k) >= chances[k]:
+					continue
+				# Toward the water edge of the block, with a little jitter.
+				var j := Vector2(WorldGrid.hash2(cx, cy, 50 + k), WorldGrid.hash2(cx, cy, 60 + k)) - Vector2(0.5, 0.5)
+				var pos: Vector2 = Vector2(cx + 0.5, cy + 0.5) + water.normalized() * 0.3 + j * 0.5
+				var entry: Array = sets[k]
+				(entry[0] as Array).append(_instance_transform(String(kinds[k]), Vector2i(cx * 3 + k, cy), Vector3(pos.x, _terrain.ground_height_at(pos.x, pos.y), pos.y)))
+				(entry[1] as Array).append(Color.WHITE)
+				(entry[2] as Array).append(cell)
+	var meshes: Array[ArrayMesh] = [PropMeshes.tall_grass(_look), PropMeshes.pebbles(_look), PropMeshes.bush(_look)]
+	var materials: Array[Material] = [_shore_grass, stone, foliage]
+	for k in kinds.size():
+		var entry: Array = sets[k]
+		if (entry[0] as Array).is_empty():
+			continue
+		var transforms: Array[Transform3D] = []
+		transforms.assign(entry[0])
+		var colors: Array[Color] = []
+		colors.assign(entry[1])
+		var multi: MultiMesh = _add_chunk(meshes[k], transforms, colors, k != 0, false, materials[k])
+		for i in transforms.size():
+			_decor.append([multi, i, transforms[i], (entry[2] as Array)[i]])
+
+
+## Hides the decorations (logs, stumps, lakeside) inside [param rect] (blocks), under a building being placed.
 func hide_decor_in(rect: Rect2i) -> void:
 	for d: Array in _decor:
 		if rect.grow(1).has_point(d[3] as Vector2i):
@@ -229,7 +292,7 @@ func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[C
 	if small:
 		node.visibility_range_end = _look.num("town", "small_prop_range")
 	add_child(node)
-	if material != _material:
+	if material != _material and material != _shore_grass:
 		# The outline is its own node with no shadow: as a material pass its hull would also
 		# cast a shadow that covers the prop itself.
 		var line := MultiMeshInstance3D.new()

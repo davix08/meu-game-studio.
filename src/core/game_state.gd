@@ -34,6 +34,8 @@ signal city_level_up(new_level: int, reward: int)
 const MAP_OUTDOOR: String = "out"
 ## Map id for the house interior.
 const MAP_INDOOR: String = "in"
+## Inside the barn (2026-11-22).
+const MAP_BARN: String = "barn"
 
 
 ## One caught fish in the bag.
@@ -90,7 +92,7 @@ var snacks: int = 0
 var luck_baits: int = 0
 ## Game minutes of luck bait effect left.
 var luck_left: float = 0.0
-## Current map: [constant MAP_OUTDOOR] or [constant MAP_INDOOR].
+## Current map: [constant MAP_OUTDOOR], [constant MAP_INDOOR] (the house) or [constant MAP_BARN].
 var map: String = MAP_OUTDOOR
 ## Lifetime fish caught.
 var stats_caught: int = 0

@@ -60,6 +60,11 @@ var _field_view: CropFieldView
 var _prod_timer: float = 0.0
 var _opened: Dictionary = {}
 var _house: HouseInterior
+var _barn: BarnInterior
+var _barn_spots: Array[Spot] = []
+## Sleep steps: 0 awake, 1 lying down, 2 asleep (the night passes), then he gets up.
+var _bed_phase: int = 0
+var _bed_timer: float = 0.0
 var _placing: String = ""
 var _ghost: MeshInstance3D
 var _ghost_door: MeshInstance3D
@@ -156,6 +161,9 @@ func _ready() -> void:
 	_house = HouseInterior.new()
 	add_child(_house)
 	_house.build(_look)
+	_barn = BarnInterior.new()
+	add_child(_barn)
+	_barn.build(_look, _production)
 
 	_build_interface()
 	_build_spots()
@@ -416,20 +424,66 @@ func _exit_house() -> void:
 	_save_soon = true
 
 
-## Puts the fisherman, camera and light in the house or back on the farm.
+func _enter_barn() -> void:
+	if not _machine.is_idle():
+		return
+	_sfx.play(&"click")
+	_state.resting = false
+	_state.map = GameState.MAP_BARN
+	_apply_space()
+	_fisherman.teleport(_barn.entry())
+	_save_soon = true
+
+
+func _exit_barn() -> void:
+	_sfx.play(&"click")
+	_state.map = GameState.MAP_OUTDOOR
+	_apply_space()
+	_fisherman.teleport(TownPlan.lot_door(_look, "galpao") + Vector2(0.0, 0.8))
+	_save_soon = true
+
+
+## Puts the fisherman, camera and light in the house, the barn or back on the farm.
 func _apply_space() -> void:
-	var inside: bool = _state.map == GameState.MAP_INDOOR
-	_fisherman.blocked_fn = _house.is_blocked if inside else Callable()
-	_fisherman.height_fn = _house.floor_height if inside else Callable()
+	var in_house: bool = _state.map == GameState.MAP_INDOOR
+	var in_barn: bool = _state.map == GameState.MAP_BARN
+	var inside: bool = in_house or in_barn
+	_fisherman.blocked_fn = _house.is_blocked if in_house else (_barn.is_blocked if in_barn else Callable())
+	_fisherman.height_fn = _house.floor_height if in_house else (_barn.floor_height if in_barn else Callable())
 	_fisherman.set_rod_visible(_state.rod_out and not inside)
 	_cycle.indoor = inside
-	_camera.set_bounds(_house.bounds() if inside else Rect2(), _look.num("camera", "indoor_size") if inside else _look.num("camera", "size"))
+	var bounds: Rect2 = _house.bounds() if in_house else (_barn.bounds() if in_barn else Rect2())
+	var view: float = _look.num("camera", "indoor_size") if in_house else (_look.num("barn", "camera_size") if in_barn else _look.num("camera", "size"))
+	_camera.set_bounds(bounds, view)
 	_cycle.update(_state.minutes)
 
 
+## Sleep (2026-11-22): the farmer lies down in bed, the night passes behind the sleep screen
+## and he gets up next to the bed ([method _update_bed] runs the steps).
 func _sleep_in_bed() -> void:
+	if _bed_phase != 0:
+		return
 	_sfx.play(&"click")
-	_clock.sleep_new_day(false)
+	_state.resting = false
+	var lie: Array = _house.lie_spot(_look.num("player", "model_height"))
+	_fisherman.lie_down(lie[0], lie[1])
+	_bed_phase = 1
+	_bed_timer = _look.num("interior", "lie_seconds")
+
+
+func _update_bed(delta: float) -> void:
+	if _bed_phase == 0:
+		return
+	_bed_timer -= delta
+	if _bed_timer > 0.0:
+		return
+	if _bed_phase == 1:
+		_bed_phase = 2
+		_bed_timer = _look.num("interior", "wake_seconds")
+		_clock.sleep_new_day(false)
+	else:
+		_bed_phase = 0
+		_fisherman.stand_up()
 
 
 func _use_plot_tap(i: int) -> void:
@@ -498,6 +552,8 @@ func _begin(fresh: bool) -> void:
 	_apply_space()
 	if _state.map == GameState.MAP_INDOOR:
 		_fisherman.teleport(_house.entry())
+	elif _state.map == GameState.MAP_BARN:
+		_fisherman.teleport(_barn.entry())
 	_town_view.set_production(_production)
 	for zone: String in _state.expanded:
 		_open_area(zone)
@@ -534,7 +590,8 @@ func _process(delta: float) -> void:
 		dir = keys
 		run = Input.is_physical_key_pressed(KEY_SHIFT)
 	var phase: FishingMachine.Phase = _machine.phase
-	if not _started or _screens.is_open():
+	_update_bed(delta)
+	if not _started or _screens.is_open() or _bed_phase != 0:
 		dir = Vector2.ZERO
 	if phase == FishingMachine.Phase.BITE or phase == FishingMachine.Phase.FIGHT or phase == FishingMachine.Phase.CAUGHT or _fishing_hud.card_open:
 		dir = Vector2.ZERO
@@ -553,6 +610,8 @@ func _process(delta: float) -> void:
 	_actions.visible = not fighting and _placing == "" and _started
 	_fishing_hud.pull.visible = _placing == "" and not _fishing_hud.card_open
 	_stick.visible = not fighting and _started
+	# Fishing only happens outside: no cast button or water hint in the house or the barn.
+	_fishing_hud.visible = _started and _state.map == GameState.MAP_OUTDOOR
 	_update_spot()
 	var e_down: bool = Input.is_physical_key_pressed(KEY_E)
 	if e_down and not _e_was_down and _started and not _screens.is_open():
@@ -741,6 +800,10 @@ func _toggle_rest() -> void:
 
 func _on_day_started(day: int, auto: bool) -> void:
 	_town.on_new_day()
+	if _state.map == GameState.MAP_BARN:
+		# Falling asleep in the barn: he wakes up at home, on the farm.
+		_state.map = GameState.MAP_OUTDOOR
+		_apply_space()
 	if _state.map == GameState.MAP_INDOOR:
 		_screens.show_sleep(day, auto)
 		_fisherman.teleport(_house.spot("bed"))
@@ -765,9 +828,10 @@ func _on_lights(on: bool) -> void:
 
 func _build_spots() -> void:
 	var reach: float = _look.num("town", "door_reach")
-	for id: String in ["galpao", "silo"]:
-		if TownPlan.has_lot(_look, id):
-			_add_spot(TownPlan.lot_door(_look, id), reach, _label_fixed.bind("act_storage"), _screens.open_storage)
+	if TownPlan.has_lot(_look, "galpao"):
+		_add_spot(TownPlan.lot_door(_look, "galpao"), reach, _label_fixed.bind("act_enter_barn"), _enter_barn)
+	if TownPlan.has_lot(_look, "silo"):
+		_add_spot(TownPlan.lot_door(_look, "silo"), reach, _label_fixed.bind("silo_name"), _screens.open_silo)
 	for home: String in ["galinheiro", "curral", "chiqueiro", "ovelhas"]:
 		if TownPlan.has_lot(_look, home):
 			_add_spot(TownPlan.lot_door(_look, home), reach, _label_home.bind(home), _use_home.bind(home))
@@ -786,6 +850,14 @@ func _build_spots() -> void:
 		spot.label = _label_sofa if entry[0] == "sofa" else _label_fixed.bind(str(entry[1]))
 		spot.action = entry[2]
 		_indoor_spots.append(spot)
+	_barn_spots.clear()
+	for entry: Array in [["door", "act_exit", _exit_barn, 1.3], ["chests", "act_chests", _screens.open_chests, 3.0]]:
+		var spot := Spot.new()
+		spot.pos = _barn.spot(str(entry[0]))
+		spot.radius = float(entry[3])
+		spot.label = _label_upstairs if entry[0] == "chests" else _label_fixed.bind(str(entry[1]))
+		spot.action = entry[2]
+		_barn_spots.append(spot)
 	if TownPlan.has_lot(_look, "quadro"):
 		_add_spot(TownPlan.lot_door(_look, "quadro"), reach, _label_fixed.bind("act_orders"), _screens.open_orders)
 	if TownPlan.has_lot(_look, "barraca"):
@@ -805,6 +877,11 @@ func _build_spots() -> void:
 
 func _label_fixed(key: String) -> String:
 	return Texts.get_text(key)
+
+
+## "Baús" only up on the barn loft (the ground under it is close but not the same floor).
+func _label_upstairs() -> String:
+	return Texts.get_text("act_chests") if _fisherman.position.y > _look.num("barn", "loft_height") * 0.8 else ""
 
 
 func _label_expand(id: String) -> String:
@@ -928,10 +1005,10 @@ func _add_spot(pos: Vector2, radius: float, label: Callable, action: Callable) -
 func _update_spot() -> void:
 	_spot = null
 	var text: String = ""
-	if _started and not _screens.is_open() and _machine.is_idle():
+	if _started and not _screens.is_open() and _machine.is_idle() and _bed_phase == 0:
 		var me: Vector2 = _fisherman.ground_pos
 		var best: float = INF
-		for spot: Spot in (_indoor_spots if _state.map == GameState.MAP_INDOOR else _spots):
+		for spot: Spot in (_indoor_spots if _state.map == GameState.MAP_INDOOR else (_barn_spots if _state.map == GameState.MAP_BARN else _spots)):
 			var d: float = me.distance_to(spot.pos)
 			if d <= spot.radius and d < best:
 				var label: String = spot.label.call()

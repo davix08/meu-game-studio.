@@ -222,7 +222,7 @@ static func apply(state: GameState, data: GameData, save: Dictionary) -> void:
 	state.luck_left = _number(save, "luck_left", state.luck_left)
 	state.dir = int(_number(save, "dir", 0))
 	var map: String = str(save.get("map", "")) if save.get("map") is String else ""
-	if map == GameState.MAP_OUTDOOR or map == GameState.MAP_INDOOR:
+	if map == GameState.MAP_OUTDOOR or map == GameState.MAP_INDOOR or map == GameState.MAP_BARN:
 		state.map = map
 	if save.get("bag") is Array:
 		_apply_bag(state, data, save["bag"])
