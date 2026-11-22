@@ -52,8 +52,12 @@ func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerra
 	_material = HouseInterior.pixel_material(look)
 	_meshes["galinha"] = [EstateMeshes.hen(look, true), EstateMeshes.hen(look, false)]
 	_meshes["ovelha"] = [_sheep()]
-	_meshes["vaca"] = [VoxelModels.cow(look)]
-	_meshes["bezerro"] = [VoxelModels.cow(look)]
+	# The owner's cow model (textured); the block cow when the file is missing.
+	var cow: Mesh = AnimalModels.mesh(look, "vaca", true)
+	if cow == null:
+		cow = VoxelModels.cow(look)
+	_meshes["vaca"] = [cow]
+	_meshes["bezerro"] = [cow]
 	_meshes["porco"] = [_pig()]
 	var products := MultiMesh.new()
 	products.transform_format = MultiMesh.TRANSFORM_3D
@@ -131,7 +135,8 @@ func _add_critter(kind: String, home: String, index: int) -> void:
 	var options: Array = _meshes[kind]
 	c.node = MeshInstance3D.new()
 	c.node.mesh = options[index % options.size()]
-	c.node.material_override = _material
+	# Models with their own material (the textured cow) keep it.
+	c.node.material_override = _material if c.node.mesh.surface_get_material(0) == null else null
 	add_child(c.node)
 	c.home = home
 	c.pos = _random_point(home)

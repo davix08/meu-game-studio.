@@ -1914,5 +1914,26 @@
 		"sack": "#d8c098",
 		"tomato": "#d83a2a",
 		"carrot": "#e8822a"
+	},
+	"animal_models": {
+		"vaca": {
+			"path": "res://assets/animals/vaca.glb",
+			"yaw_degrees": 0,
+			"height": 1.1
+		},
+		"cavalo": {
+			"path": "res://assets/animals/cavalo.glb",
+			"yaw_degrees": -90,
+			"height": 1.65
+		}
+	},
+	"ride": {
+		"saddle_height": 1.08,
+		"seat_forward": 0.12,
+		"side_offset": 0.75,
+		"mount_seconds": 1.0,
+		"speed_factor": 2.0,
+		"gallop_freq": 9.0,
+		"store_reach": 2.2
 	}
 }

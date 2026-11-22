@@ -108,6 +108,14 @@ var _lie_feet: Vector3 = Vector3.ZERO
 var _lie_rot: Quaternion = Quaternion.IDENTITY
 var _stand_yaw: float = 0.0
 var _body_scale: float = 1.0
+## Riding (2026-11-22): the horse node walks under him; [member _ride_k] goes 0 (on the ground,
+## beside the horse) to 1 (in the saddle) while mounting, and back while getting off.
+signal dismounted(horse: Node3D)
+var _horse: Node3D
+var _ride_k: float = 0.0
+var _ride_dir: int = 0
+var _ride_cfg: Dictionary = {}
+var _gallop: float = 0.0
 ## Clothing group -> its shader material, when the 3D model file is used.
 var _model_materials: Dictionary = {}
 ## Clothing group -> brightness of the model's own color (keeps highlights when re-dressed).
@@ -174,9 +182,9 @@ func step(delta: float, dir: Vector2, run: bool) -> void:
 		return
 	var dt: float = minf(delta, _max_step)
 	var before: Vector2 = ground_pos
-	var wants_move: bool = dir.length_squared() > 0.0001
+	var wants_move: bool = dir.length_squared() > 0.0001 and _ride_dir == 0
 	if wants_move:
-		var speed: float = (_run_speed if run else _walk_speed) * (_swim_speed if swimming else 1.0)
+		var speed: float = (_run_speed if run else _walk_speed) * (_swim_speed if swimming else 1.0) * (float(_ride_cfg.get("speed_factor", 1.0)) if riding() else 1.0)
 		var move: Vector2 = dir.normalized() * speed * dt
 		if move.x != 0.0 and _free(ground_pos.x + move.x, ground_pos.y):
 			ground_pos.x += move.x
@@ -187,9 +195,12 @@ func step(delta: float, dir: Vector2, run: bool) -> void:
 	elif _has_face_target:
 		rotation.y = lerp_angle(rotation.y, _face_yaw, 1.0 - exp(-_turn_speed * delta))
 	var moved: bool = ground_pos.distance_squared_to(before) > 0.0000001
-	swimming = not blocked_fn.is_valid() and _grid.is_water(floori(ground_pos.x), floori(ground_pos.y))
+	swimming = not blocked_fn.is_valid() and _horse == null and _grid.is_water(floori(ground_pos.x), floori(ground_pos.y))
 	_animate(delta, moved, run)
 	_apply_pose(delta)
+	if _horse != null:
+		_step_ride(delta, moved)
+		return
 	if swimming:
 		_swim_pose(delta, moved)
 	if _rod_holder != null:
@@ -204,7 +215,93 @@ func step(delta: float, dir: Vector2, run: bool) -> void:
 func _free(x: float, z: float) -> bool:
 	if blocked_fn.is_valid():
 		return not blocked_fn.call(x, z)
+	if _horse != null:
+		# A horse does not swim: water blocks it.
+		return _grid.box_free(x, z, _half_width * 1.6, _half_depth * 2.0)
 	return _grid.box_free_swim(x, z, _half_width, _half_depth)
+
+
+## True while in the saddle (not while getting on or off).
+func riding() -> bool:
+	return _horse != null and _ride_dir == 0
+
+
+## True while getting on or off the horse (input is ignored then).
+func mounting() -> bool:
+	return _ride_dir != 0
+
+
+## Gets on [param horse] (a node in the world; it is moved under him every frame), standing
+## beside it first, then climbing into the saddle. [param cfg]: saddle_height, seat_forward,
+## side_offset, mount_seconds, speed_factor, gallop_freq (world_look "ride").
+func mount(horse: Node3D, cfg: Dictionary) -> void:
+	_horse = horse
+	_ride_cfg = cfg
+	_ride_k = 0.0
+	_ride_dir = 1
+	if _rod_holder != null:
+		_rod_holder.visible = false
+
+
+## Climbs down; [signal dismounted] gives the horse back when he is on the ground.
+func dismount() -> void:
+	if _horse != null and _ride_dir == 0:
+		_ride_dir = -1
+
+
+## Leaves the horse at once (new day, entering a space): no animation.
+func drop_horse() -> Node3D:
+	var h: Node3D = _horse
+	_horse = null
+	_ride_dir = 0
+	_ride_k = 0.0
+	_reset_ride_pose()
+	return h
+
+
+func _step_ride(delta: float, moved: bool) -> void:
+	var secs: float = maxf(0.1, float(_ride_cfg.get("mount_seconds", 1.0)))
+	if _ride_dir != 0:
+		_ride_k = clampf(_ride_k + float(_ride_dir) * delta / secs, 0.0, 1.0)
+		if _ride_dir == 1 and _ride_k >= 1.0:
+			_ride_dir = 0
+		elif _ride_dir == -1 and _ride_k <= 0.0:
+			var h: Node3D = _horse
+			_horse = null
+			_ride_dir = 0
+			_reset_ride_pose()
+			if _rod_holder != null:
+				_rod_holder.visible = _rod_visible
+			dismounted.emit(h)
+			return
+	var k: float = smoothstep(0.0, 1.0, _ride_k)
+	var ground: float = _terrain.ground_height_at(ground_pos.x, ground_pos.y)
+	var yaw: float = rotation.y
+	var fwd := Vector3(sin(yaw), 0.0, cos(yaw))
+	var side := Vector3(cos(yaw), 0.0, -sin(yaw))
+	# Gallop: the horse rocks and bobs while moving, the rider goes with it.
+	_gallop += delta * float(_ride_cfg.get("gallop_freq", 9.0)) * (1.0 if moved else 0.0)
+	var bob: float = absf(sin(_gallop)) * 0.07 if moved else 0.0
+	var seat: float = float(_ride_cfg.get("saddle_height", 1.05)) - _hip_height
+	var feet := Vector3(ground_pos.x, ground, ground_pos.y)
+	_horse.global_position = feet + Vector3(0.0, bob * 0.6, 0.0) - fwd * float(_ride_cfg.get("seat_forward", 0.0))
+	_horse.rotation = Vector3(sin(_gallop) * 0.05 if moved else 0.0, yaw, 0.0)
+	# From beside the horse (side offset) up an arc into the saddle.
+	var arc: float = sin(k * PI) * 0.25
+	position = feet + side * float(_ride_cfg.get("side_offset", 0.7)) * (1.0 - k) + Vector3(0.0, seat * k + arc + bob * k, 0.0)
+	# Pose: legs astride the horse, knees forward, hands on the reins; the right leg swings
+	# high over the back while climbing.
+	var swing: float = sin(clampf((k - 0.25) / 0.6, 0.0, 1.0) * PI) if _ride_dir != 0 else 0.0
+	_leg_left.rotation = Vector3(-1.2 * k, 0.0, -0.5 * k)
+	_leg_right.rotation = Vector3(-1.2 * k - swing * 0.6, 0.0, 0.5 * k + swing * 1.1)
+	_arm_left.rotation = Vector3(-0.7 * k, 0.0, -0.15 * k)
+	_arm_right.rotation = Vector3(-0.7 * k, 0.0, 0.15 * k)
+	_torso.rotation.x = 0.12 * k + (sin(_gallop) * 0.06 if moved else 0.0)
+
+
+func _reset_ride_pose() -> void:
+	for node: Node3D in [_leg_left, _leg_right, _arm_left, _arm_right]:
+		node.rotation = Vector3.ZERO
 
 
 ## Swimming: breaststroke arms, kicking legs, body tilted forward, head above the water.

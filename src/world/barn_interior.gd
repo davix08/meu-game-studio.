@@ -3,6 +3,7 @@ extends Node3D
 ## The inside of the barn ("Celeiro", the galpao lot), 2026-11-22, built like the house inside:
 ## a separate space far from the farm, seen with two walls cut away. Two floors:
 ##   - ground floor: plank floor with hay, three horse stalls along the west wall with a horse
+##     (the owner's horse model; the first one can be taken out to ride, spot "ride")
 ##     in each (idle: head and tail move), hay bales and the big door in the north wall;
 ##   - the loft (upper floor) along the north wall, reached by the stairs on the east side,
 ##     with the barn chests in a row. Chests fill in order (Production.chest_fill): when one is
@@ -58,8 +59,8 @@ func build(look: WorldLook, production: Production) -> void:
 	node.position = _origin
 	add_child(node)
 	for k in 3:
-		var horse: Node3D = VoxelModels.horse(look, look.color(GROUP, "horse_%d" % k), material)
-		horse.position = _origin + Vector3(1.25, 0.0, 4.5 + float(k) * 1.8)
+		var horse: Node3D = AnimalModels.horse_node(look, look.color(GROUP, "horse_%d" % k), material)
+		horse.position = _origin + Vector3(1.35, 0.0, 4.5 + float(k) * 1.8)
 		horse.rotation.y = PI * 0.5
 		add_child(horse)
 		_horses.append(horse)
@@ -233,6 +234,12 @@ func refresh() -> void:
 		_chest_labels[i].modulate = _look.color(GROUP, "chest_full") if full else (_look.color(GROUP, "chest_used") if fill.x > 0 else Color.WHITE)
 
 
+## Hides the horse of the first stall while it is out riding (shown again when put back).
+func set_horse_out(out: bool) -> void:
+	if not _horses.is_empty():
+		_horses[0].visible = not out
+
+
 ## Where chest [param i] stands (room meters, on the loft floor).
 func chest_position(i: int) -> Vector3:
 	var n: int = maxi(1, _shown_chests)
@@ -248,8 +255,14 @@ func _process(delta: float) -> void:
 	for k in _horses.size():
 		var horse: Node3D = _horses[k]
 		var t: float = _time + float(k) * 1.7
-		(horse.get_child(1) as Node3D).rotation.x = 0.12 + sin(t * 0.8) * 0.12 + maxf(0.0, sin(t * 0.23)) * 0.5
-		(horse.get_child(2) as Node3D).rotation.z = sin(t * 2.1) * 0.25
+		if horse.get_child_count() >= 3:
+			(horse.get_child(1) as Node3D).rotation.x = 0.12 + sin(t * 0.8) * 0.12 + maxf(0.0, sin(t * 0.23)) * 0.5
+			(horse.get_child(2) as Node3D).rotation.z = sin(t * 2.1) * 0.25
+		else:
+			# One-mesh horse: breathing and a slow nod of the whole body.
+			var body: Node3D = horse.get_child(0)
+			body.scale = Vector3(1.0, 1.0 + sin(t * 1.3) * 0.012, 1.0)
+			body.rotation.x = maxf(0.0, sin(t * 0.23)) * 0.04
 	_timer -= delta
 	if _timer <= 0.0:
 		_timer = 1.0
@@ -296,6 +309,8 @@ func spot(name: String) -> Vector2:
 			return o + door_spot() + Vector2(0.0, 0.9)
 		"chests":
 			return o + Vector2(_loft.get_center().x - 0.5, 1.7)
+		"ride":
+			return o + Vector2(3.2, 4.5)
 	return o
 
 
