@@ -457,5 +457,17 @@
 				"estaca": 3
 			}
 		}
+	},
+	"tools": {
+		"machado": {
+			"name": "Machado",
+			"price": 150,
+			"for": "tree"
+		},
+		"picareta": {
+			"name": "Picareta",
+			"price": 200,
+			"for": "rock"
+		}
 	}
 }

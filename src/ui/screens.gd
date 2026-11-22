@@ -26,8 +26,10 @@ signal start_chosen(fresh: bool)
 signal outfit_changed
 ## A screen opened or closed.
 signal open_changed(open: bool)
+## The player chose a building to place (2026-11-22).
+signal place_requested(id: String)
 
-enum ShopTab { SELL, RODS, BAITS, ITEMS, FARM, AUCTION, UPGRADES }
+enum ShopTab { SELL, RODS, BAITS, ITEMS, FARM, AUCTION, UPGRADES, BUILD }
 
 var _look: WorldLook
 var _ctx: GameContext
@@ -45,6 +47,13 @@ var _sleep: Control
 var _live: bool = false
 var _live_timer: float = 0.0
 var _refreshing: bool = false
+## Ids of the buildings the player places (set by the main scene).
+var _placeable: Array[String] = []
+
+
+## Tells the shop which buildings can be placed (the "Obras" tab).
+func set_placeable(ids: Array[String]) -> void:
+	_placeable = ids
 
 
 ## Builds the toast and connects the level-up screen.
@@ -330,7 +339,7 @@ func _confirm_new(back: Callable) -> void:
 ## The fish shop on [param tab].
 func open_shop(tab: int = ShopTab.SELL) -> void:
 	var body: VBoxContainer = _sheet(Texts.get_text("shop"), func() -> void: open_shop(tab))
-	var names: Array[String] = [Texts.get_text("tab_sell"), Texts.get_text("tab_rods"), Texts.get_text("tab_baits"), Texts.get_text("tab_items"), Texts.get_text("tab_farm"), Texts.get_text("tab_auction"), Texts.get_text("tab_upgrades")]
+	var names: Array[String] = [Texts.get_text("tab_sell"), Texts.get_text("tab_rods"), Texts.get_text("tab_baits"), Texts.get_text("tab_items"), Texts.get_text("tab_farm"), Texts.get_text("tab_auction"), Texts.get_text("tab_upgrades"), Texts.get_text("tab_build")]
 	_tabs(body, names, tab, func(i: int) -> void: open_shop(i))
 	match tab:
 		ShopTab.SELL:
@@ -352,6 +361,16 @@ func open_shop(tab: int = ShopTab.SELL) -> void:
 				var b: Button = UiKit.button(_look, Texts.fmt("need_level", [item.level]) if locked else Texts.fmt("buy", [item.price]), _act7, not locked and _ctx.state.coins >= item.price)
 				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, "#e8a040"), UiKit.label("%s × %d\n%s" % [item.name, owned, item.description]), b]))
 		ShopTab.FARM:
+			body.add_child(UiKit.label(Texts.get_text("tools"), 24))
+			var tools: Dictionary = _ctx.production.data()["tools"]
+			for tid: Variant in tools:
+				var tool: Dictionary = tools[tid]
+				var tool_id: String = str(tid)
+				var owned_tool: bool = _ctx.state.tools.has(tool_id)
+				var _buy_tool: Callable = func() -> void:
+					var r: Production.Result = _ctx.production.buy_tool(tool_id)
+					_result(r == Production.Result.OK, Texts.get_text("tool_bought") if r == Production.Result.OK else Texts.get_text("no_coins"))
+				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.ROD, "#8a8e96"), UiKit.label(str(tool["name"])), UiKit.button(_look, Texts.get_text("tool_owned") if owned_tool else Texts.fmt("tool_buy", [int(tool["price"])]), _buy_tool, not owned_tool and _ctx.state.coins >= int(tool["price"]))]))
 			for g: Variant in _ctx.town_data.list("farm_life", "shop_goods"):
 				var good: Dictionary = _ctx.town_data.good(str(g))
 				var price: int = int(good["price"])
@@ -385,6 +404,23 @@ func open_shop(tab: int = ShopTab.SELL) -> void:
 					_result(r == Farm.Result.OK, text)
 				var label: String = Texts.fmt("buy", [price]) if built else Texts.fmt("auction_need", [home_name])
 				body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, "#f4f0e6"), UiKit.label("%s\n%s" % [str(info["name"]), home_name]), UiKit.button(_look, label, _bid, built and _ctx.state.coins >= price)]))
+		ShopTab.BUILD:
+			for bid: String in _placeable:
+				var need: Dictionary = _ctx.farm.needs(bid)
+				var name: String = str(_ctx.town_data.lot(bid).get("name", bid))
+				var built: bool = _ctx.state.is_built(bid)
+				var blocker: Farm.Result = _ctx.farm.build_blocker(bid)
+				var line: String = "%s\n%s" % [name, Texts.fmt("build_needs_short", [int(need.get("level", 1)), int(need.get("madeira", 0)), int(need.get("pedra", 0)), int(need.get("coins", 0))])]
+				var _pick: Callable = func() -> void:
+					_click()
+					close()
+					place_requested.emit(bid)
+				var text: String = Texts.get_text("build_built") if built else Texts.get_text("build_pick")
+				if not built and blocker == Farm.Result.LOW_LEVEL:
+					text = Texts.fmt("build_low", [int(need.get("level", 1))])
+				elif not built and blocker == Farm.Result.MISSING:
+					text = Texts.get_text("missing_items")
+				body.add_child(UiKit.row(_look, [UiKit.label(line, _look.integer("ui", "small_size")), UiKit.button(_look, text, _pick, not built and blocker == Farm.Result.OK)]))
 		ShopTab.UPGRADES:
 			var farm: Farm = _ctx.farm
 			var price: int = int(_ctx.town_data.num("farm_life", "milker_price"))
@@ -949,21 +985,12 @@ func open_field() -> void:
 		empty += 1 if st == 0 else 0
 	body.add_child(UiKit.label(Texts.fmt("field_plots", [s.crop_plots.size(), ready, empty]), 24))
 	body.add_child(UiKit.label(Texts.fmt("storage_used", [Texts.get_text("silo_name"), p.used("silo"), p.capacity("silo")]), 0, _look.color("ui", "muted")))
-	var _harvest: Callable = func() -> void:
-		var n: int = p.harvest_all()
-		_result(n > 0, Texts.fmt("harvested_n", [n]) if n > 0 else Texts.get_text("silo_full"))
-	body.add_child(UiKit.button(_look, Texts.fmt("harvest_all", [ready]), _harvest, ready > 0))
+	body.add_child(UiKit.label(Texts.get_text("field_hint"), 0, _look.color("ui", "good")))
 	for c: Variant in p.crops():
 		var crop: Dictionary = c
-		var id: String = str(crop["id"])
 		var lvl: int = int(crop["level"])
-		if _ctx.farm.level() < lvl:
-			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(crop["color"])), UiKit.label(Texts.fmt("crop_locked", [str(crop["name"]), lvl]), 0, _look.color("ui", "muted"))]))
-			continue
-		var _plant: Callable = func() -> void:
-			var n: int = p.plant_all(id)
-			_result(n > 0, Texts.fmt("planted_n", [n]) if n > 0 else Texts.get_text("missing_items"))
-		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(crop["color"])), UiKit.label(Texts.fmt("crop_have", [str(crop["name"]), p.count(id), _ptime(int(crop["seconds"]))])), UiKit.button(_look, Texts.get_text("plant"), _plant, empty > 0 and p.count(id) > 0)]))
+		var line: String = Texts.fmt("crop_have", [str(crop["name"]), p.count(str(crop["id"])), _ptime(int(crop["seconds"]))]) if _ctx.farm.level() >= lvl else Texts.fmt("crop_locked", [str(crop["name"]), lvl])
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(crop["color"])), UiKit.label(line, 0, _look.color("ui", "ink") if _ctx.farm.level() >= lvl else _look.color("ui", "muted"))]))
 	for i in s.crop_plots.size():
 		var st: int = p.plot_stage(i)
 		if st == 0:
@@ -976,6 +1003,27 @@ func open_field() -> void:
 		var r: Production.Result = p.buy_plot()
 		_prod_msg(r, Texts.get_text("bought"))
 	body.add_child(UiKit.button(_look, Texts.fmt("buy_plot", [price]) if price >= 0 else Texts.get_text("plots_max"), _buy, price >= 0 and s.coins >= price))
+
+
+## Picks what to plant in plot [param i] (tapped in the field).
+func open_plant(i: int) -> void:
+	var p: Production = _ctx.production
+	var body: VBoxContainer = _sheet(Texts.get_text("plant_pick"), open_plant.bind(i))
+	for c: Variant in p.crops():
+		var crop: Dictionary = c
+		var id: String = str(crop["id"])
+		var lvl: int = int(crop["level"])
+		if _ctx.farm.level() < lvl:
+			body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(crop["color"])), UiKit.label(Texts.fmt("crop_locked", [str(crop["name"]), lvl]), 0, _look.color("ui", "muted"))]))
+			continue
+		var _plant: Callable = func() -> void:
+			var r: Production.Result = p.plant(i, id)
+			if r == Production.Result.OK:
+				_sfx.play(&"coin")
+				close()
+			else:
+				_result(false, Texts.get_text("missing_items"))
+		body.add_child(UiKit.row(_look, [_item_icon(FishIcon.Kind.GOOD, str(crop["color"])), UiKit.label(Texts.fmt("crop_have", [str(crop["name"]), p.count(id), _ptime(int(crop["seconds"]))])), UiKit.button(_look, Texts.get_text("plant"), _plant, p.count(id) > 0)]))
 
 
 ## A factory: its queue with timers, collect, the recipes and buying more queue slots.

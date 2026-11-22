@@ -315,23 +315,53 @@ static func egg_basket(look: WorldLook) -> Vector3:
 	return Vector3(d.x - 1.4, 0.0, d.y + 0.2)
 
 
-## The milking corral: fence with a gate, a roofed milking stall, a feed trough and a water tub.
+## The milking corral, after the user's picture (2026-11-22): packed-dirt floor with darker
+## speckles and a few stones, a reddish wooden fence with a gate, a grey-roofed barn in the back
+## corner with a big door, and a water trough.
 static func _corral(mb: MeshBuilder, look: WorldLook, r: Rect2i) -> void:
-	_lot_fence(mb, look, r, "curral")
-	var x0: float = float(r.position.x) + 0.7
-	var z0: float = float(r.position.y) + 0.7
-	var post: Color = look.color("colors", "wood_dark")
-	for p: Vector2 in [Vector2(x0, z0), Vector2(x0 + 3.0, z0), Vector2(x0, z0 + 2.6), Vector2(x0 + 3.0, z0 + 2.6)]:
-		mb.add_box(Vector3(p.x, 1.1, p.y), Vector3(0.14, 2.2, 0.14), post)
-	EstateMeshes._gable(mb, x0 - 0.1, x0 + 3.1, z0 - 0.1, z0 + 2.7, 2.2, 0.7, 0.25, 6, look.color("colors", "roof_a"), look.color("colors", "roof_b"), look.color("colors", "roof_ridge"), _c(look, "plank"), post)
-	EstateMeshes._planks(mb, x0, x0 + 3.0, z0, z0 + 0.1, 0.0, 1.2, 4, _c(look, "plank"), _c(look, "plank_light"))
-	mb.add_box(Vector3(x0 + 1.5, 0.2, z0 + 1.3), Vector3(0.35, 0.4, 0.35), post)
+	var dirt: Color = _c(look, "corral_dirt")
+	var x0: float = float(r.position.x) + 0.2
+	var z0: float = float(r.position.y) + 0.2
+	var x1: float = float(r.end.x) - 0.2
+	var z1: float = float(r.end.y) - 0.2
+	EstateMeshes._box(mb, x0, 0.0, z0, x1, 0.06, z1, dirt)
+	for k in int((x1 - x0) * (z1 - z0) * 1.5):
+		var hx: float = WorldGrid.hash2(k, r.position.x, 81)
+		var hz: float = WorldGrid.hash2(k, r.position.y, 82)
+		var shade: Color = dirt.darkened(0.12) if k % 3 else dirt.lightened(0.1)
+		mb.add_box(Vector3(lerpf(x0 + 0.2, x1 - 0.2, hx), 0.065, lerpf(z0 + 0.2, z1 - 0.2, hz)), Vector3(0.18, 0.01, 0.18), shade)
+	for k in 5:
+		mb.add_box(Vector3(lerpf(x0 + 1.0, x1 - 1.0, WorldGrid.hash2(k, 3, 83)), 0.09, lerpf(z0 + 1.0, z1 - 1.0, WorldGrid.hash2(k, 4, 84))), Vector3(0.22, 0.08, 0.16), look.color("colors", "stone"))
+	# Fence: reddish posts and two rails, with a gap at the gate.
+	var post: Color = _c(look, "corral_fence")
 	var door: Vector2 = TownPlan.lot_door(look, "curral")
-	var tx: float = float(r.end.x) - 1.0
-	mb.add_box(Vector3(tx, 0.25, door.y - 2.0), Vector3(0.6, 0.35, 1.6), _c(look, "trough"))
-	mb.add_box(Vector3(tx, 0.4, door.y - 2.0), Vector3(0.45, 0.06, 1.4), _c(look, "hay"))
-	mb.add_cone(Vector3(tx, 0.0, door.y + 1.6), 0.45, 0.45, 0.45, _c(look, "trough"), _c(look, "trough"), 10)
-	mb.add_cone(Vector3(tx, 0.4, door.y + 1.6), 0.4, 0.4, 0.04, _c(look, "water_blue"), _c(look, "water_blue"), 10, true)
+	var corners: Array[Vector2] = [Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1)]
+	for i in 4:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[(i + 1) % 4]
+		var n: int = maxi(1, int(a.distance_to(b)))
+		for k in n:
+			var p0: Vector2 = a.lerp(b, float(k) / float(n))
+			var p1: Vector2 = a.lerp(b, float(k + 1) / float(n))
+			if ((p0 + p1) * 0.5).distance_to(door) < 1.25:
+				continue
+			mb.add_box(Vector3(p0.x, 0.55, p0.y), Vector3(0.16, 1.1, 0.16), post.darkened(0.15))
+			mb.add_box(Vector3(p0.x, 1.12, p0.y), Vector3(0.2, 0.06, 0.2), post.darkened(0.3))
+			EstateMeshes._beam(mb, Vector3(p0.x, 0.85, p0.y), Vector3(p1.x, 0.85, p1.y), 0.09, post)
+			EstateMeshes._beam(mb, Vector3(p0.x, 0.45, p0.y), Vector3(p1.x, 0.45, p1.y), 0.09, post)
+	# Barn in the back corner: plank walls, grey tiled roof, a big wooden door.
+	var bx0: float = x0 + 0.3
+	var bz0: float = z0 + 0.3
+	var bx1: float = bx0 + 3.2
+	var bz1: float = bz0 + 2.6
+	EstateMeshes._planks(mb, bx0, bx1, bz0, bz1, 0.0, 2.0, 10, _c(look, "corral_wall"), _c(look, "corral_wall").darkened(0.08))
+	EstateMeshes._gable(mb, bx0, bx1, bz0, bz1, 2.0, 0.9, 0.3, 8, _c(look, "corral_roof"), _c(look, "corral_roof").darkened(0.1), _c(look, "corral_roof").darkened(0.3), _c(look, "corral_wall"), post.darkened(0.3))
+	mb.add_box(Vector3(bx0 + 1.6, 0.8, bz1 + 0.03), Vector3(1.2, 1.6, 0.06), _c(look, "corral_door"))
+	EstateMeshes._beam(mb, Vector3(bx0 + 1.05, 0.05, bz1 + 0.07), Vector3(bx0 + 2.15, 1.55, bz1 + 0.07), 0.08, _c(look, "corral_door").lightened(0.2))
+	EstateMeshes._beam(mb, Vector3(bx0 + 2.15, 0.05, bz1 + 0.07), Vector3(bx0 + 1.05, 1.55, bz1 + 0.07), 0.08, _c(look, "corral_door").lightened(0.2))
+	# Water trough by the barn.
+	mb.add_box(Vector3(bx1 + 0.8, 0.25, bz0 + 0.8), Vector3(0.9, 0.5, 0.6), look.color("colors", "stone"))
+	mb.add_box(Vector3(bx1 + 0.8, 0.46, bz0 + 0.8), Vector3(0.75, 0.04, 0.45), _c(look, "water_blue"))
 
 
 ## The future field (locked at farm level 8): fence, tilled rows and small sprouts.

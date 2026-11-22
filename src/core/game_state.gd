@@ -176,6 +176,10 @@ var factories: Dictionary = {}
 var order_board: Array[Dictionary] = []
 ## Roadside stall slots: {} or {"item", "count", "price", "sell_at", "sold"}.
 var stall: Array = []
+## Tools owned ("machado", "picareta"): needed to cut trees and break rocks.
+var tools: PackedStringArray = PackedStringArray()
+## Buildings placed by the player: id -> [x, y, w, h, door side] (2026-11-22).
+var placed: Dictionary = {}
 ## Land expansions opened.
 var expanded: PackedStringArray = PackedStringArray()
 ## Settings: sound on, FPS counter shown (Story 006).

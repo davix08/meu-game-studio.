@@ -127,6 +127,43 @@ func set_lights(on: bool) -> void:
 ## Connects the real-time production (2026-11-21): green "!" over lots with something ready
 ## (finished factory products, animals to collect, a ripe crop, a sold stall slot), and the
 ## fences and signs of the expansion areas still closed.
+## Adds the model of a building the player just placed (2026-11-22).
+func add_lot(id: String) -> void:
+	if _built.has(id):
+		return
+	var material: StandardMaterial3D = MeshBuilder.make_material(_look.num("props", "roughness"))
+	var glass := MeshBuilder.new()
+	_built[id] = _instance(TownMeshes.building(_look, id, glass), material)
+	_sites[id] = Node3D.new()
+	add_child(_sites[id])
+	var glass_mesh: ArrayMesh = glass.build()
+	if glass_mesh.get_surface_count() > 0:
+		(_built[id] as Node3D).add_child(_instance_into(glass_mesh, _glass_material))
+	var top: Vector3 = TownMeshes.chimney_top(_look, id)
+	if top != Vector3.INF:
+		var smoke := ChimneySmoke.new()
+		add_child(smoke)
+		smoke.setup(_look, top)
+		_smokes[id] = smoke
+	if _prod != null and not _ready.has(id):
+		var mark := _label("!", 140)
+		mark.modulate = _look.color("town", "ready_marker")
+		mark.outline_size = 24
+		var r: Rect2i = TownPlan.lot_rect(_look, id)
+		mark.position = Vector3(float(r.position.x) + float(r.size.x) * 0.5, _marker_base + 1.0, float(r.position.y) + float(r.size.y) * 0.5)
+		mark.visible = false
+		add_child(mark)
+		_ready[id] = mark
+	refresh()
+
+
+func _instance_into(mesh: ArrayMesh, material: Material) -> MeshInstance3D:
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.material_override = material
+	return node
+
+
 func set_production(prod: Production) -> void:
 	_prod = prod
 	var material: StandardMaterial3D = MeshBuilder.make_material(_look.num("props", "roughness"))

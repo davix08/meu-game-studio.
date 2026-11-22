@@ -55,6 +55,24 @@ func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerra
 	_meshes["vaca"] = [_cow()]
 	_meshes["bezerro"] = [_cow()]
 	_meshes["porco"] = [_pig()]
+	var products := MultiMesh.new()
+	products.transform_format = MultiMesh.TRANSFORM_3D
+	products.use_colors = true
+	var mb := MeshBuilder.new()
+	mb.add_ellipsoid(Vector3(0.0, 0.08, 0.0), Vector3(0.07, 0.09, 0.07), Color.WHITE, Color.WHITE, 6, 4, true)
+	products.mesh = mb.build()
+	_products = MultiMeshInstance3D.new()
+	_products.multimesh = products
+	_products.material_override = _material
+	add_child(_products)
+	refresh_areas()
+	state.town_changed.connect(refresh)
+	refresh()
+
+
+## Recomputes where each home's animals walk (also after the player places a building).
+func refresh_areas() -> void:
+	var look: WorldLook = _look
 	# Where each home's animals walk: the coop yard in front of the coop, the corral east of the
 	# milking stall (lots of the farm map).
 	if TownPlan.has_lot(look, "galinheiro"):
@@ -66,19 +84,10 @@ func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerra
 			_areas[pen] = Rect2(float(pr.position.x) + 0.8, float(pr.position.y) + 0.8, float(pr.size.x) - 4.0, float(pr.size.y) - 1.6) if pen == "ovelhas" else Rect2(float(pr.position.x) + 0.8, float(pr.position.y) + 0.8, float(pr.size.x) - 1.6, float(pr.size.y) - 3.4)
 	if TownPlan.has_lot(look, "curral"):
 		var corral: Rect2i = TownPlan.lot_rect(look, "curral")
-		_areas["curral"] = Rect2(float(corral.position.x) + 4.2, float(corral.position.y) + 1.0, float(corral.size.x) - 5.6, float(corral.size.y) - 2.0)
-	var products := MultiMesh.new()
-	products.transform_format = MultiMesh.TRANSFORM_3D
-	products.use_colors = true
-	var mb := MeshBuilder.new()
-	mb.add_ellipsoid(Vector3(0.0, 0.08, 0.0), Vector3(0.07, 0.09, 0.07), Color.WHITE, Color.WHITE, 6, 4, true)
-	products.mesh = mb.build()
-	_products = MultiMeshInstance3D.new()
-	_products.multimesh = products
-	_products.material_override = _material
-	add_child(_products)
-	state.town_changed.connect(refresh)
-	refresh()
+		_areas["curral"] = Rect2(float(corral.position.x) + 1.0, float(corral.position.y) + 3.6, float(corral.size.x) - 2.0, float(corral.size.y) - 4.6)
+	_signature = ""
+	if _products != null:
+		refresh()
 
 
 ## Where the player stands to feed and collect at [param home_id] (meters, x z).
@@ -182,8 +191,10 @@ func _draw_products() -> void:
 		if not _areas.has(home):
 			continue
 		var products: Dictionary = _state.pending.get(home, {})
-		var basket: Vector3 = TownMeshes.egg_basket(_look)
-		var spot: Vector2 = Vector2(basket.x - 0.2, basket.z - 0.1) if home == "galinheiro" else anchor(home) + Vector2(-1.0, 0.6)
+		var spot: Vector2 = anchor(home) + Vector2(-1.0, 0.6)
+		if home == "galinheiro":
+			var basket: Vector3 = TownMeshes.egg_basket(_look)
+			spot = Vector2(basket.x - 0.2, basket.z - 0.1)
 		var n: int = 0
 		for id: Variant in products:
 			var color: Color = Color.html(str(_town.good(str(id)).get("color", "#ffffff")))
@@ -224,17 +235,28 @@ func _pig() -> ArrayMesh:
 	return mb.build()
 
 
+## A blocky Holstein cow in the pixel style of the user's picture (2026-11-22): white body
+## with black patches, black head with a white blaze, pink snout and udder, small horns, black
+## hooves and a tail. It faces +x.
 func _cow() -> ArrayMesh:
 	var mb := MeshBuilder.new()
-	var white := Color(0.96, 0.94, 0.9)
-	var spot := Color(0.25, 0.2, 0.18)
-	mb.add_box(Vector3(0.0, 0.75, 0.0), Vector3(1.1, 0.55, 0.55), white)
-	mb.add_box(Vector3(-0.15, 0.85, 0.28), Vector3(0.35, 0.3, 0.02), spot)
-	mb.add_box(Vector3(0.25, 0.7, -0.28), Vector3(0.3, 0.25, 0.02), spot)
-	mb.add_box(Vector3(0.68, 0.9, 0.0), Vector3(0.32, 0.32, 0.36), white)
-	mb.add_box(Vector3(0.86, 0.82, 0.0), Vector3(0.08, 0.18, 0.3), Color(0.95, 0.7, 0.7))
+	var white := Color(0.95, 0.94, 0.92)
+	var black := Color(0.1, 0.09, 0.1)
+	var pink := Color(0.95, 0.62, 0.6)
+	var horn := Color(0.92, 0.88, 0.75)
+	mb.add_box(Vector3(0.0, 0.78, 0.0), Vector3(1.15, 0.55, 0.6), white)
+	for patch: Array in [[Vector3(-0.25, 0.92, 0.301), Vector3(0.4, 0.3, 0.01)], [Vector3(0.2, 0.7, 0.301), Vector3(0.25, 0.25, 0.01)], [Vector3(-0.1, 0.85, -0.301), Vector3(0.45, 0.35, 0.01)], [Vector3(0.3, 1.056, 0.05), Vector3(0.3, 0.01, 0.35)], [Vector3(-0.35, 1.056, -0.1), Vector3(0.3, 0.01, 0.3)], [Vector3(-0.576, 0.8, 0.0), Vector3(0.01, 0.3, 0.3)]]:
+		mb.add_box(patch[0], patch[1], black)
+	mb.add_box(Vector3(0.0, 0.5, 0.0), Vector3(0.3, 0.06, 0.3), pink)
+	mb.add_box(Vector3(0.72, 0.95, 0.0), Vector3(0.34, 0.36, 0.38), black)
+	mb.add_box(Vector3(0.82, 0.98, 0.0), Vector3(0.16, 0.22, 0.1), white)
+	mb.add_box(Vector3(0.92, 0.84, 0.0), Vector3(0.1, 0.16, 0.3), pink)
 	for side: float in [-1.0, 1.0]:
-		mb.add_box(Vector3(0.66, 1.1, side * 0.2), Vector3(0.05, 0.12, 0.05), Color(0.9, 0.85, 0.7))
-	for p: Vector2 in [Vector2(-0.4, -0.18), Vector2(-0.4, 0.18), Vector2(0.4, -0.18), Vector2(0.4, 0.18)]:
-		mb.add_box(Vector3(p.x, 0.25, p.y), Vector3(0.14, 0.5, 0.14), white.darkened(0.1))
+		mb.add_box(Vector3(0.66, 1.16, side * 0.15), Vector3(0.06, 0.12, 0.06), horn)
+		mb.add_box(Vector3(0.62, 1.02, side * 0.24), Vector3(0.06, 0.08, 0.12), black)
+	for p: Vector2 in [Vector2(-0.42, -0.2), Vector2(-0.42, 0.2), Vector2(0.38, -0.2), Vector2(0.38, 0.2)]:
+		mb.add_box(Vector3(p.x, 0.3, p.y), Vector3(0.15, 0.46, 0.15), white)
+		mb.add_box(Vector3(p.x, 0.05, p.y), Vector3(0.16, 0.1, 0.16), black)
+	mb.add_box(Vector3(-0.6, 0.7, 0.0), Vector3(0.05, 0.4, 0.05), white)
+	mb.add_box(Vector3(-0.6, 0.48, 0.0), Vector3(0.08, 0.1, 0.08), black)
 	return mb.build()

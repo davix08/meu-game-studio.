@@ -611,6 +611,23 @@ func expand(id: String) -> Result:
 	return Result.OK
 
 
+# --- Tools ---
+
+## Buys tool [param id] ("machado" or "picareta"); it is kept forever.
+func buy_tool(id: String) -> Result:
+	var tool: Dictionary = (_p["tools"] as Dictionary).get(id, {})
+	if tool.is_empty():
+		return Result.MISSING
+	if _state.tools.has(id):
+		return Result.MAX
+	if _state.coins < int(tool["price"]):
+		return Result.NOT_ENOUGH_COINS
+	_state.coins -= int(tool["price"])
+	_state.tools.append(id)
+	_changed()
+	return Result.OK
+
+
 # --- Every second ---
 
 ## Updates the stall sales, refills orders and lets the milking machine collect the milk.

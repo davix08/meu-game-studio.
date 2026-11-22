@@ -166,6 +166,8 @@ func gather(index: int, rock: bool) -> Result:
 	var key: String = str(index)
 	if _state.chopped.has(key):
 		return Result.ALREADY
+	if not _state.tools.has("picareta" if rock else "machado"):
+		return Result.MISSING
 	var yield_amount: int = int(_n("stone_yield" if rock else "wood_yield"))
 	var item: String = "pedra" if rock else "madeira"
 	if production != null and production.room_for(item) < yield_amount:

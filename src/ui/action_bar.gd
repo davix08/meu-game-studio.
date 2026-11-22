@@ -40,7 +40,9 @@ func setup(look: WorldLook) -> void:
 	var gap: float = look.num("ui", "action_gap")
 	_round(Texts.get_text("btn_bag"), Vector2(m + pull + gap + d, m + d), bag_pressed)
 	_rest = _round(Texts.get_text("btn_rest"), Vector2(m + pull + gap + d, m + d * 2.0 + gap), rest_pressed)
-	_rod = _round(Texts.get_text("btn_rod_stow"), Vector2(m + pull + gap + d, m + d * 3.0 + gap * 2.0), rod_pressed)
+	# Resting moved into the house (sofa and bed, 2026-11-22): the rod button takes its place.
+	_rest.visible = false
+	_rod = _round(Texts.get_text("btn_rod_stow"), Vector2(m + pull + gap + d, m + d * 2.0 + gap), rod_pressed)
 	_round(Texts.get_text("btn_book"), Vector2(m + d, m + pull + gap + d), book_pressed)
 	_round(Texts.get_text("btn_shop"), Vector2(m + d * 2.0 + gap, m + pull + gap + d), shop_pressed)
 	_context = Button.new()

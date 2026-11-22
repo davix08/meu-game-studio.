@@ -203,8 +203,9 @@ func _stop_cell(dest: String) -> Vector2i:
 	var door: Vector2i = TownPlan.door_cell(_look, dest)
 	var best: Vector2i = door
 	var best_d: float = INF
-	for dy in range(-3, 4):
-		for dx in range(-3, 4):
+	# Buildings can be placed anywhere (2026-11-22): look for the closest road block nearby.
+	for dy in range(-14, 15):
+		for dx in range(-14, 15):
 			var c := Vector2i(door.x + dx, door.y + dy)
 			if _road(c) and not TownPlan.lot_rect(_look, dest).has_point(c) and c != door:
 				var d: float = Vector2(c).distance_to(Vector2(door))

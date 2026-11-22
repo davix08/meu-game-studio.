@@ -21,7 +21,8 @@
 		"margin_west": 10.0,
 		"margin_east": 10.0,
 		"margin_north": 8.0,
-		"margin_south": 8.0
+		"margin_south": 8.0,
+		"indoor_size": 9.0
 	},
 	"joystick": {
 		"radius": 100.0,
@@ -112,7 +113,10 @@
 		"split_hand_y": -0.17,
 		"split_hand_z": 0.03,
 		"split_main_ref": 0.8,
-		"split_red_ref": 0.1
+		"split_red_ref": 0.1,
+		"swim_depth": 0.62,
+		"swim_speed": 0.55,
+		"swim_energy_per_second": 0.6
 	},
 	"terrain": {
 		"land_height": 0.0,
@@ -762,20 +766,6 @@
 				5,
 				0
 			],
-			"galinheiro": [
-				25,
-				4,
-				7,
-				5,
-				0
-			],
-			"curral": [
-				3,
-				14,
-				9,
-				8,
-				2
-			],
 			"plantacao": [
 				16,
 				32,
@@ -787,13 +777,6 @@
 				12,
 				4,
 				3,
-				4,
-				0
-			],
-			"fabrica_racao": [
-				33,
-				4,
-				5,
 				4,
 				0
 			],
@@ -810,41 +793,6 @@
 				3,
 				3,
 				3
-			],
-			"padaria": [
-				3,
-				24,
-				6,
-				5,
-				2
-			],
-			"laticinios": [
-				43,
-				24,
-				5,
-				5,
-				2
-			],
-			"usina": [
-				53,
-				28,
-				5,
-				5,
-				3
-			],
-			"chiqueiro": [
-				3,
-				33,
-				8,
-				5,
-				1
-			],
-			"ovelhas": [
-				48,
-				2,
-				8,
-				5,
-				0
 			]
 		},
 		"river": [
@@ -1056,7 +1004,74 @@
 				]
 			}
 		},
-		"ready_marker": "#7ad86a"
+		"ready_marker": "#7ad86a",
+		"corral_dirt": "#9a7050",
+		"corral_fence": "#9a5a3a",
+		"corral_wall": "#a89a90",
+		"corral_roof": "#7a8088",
+		"corral_door": "#9a6a44",
+		"placeable": {
+			"galinheiro": [
+				25,
+				4,
+				7,
+				5,
+				0
+			],
+			"curral": [
+				3,
+				14,
+				9,
+				8,
+				2
+			],
+			"fabrica_racao": [
+				33,
+				4,
+				5,
+				4,
+				0
+			],
+			"padaria": [
+				3,
+				24,
+				6,
+				5,
+				2
+			],
+			"laticinios": [
+				43,
+				24,
+				5,
+				5,
+				2
+			],
+			"usina": [
+				53,
+				28,
+				5,
+				5,
+				3
+			],
+			"chiqueiro": [
+				3,
+				33,
+				8,
+				5,
+				1
+			],
+			"ovelhas": [
+				48,
+				2,
+				8,
+				5,
+				0
+			]
+		},
+		"ghost_ok": "#58d85880",
+		"ghost_bad": "#e8484880",
+		"ghost_door": "#ffe060c0",
+		"ghost_ahead": 1.5
 	},
 	"daynight": {
 		"hours": [
@@ -1592,8 +1607,8 @@
 			9.6
 		],
 		"border": 3,
-		"tree_chance": 0.05,
-		"rock_chance": 0.025,
+		"tree_chance": 0.035,
+		"rock_chance": 0.018,
 		"truck_start": [
 			59.5,
 			20.5
@@ -1679,5 +1694,45 @@
 		"tile_h": 62,
 		"picture_h": 130,
 		"left_w": 390
+	},
+	"interior": {
+		"origin": [
+			180,
+			20
+		],
+		"size": [
+			10,
+			8
+		],
+		"wall_height": 2.6,
+		"lamp_energy": 2.2,
+		"lamp_range": 9.0,
+		"window_energy": 0.8,
+		"camera_size": 9.0,
+		"ambient": "#5a4030",
+		"ambient_energy": 0.35,
+		"background": "#14100c",
+		"sun_energy": 0.25,
+		"sun_color": "#ffb070",
+		"tile_a": "#d8c0a0",
+		"tile_b": "#a88c70",
+		"wall": "#c8a888",
+		"wood": "#9a6438",
+		"wood_dark": "#6a4024",
+		"door": "#a83a2a",
+		"metal": "#8a8a90",
+		"fridge": "#e8e0d0",
+		"counter": "#e8dcc8",
+		"stove": "#4a4a50",
+		"hood": "#c8a880",
+		"rug": "#8a3a2a",
+		"sofa": "#7a5a48",
+		"lampshade": "#f8e0a0",
+		"window": "#a8c8e0",
+		"sheet": "#f0e8d8",
+		"pillow": "#ffffff",
+		"blanket": "#4a7ab0",
+		"light": "#ffb060",
+		"window_light": "#c8d8ff"
 	}
 }

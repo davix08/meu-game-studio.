@@ -51,96 +51,96 @@
 			"tint": "#ffffff"
 		},
 		"cirurgiao": {
-			"sprite": 1,
-			"tint": "#bcd8ff"
+			"sprite": 13,
+			"tint": "#ffffff"
 		},
 		"caranguejo": {
-			"sprite": 2,
-			"tint": "#bcd8ff"
+			"sprite": 14,
+			"tint": "#ffffff"
 		},
 		"dourado": {
-			"sprite": 3,
-			"tint": "#bcd8ff"
+			"sprite": 15,
+			"tint": "#ffffff"
 		},
 		"koi": {
-			"sprite": 4,
-			"tint": "#bcd8ff"
+			"sprite": 16,
+			"tint": "#ffffff"
 		},
 		"leao": {
-			"sprite": 5,
-			"tint": "#bcd8ff"
+			"sprite": 17,
+			"tint": "#ffffff"
 		},
 		"cavalo": {
-			"sprite": 6,
-			"tint": "#bcd8ff"
+			"sprite": 18,
+			"tint": "#ffffff"
 		},
 		"choco": {
-			"sprite": 7,
-			"tint": "#bcd8ff"
+			"sprite": 19,
+			"tint": "#ffffff"
 		},
 		"polvo": {
-			"sprite": 8,
-			"tint": "#bcd8ff"
+			"sprite": 20,
+			"tint": "#ffffff"
 		},
 		"lagosta": {
-			"sprite": 9,
-			"tint": "#bcd8ff"
+			"sprite": 21,
+			"tint": "#ffffff"
 		},
 		"fantasma": {
-			"sprite": 10,
-			"tint": "#bcd8ff"
+			"sprite": 22,
+			"tint": "#ffffff"
 		},
 		"tubaraoazul": {
-			"sprite": 11,
-			"tint": "#bcd8ff"
+			"sprite": 23,
+			"tint": "#ffffff"
 		},
 		"espada": {
-			"sprite": 12,
-			"tint": "#bcd8ff"
+			"sprite": 24,
+			"tint": "#ffffff"
 		},
 		"jamanta": {
-			"sprite": 1,
-			"tint": "#ffd8a8"
+			"sprite": 25,
+			"tint": "#ffffff"
 		},
 		"atum": {
-			"sprite": 2,
-			"tint": "#ffd8a8"
+			"sprite": 26,
+			"tint": "#ffffff"
 		},
 		"martelo": {
-			"sprite": 3,
-			"tint": "#ffd8a8"
+			"sprite": 27,
+			"tint": "#ffffff"
 		},
 		"celacanto": {
-			"sprite": 4,
-			"tint": "#ffd8a8"
+			"sprite": 28,
+			"tint": "#ffffff"
 		},
 		"nautilo": {
-			"sprite": 5,
-			"tint": "#ffd8a8"
+			"sprite": 29,
+			"tint": "#ffffff"
 		},
 		"moreia": {
-			"sprite": 6,
-			"tint": "#ffd8a8"
+			"sprite": 30,
+			"tint": "#ffffff"
 		},
 		"lua": {
-			"sprite": 7,
-			"tint": "#ffd8a8"
+			"sprite": 31,
+			"tint": "#ffffff"
 		},
 		"lula": {
-			"sprite": 8,
-			"tint": "#ffd8a8"
+			"sprite": 32,
+			"tint": "#ffffff"
 		},
 		"baleia": {
-			"sprite": 9,
-			"tint": "#ffd8a8"
+			"sprite": 33,
+			"tint": "#ffffff"
 		},
 		"arowana": {
-			"sprite": 10,
-			"tint": "#ffd8a8"
+			"sprite": 34,
+			"tint": "#ffffff"
 		},
 		"remo": {
-			"sprite": 11,
-			"tint": "#ffd8a8"
+			"sprite": 35,
+			"tint": "#ffffff"
 		}
 	}
 }

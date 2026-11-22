@@ -84,6 +84,16 @@ func setup(look: WorldLook, world: LakeWorld, target: Node3D) -> void:
 		_fly_seeds.append(Vector3(rng.randf_range(-1.0, 1.0), rng.randf(), rng.randf() * TAU))
 
 
+## True while the farmer is inside the house: a warm, dim room lit by its lamp.
+var indoor: bool = false
+var _indoor_look: WorldLook
+
+
+## Reads the indoor light from the "interior" group of [param look].
+func setup_indoor(look: WorldLook) -> void:
+	_indoor_look = look
+
+
 ## True while the lights are on (night).
 func is_night() -> bool:
 	return _lights
@@ -109,16 +119,27 @@ func update(minutes: float) -> void:
 	env.ambient_light_color = _ambient[i].lerp(_ambient[i + 1], t)
 	env.ambient_light_energy = lerpf(float(_ambient_energy[i]), float(_ambient_energy[i + 1]), t)
 	env.fog_light_color = _fog[i].lerp(_fog[i + 1], t)
+	env.background_mode = Environment.BG_SKY
+	env.fog_enabled = true
+	if indoor and _indoor_look != null:
+		sun.light_energy = _indoor_look.num("interior", "sun_energy")
+		sun.light_color = _indoor_look.color("interior", "sun_color")
+		env.ambient_light_color = _indoor_look.color("interior", "ambient")
+		env.ambient_light_energy = _indoor_look.num("interior", "ambient_energy")
+		env.background_mode = Environment.BG_COLOR
+		env.background_color = _indoor_look.color("interior", "background")
+		env.fog_enabled = false
 	var on: bool = hour >= _on_hour or hour < _off_hour
 	if on != _lights or _first:
 		_first = false
 		_lights = on
-		_flies.visible = on
 		lights_changed.emit(on)
+	_flies.visible = _lights and not indoor
 
 
 func _process(delta: float) -> void:
-	if not _flies.visible:
+	if not _flies.visible or indoor:
+		_flies.visible = _flies.visible and not indoor
 		return
 	_time += delta
 	var center: Vector3 = _target.position

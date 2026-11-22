@@ -24,6 +24,8 @@ var _smoothing: float = 1.0
 var _focus: Vector3 = Vector3.ZERO
 var _min_focus: Vector2 = Vector2.ZERO
 var _max_focus: Vector2 = Vector2.ZERO
+var _map_min: Vector2 = Vector2.ZERO
+var _map_max: Vector2 = Vector2.ZERO
 
 
 ## Configures the camera from [param look] and snaps it to [param target].
@@ -38,9 +40,23 @@ func setup(look: WorldLook, target: Node3D) -> void:
 	far = look.num("camera", "far")
 	_min_focus = Vector2(look.num("camera", "margin_west"), look.num("camera", "margin_north"))
 	_max_focus = Vector2(float(WorldGrid.WIDTH) - look.num("camera", "margin_east"), float(WorldGrid.HEIGHT) - look.num("camera", "margin_south"))
+	_map_min = _min_focus
+	_map_max = _max_focus
 	_focus = _clamped_target()
 	position = _focus + _offset
 	current = true
+
+
+## Keeps the focus inside [param rect] (x, z meters); an empty rect restores the map bounds.
+func set_bounds(rect: Rect2, view_size: float) -> void:
+	if rect.size == Vector2.ZERO:
+		_min_focus = _map_min
+		_max_focus = _map_max
+	else:
+		_min_focus = rect.position
+		_max_focus = rect.end
+	size = view_size
+	_focus = _clamped_target()
 
 
 func _process(delta: float) -> void:

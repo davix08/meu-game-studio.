@@ -196,6 +196,20 @@ func box_free(x: float, z: float, half_width: float, half_depth: float) -> bool:
 	return true
 
 
+## Like [method box_free], but water blocks count as free (swimming, 2026-11-22). Solid props,
+## buildings and the map edge still block.
+func box_free_swim(x: float, z: float, half_width: float, half_depth: float) -> bool:
+	var cx0: int = floori(x - half_width)
+	var cx1: int = floori(x + half_width - BOX_EPSILON)
+	var cy0: int = floori(z - half_depth)
+	var cy1: int = floori(z + half_depth - BOX_EPSILON)
+	for cy in range(cy0, cy1 + 1):
+		for cx in range(cx0, cx1 + 1):
+			if tile_at(cx, cy) < 0 or _solid[cy * WIDTH + cx] == 1:
+				return false
+	return true
+
+
 ## Removes every placement (trees, bushes, rocks, tufts...) and solid flag inside [param rect]
 ## and turns flower blocks into plain grass, so a building can stand there (Story 004). The
 ## house footprint and the sign by the door are never touched.

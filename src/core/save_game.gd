@@ -97,6 +97,8 @@ static func to_dict(state: GameState) -> Dictionary:
 		"order_board": state.order_board.duplicate(true),
 		"stall": state.stall.duplicate(true),
 		"expanded": Array(state.expanded),
+		"tools": Array(state.tools),
+		"placed": state.placed.duplicate(true),
 		"sound_on": state.sound_on,
 		"show_fps": state.show_fps,
 	}
@@ -345,6 +347,10 @@ static func _apply_town(state: GameState, data: GameData, save: Dictionary) -> v
 				state.order_board.append((o as Dictionary).duplicate(true))
 	if save.get("stall") is Array:
 		state.stall = (save["stall"] as Array).duplicate(true)
+	if save.get("placed") is Dictionary:
+		state.placed = (save["placed"] as Dictionary).duplicate(true)
+	if save.get("tools") is Array:
+		state.tools = PackedStringArray(save["tools"])
 	if save.get("expanded") is Array:
 		state.expanded = PackedStringArray(save["expanded"])
 	if save.get("sound_on") is bool:

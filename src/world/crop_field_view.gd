@@ -49,6 +49,15 @@ func plot_center(i: int) -> Vector2:
 	return Vector2(float(r.position.x) + 2.0 + float(i % cols) * 2.0, float(r.position.y) + 2.0 + float(i / cols) * 2.0)
 
 
+## The plot under ground point [param point] (meters, x z), or -1.
+func plot_at(point: Vector2) -> int:
+	for i in _state.crop_plots.size():
+		var c: Vector2 = plot_center(i)
+		if absf(point.x - c.x) <= 1.0 and absf(point.y - c.y) <= 1.0:
+			return i
+	return -1
+
+
 func _process(delta: float) -> void:
 	_timer -= delta
 	if _timer <= 0.0:

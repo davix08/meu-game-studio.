@@ -21,6 +21,10 @@ enum Side { SOUTH, NORTH, EAST, WEST }
 
 const GROUP: String = "town"
 
+## Buildings the player placed (2026-11-22): id -> [x, y, w, h, door side]. Asked before the
+## fixed lots of the data, so every lot helper also knows the placed buildings.
+static var placed: Dictionary = {}
+
 
 ## Paints the town on [param grid].
 static func plan(grid: WorldGrid, look: WorldLook) -> void:
@@ -82,7 +86,63 @@ static func apply_lot_state(grid: WorldGrid, look: WorldLook, id: String, built:
 
 ## True when the map has a lot called [param id].
 static func has_lot(look: WorldLook, id: String) -> bool:
-	return (look.raw(GROUP, "lots") as Dictionary).has(id)
+	return placed.has(id) or (look.raw(GROUP, "lots") as Dictionary).has(id)
+
+
+## The size (w, h) of placeable building [param id], or (0, 0) when it is not placeable.
+static func placeable_size(look: WorldLook, id: String) -> Vector2i:
+	var p: Dictionary = look.raw(GROUP, "placeable") if look.has(GROUP, "placeable") else {}
+	if not p.has(id):
+		return Vector2i.ZERO
+	var e: Array = p[id]
+	return Vector2i(int(e[2]), int(e[3]))
+
+
+## The old fixed spot of placeable building [param id] (moves older saves): [x, y, w, h, side].
+static func default_spot(look: WorldLook, id: String) -> Array:
+	return (look.raw(GROUP, "placeable") as Dictionary).get(id, [])
+
+
+## Ids of the placeable buildings, in data order.
+static func placeable_ids(look: WorldLook) -> Array[String]:
+	var out: Array[String] = []
+	if look.has(GROUP, "placeable"):
+		for id: Variant in look.raw(GROUP, "placeable"):
+			out.append(str(id))
+	return out
+
+
+## The footprint [param rect] with its door on [param side] can be built: every block inside the
+## map, on grass, flowers or sand, not solid; the block in front of the door walkable land.
+static func can_place(grid: WorldGrid, rect: Rect2i, side: int) -> bool:
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			var t: int = grid.tile_at(x, y)
+			if t != WorldGrid.Tile.GRASS and t != WorldGrid.Tile.FLOWERS and t != WorldGrid.Tile.SAND:
+				return false
+			if grid.has_solid_flag(x, y):
+				return false
+	var door: Vector2i = _door_of(rect, side)
+	return not grid.is_solid(door.x, door.y)
+
+
+## Places building [param id] at [param rect] with its door on [param side] and blocks it.
+static func place(grid: WorldGrid, id: String, rect: Rect2i, side: int) -> void:
+	placed[id] = [rect.position.x, rect.position.y, rect.size.x, rect.size.y, side]
+	# The placements stay in the list (their indices are saved); the props under the building were
+	# hidden by the caller, so only the blocks are marked solid here.
+	grid.block_area(rect)
+
+
+static func _door_of(r: Rect2i, side: int) -> Vector2i:
+	match side:
+		Side.NORTH:
+			return Vector2i(r.position.x + r.size.x / 2, r.position.y - 1)
+		Side.EAST:
+			return Vector2i(r.end.x, r.position.y + r.size.y / 2)
+		Side.WEST:
+			return Vector2i(r.position.x - 1, r.position.y + r.size.y / 2)
+	return Vector2i(r.position.x + r.size.x / 2, r.end.y)
 
 
 ## Ids of the lots, in data order.
@@ -91,18 +151,21 @@ static func lot_ids(look: WorldLook) -> Array[String]:
 	var lots: Dictionary = look.raw(GROUP, "lots")
 	for id: Variant in lots:
 		out.append(str(id))
+	for id: Variant in placed:
+		if not out.has(str(id)):
+			out.append(str(id))
 	return out
 
 
 ## The cell rectangle of lot [param id].
 static func lot_rect(look: WorldLook, id: String) -> Rect2i:
-	var e: Array = (look.raw(GROUP, "lots") as Dictionary)[id]
+	var e: Array = placed[id] if placed.has(id) else (look.raw(GROUP, "lots") as Dictionary)[id]
 	return Rect2i(int(e[0]), int(e[1]), int(e[2]), int(e[3]))
 
 
 ## The side of the lot where the door is.
 static func lot_side(look: WorldLook, id: String) -> Side:
-	var e: Array = (look.raw(GROUP, "lots") as Dictionary)[id]
+	var e: Array = placed[id] if placed.has(id) else (look.raw(GROUP, "lots") as Dictionary)[id]
 	return int(e[4]) as Side
 
 

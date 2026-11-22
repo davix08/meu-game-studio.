@@ -59,6 +59,14 @@ var _production: Production
 var _field_view: CropFieldView
 var _prod_timer: float = 0.0
 var _opened: Dictionary = {}
+var _house: HouseInterior
+var _placing: String = ""
+var _ghost: MeshInstance3D
+var _ghost_door: MeshInstance3D
+var _ghost_rect: Rect2i
+var _ghost_ok: bool = false
+var _place_bar: HBoxContainer
+var _indoor_spots: Array[Spot] = []
 var _ranch: RanchView
 var _npcs: NpcView
 var _cycle: DayNight
@@ -79,6 +87,7 @@ var _e_was_down: bool = false
 
 
 func _ready() -> void:
+	TownPlan.placed = {}
 	_look = WorldLook.load_file()
 	_data = GameData.load_from_dir()
 	_town_data = TownData.load_file()
@@ -119,6 +128,7 @@ func _ready() -> void:
 	add_child(_truck)
 	_truck.setup(_look, _town_data, _state, _farm, _world.grid, _world.terrain)
 
+	_fisherman.setup_water(_look.num("terrain", "water_level"), _look.num("player", "swim_depth"), _look.num("player", "swim_speed"))
 	_camera = FollowCamera.new()
 	add_child(_camera)
 	_camera.setup(_look, _fisherman)
@@ -142,6 +152,10 @@ func _ready() -> void:
 	add_child(_cycle)
 	_cycle.setup(_look, _world, _fisherman)
 	_cycle.lights_changed.connect(_on_lights)
+	_cycle.setup_indoor(_look)
+	_house = HouseInterior.new()
+	add_child(_house)
+	_house.build(_look)
 
 	_build_interface()
 	_build_spots()
@@ -207,6 +221,27 @@ func _build_interface() -> void:
 	_screens.start_chosen.connect(_begin)
 	_screens.new_game_requested.connect(_new_game)
 	_screens.outfit_changed.connect(_dress)
+	_screens.set_placeable(TownPlan.placeable_ids(_look))
+	_screens.place_requested.connect(_start_placing)
+	_place_bar = HBoxContainer.new()
+	_place_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_place_bar.offset_top = -110.0
+	_place_bar.offset_bottom = -30.0
+	_place_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_place_bar.add_theme_constant_override(&"separation", 16)
+	var hint: Label = UiKit.label(Texts.get_text("place_hint"), 20, Color.WHITE)
+	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
+	hint.add_theme_color_override(&"font_outline_color", Color.BLACK)
+	hint.add_theme_constant_override(&"outline_size", 6)
+	_place_bar.add_child(hint)
+	var ok_button: Button = UiKit.button(_look, Texts.get_text("place_ok"), _confirm_placing)
+	ok_button.custom_minimum_size = Vector2(220.0, 64.0)
+	_place_bar.add_child(ok_button)
+	var cancel_button: Button = UiKit.button(_look, Texts.get_text("place_cancel"), _cancel_placing)
+	cancel_button.custom_minimum_size = Vector2(160.0, 64.0)
+	_place_bar.add_child(cancel_button)
+	_place_bar.visible = false
+	root.add_child(_place_bar)
 
 
 func _connect_events() -> void:
@@ -218,6 +253,187 @@ func _connect_events() -> void:
 	_farm.farm_level_up.connect(_on_farm_level_up)
 	_production.material_dropped.connect(_on_material)
 	_production.order_shipped.connect(_truck.pickup)
+
+
+# --- Placing buildings (2026-11-22) ---
+
+## Re-creates the buildings placed in this save; older saves get their built buildings at the
+## spots they had on the fixed map.
+func _restore_placements() -> void:
+	for id: String in TownPlan.placeable_ids(_look):
+		if _state.is_built(id) and not _state.placed.has(id):
+			_state.placed[id] = TownPlan.default_spot(_look, id)
+	for id: Variant in _state.placed:
+		var e: Array = _state.placed[id]
+		TownPlan.place(_world.grid, str(id), Rect2i(int(e[0]), int(e[1]), int(e[2]), int(e[3])), int(e[4]))
+		_town_view.add_lot(str(id))
+	_after_placement()
+
+
+func _after_placement() -> void:
+	_ranch.refresh_areas()
+	_spots.clear()
+	_build_spots()
+
+
+func _start_placing(id: String) -> void:
+	_placing = id
+	if _ghost == null:
+		_ghost = MeshInstance3D.new()
+		_ghost.mesh = BoxMesh.new()
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_ghost.material_override = m
+		add_child(_ghost)
+		_ghost_door = MeshInstance3D.new()
+		_ghost_door.mesh = BoxMesh.new()
+		var dm := StandardMaterial3D.new()
+		dm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		dm.albedo_color = _look.color("town", "ghost_door")
+		_ghost_door.material_override = dm
+		add_child(_ghost_door)
+	_ghost.visible = true
+	_ghost_door.visible = true
+	_place_bar.visible = true
+	_update_ghost()
+
+
+## Puts the footprint in front of the farmer and colors it green (free) or red (taken).
+func _update_ghost() -> void:
+	var size: Vector2i = TownPlan.placeable_size(_look, _placing)
+	var yaw: float = _fisherman.rotation.y
+	var ahead := Vector2(sin(yaw), cos(yaw))
+	var reach: float = maxf(float(size.x), float(size.y)) * 0.5 + _look.num("town", "ghost_ahead")
+	var center: Vector2 = _fisherman.ground_pos + ahead * reach
+	_ghost_rect = Rect2i(roundi(center.x - float(size.x) * 0.5), roundi(center.y - float(size.y) * 0.5), size.x, size.y)
+	_ghost_ok = _state.map == GameState.MAP_OUTDOOR and _place_ok(_ghost_rect)
+	var c := Vector3(float(_ghost_rect.position.x) + float(size.x) * 0.5, 0.25, float(_ghost_rect.position.y) + float(size.y) * 0.5)
+	_ghost.position = c
+	(_ghost.mesh as BoxMesh).size = Vector3(float(size.x), 0.5, float(size.y))
+	(_ghost.material_override as StandardMaterial3D).albedo_color = _look.color("town", "ghost_ok" if _ghost_ok else "ghost_bad")
+	_ghost_door.position = Vector3(float(_ghost_rect.position.x + size.x / 2) + 0.5, 0.1, float(_ghost_rect.end.y) + 0.5)
+	(_ghost_door.mesh as BoxMesh).size = Vector3(0.9, 0.2, 0.9)
+
+
+## The footprint is free: grass, flowers or sand, nothing solid except the loose trees and rocks
+## of the farm (the builders clear those), and the door block can be walked.
+func _place_ok(rect: Rect2i) -> bool:
+	var grid: WorldGrid = _world.grid
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			var t: int = grid.tile_at(x, y)
+			if t != WorldGrid.Tile.GRASS and t != WorldGrid.Tile.FLOWERS and t != WorldGrid.Tile.SAND:
+				return false
+			if grid.has_solid_flag(x, y) and not _loose_prop_at(Vector2i(x, y)):
+				return false
+	var door := Vector2i(rect.position.x + rect.size.x / 2, rect.end.y)
+	return grid.tile_at(door.x, door.y) >= 0 and not grid.is_water(door.x, door.y) and (not grid.has_solid_flag(door.x, door.y) or _loose_prop_at(door))
+
+
+func _loose_prop_at(cell: Vector2i) -> bool:
+	for index: int in _world.props.cuttable():
+		var p: WorldGrid.Placement = _world.grid.placements[index]
+		if p.cell == cell and p.zone == "":
+			return true
+	return false
+
+
+## Removes the loose trees and rocks under [param rect] (and its door) for good.
+func _clear_under(rect: Rect2i) -> void:
+	var door := Vector2i(rect.position.x + rect.size.x / 2, rect.end.y)
+	for index: int in _world.props.cuttable():
+		var p: WorldGrid.Placement = _world.grid.placements[index]
+		if p.zone == "" and (rect.has_point(p.cell) or p.cell == door):
+			_state.chopped[str(index)] = 1 << 30
+			_set_cut(index, true)
+
+
+func _confirm_placing() -> void:
+	if not _ghost_ok or not _place_ok(_ghost_rect):
+		_sfx.play(&"error")
+		_screens.toast(Texts.get_text("place_bad"))
+		return
+	if _farm.build_blocker(_placing) != Farm.Result.OK:
+		_sfx.play(&"error")
+		_screens.toast(Texts.get_text("build_missing"))
+		_cancel_placing()
+		return
+	_clear_under(_ghost_rect)
+	TownPlan.place(_world.grid, _placing, _ghost_rect, 0)
+	_farm.build(_placing)
+	_state.placed[_placing] = [_ghost_rect.position.x, _ghost_rect.position.y, _ghost_rect.size.x, _ghost_rect.size.y, 0]
+	_town_view.add_lot(_placing)
+	_after_placement()
+	_sfx.play(&"level")
+	_screens.toast(Texts.get_text("built_ok"))
+	_save_soon = true
+	_cancel_placing()
+
+
+func _cancel_placing() -> void:
+	_placing = ""
+	if _ghost != null:
+		_ghost.visible = false
+		_ghost_door.visible = false
+	_place_bar.visible = false
+
+
+# --- The house (2026-11-22) ---
+
+func _label_sofa() -> String:
+	return Texts.get_text("act_sofa_stop") if _state.resting else Texts.get_text("act_sofa")
+
+
+func _enter_house() -> void:
+	if not _machine.is_idle():
+		return
+	_sfx.play(&"click")
+	_state.map = GameState.MAP_INDOOR
+	_apply_space()
+	_fisherman.teleport(_house.entry())
+	_save_soon = true
+
+
+func _exit_house() -> void:
+	_sfx.play(&"click")
+	_state.resting = false
+	_state.map = GameState.MAP_OUTDOOR
+	_apply_space()
+	_fisherman.teleport(Vector2(WorldGrid.DOOR) + Vector2(0.5, 1.4))
+	_save_soon = true
+
+
+## Puts the fisherman, camera and light in the house or back on the farm.
+func _apply_space() -> void:
+	var inside: bool = _state.map == GameState.MAP_INDOOR
+	_fisherman.blocked_fn = _house.is_blocked if inside else Callable()
+	_fisherman.height_fn = _house.floor_height if inside else Callable()
+	_fisherman.set_rod_visible(_state.rod_out and not inside)
+	_cycle.indoor = inside
+	_camera.set_bounds(_house.bounds() if inside else Rect2(), _look.num("camera", "indoor_size") if inside else _look.num("camera", "size"))
+	_cycle.update(_state.minutes)
+
+
+func _sleep_in_bed() -> void:
+	_sfx.play(&"click")
+	_clock.sleep_new_day(false)
+
+
+func _use_plot_tap(i: int) -> void:
+	match _production.plot_stage(i):
+		0:
+			_sfx.play(&"click")
+			_screens.open_plant(i)
+		2:
+			var r: Production.Result = _production.harvest(i)
+			_sfx.play(&"coin" if r == Production.Result.OK else &"error")
+			if r != Production.Result.OK:
+				_screens.toast(Texts.get_text("silo_full"))
+		_:
+			var crop: Dictionary = _production.crop(str(_state.crop_plots[i]["crop"]))
+			_screens.toast(Texts.fmt("plot_left", [str(crop["name"]), _screens._ptime(_production.seconds_left(float(_state.crop_plots[i]["ready_at"])))]))
 
 
 func _on_material(id: String) -> void:
@@ -264,7 +480,11 @@ func _begin(fresh: bool) -> void:
 		_state.town_changed.emit()
 	for key: Variant in _state.chopped:
 		_set_cut(int(str(key)), true)
+	_restore_placements()
 	_production.setup_state()
+	_apply_space()
+	if _state.map == GameState.MAP_INDOOR:
+		_fisherman.teleport(_house.entry())
 	_town_view.set_production(_production)
 	for zone: String in _state.expanded:
 		_open_area(zone)
@@ -310,10 +530,15 @@ func _process(delta: float) -> void:
 	# Screen-space input (up = -y, right = +x) to world ground direction (x, z): the camera is
 	# yawed by +_input_yaw around Y, so rotate the input by -_input_yaw (Vector2.rotated).
 	_fisherman.step(delta, dir.rotated(-_input_yaw), run)
+	if _fisherman.swimming and dir != Vector2.ZERO:
+		_state.energy = maxf(0.0, _state.energy - _look.num("player", "swim_energy_per_second") * delta)
 	_actions.set_resting(_state.resting)
+	if _placing != "":
+		_update_ghost()
 	# During the minigame only PUXAR matters: the side buttons and the joystick step aside.
 	var fighting: bool = phase == FishingMachine.Phase.FIGHT or phase == FishingMachine.Phase.CAUGHT
-	_actions.visible = not fighting
+	_actions.visible = not fighting and _placing == ""
+	_fishing_hud.pull.visible = _placing == "" and not _fishing_hud.card_open
 	_stick.visible = not fighting
 	_update_spot()
 	var e_down: bool = Input.is_physical_key_pressed(KEY_E)
@@ -404,12 +629,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			_tap(click.position)
 	elif event is InputEventKey:
 		var key: InputEventKey = event
-		if key.pressed and not key.echo and key.physical_keycode == KEY_Z:
-			_toggle_rest()
+		pass
 
 
-## A tap on the world: a neighbor opens the dialog (Story 013); otherwise it casts.
+## A tap on the world: a field plot plants or harvests (2026-11-22); a neighbor opens the
+## dialog (Story 013); otherwise it casts.
 func _tap(screen_pos: Vector2) -> void:
+	var ground: Variant = Plane(Vector3.UP, 0.15).intersects_ray(_camera.project_ray_origin(screen_pos), _camera.project_ray_normal(screen_pos))
+	if ground != null and _state.map == GameState.MAP_OUTDOOR:
+		var g: Vector3 = ground
+		var plot: int = _field_view.plot_at(Vector2(g.x, g.z))
+		if plot >= 0:
+			_use_plot_tap(plot)
+			return
 	var who: String = _npcs.npc_at_screen(_camera, screen_pos, _look.num("npc", "tap_radius") * 60.0) if _npcs != null else ""
 	if who != "" and _machine.is_idle():
 		_sfx.play(&"click")
@@ -450,6 +682,9 @@ func _cast_forward() -> void:
 
 ## Asks the machine to cast to [param world_point] (meters, on the water plane).
 func _try_cast(world_point: Vector3) -> void:
+	if _fisherman.swimming:
+		_fishing_hud.show_toast("cast_swimming")
+		return
 	_sync_position()
 	_fisherman.set_rod_color(Color.html(_data.rod_by_id(_state.rod).color))
 	var result: FishingMachine.CastResult = _machine.cast_at(LakeWorldQuery.to_query_pos(Vector3(world_point.x, 0.0, world_point.z)))
@@ -493,6 +728,13 @@ func _toggle_rest() -> void:
 
 func _on_day_started(day: int, auto: bool) -> void:
 	_town.on_new_day()
+	if _state.map == GameState.MAP_INDOOR:
+		_screens.show_sleep(day, auto)
+		_fisherman.teleport(_house.spot("bed"))
+		for index: int in _farm.regrow():
+			_set_cut(index, false)
+		_save_soon = true
+		return
 	for index: int in _farm.regrow():
 		_set_cut(index, false)
 	_fisherman.teleport(WorldGrid.SPAWN)
@@ -522,6 +764,15 @@ func _build_spots() -> void:
 			_add_spot(TownPlan.lot_door(_look, fid), reach, _label_factory.bind(fid), _use_factory.bind(fid))
 	if TownPlan.has_lot(_look, "plantacao"):
 		_add_spot(TownPlan.lot_door(_look, "plantacao"), reach + 1.0, _label_fixed.bind("act_field"), _screens.open_field)
+	_add_spot(Vector2(WorldGrid.DOOR) + Vector2(0.5, 1.2), reach, _label_fixed.bind("act_enter"), _enter_house)
+	_indoor_spots.clear()
+	for entry: Array in [["door", "act_exit", _exit_house], ["bed", "act_sleep", _sleep_in_bed], ["sofa", "act_sofa", _toggle_rest]]:
+		var spot := Spot.new()
+		spot.pos = _house.spot(str(entry[0]))
+		spot.radius = 1.3
+		spot.label = _label_sofa if entry[0] == "sofa" else _label_fixed.bind(str(entry[1]))
+		spot.action = entry[2]
+		_indoor_spots.append(spot)
 	if TownPlan.has_lot(_look, "quadro"):
 		_add_spot(TownPlan.lot_door(_look, "quadro"), reach, _label_fixed.bind("act_orders"), _screens.open_orders)
 	if TownPlan.has_lot(_look, "barraca"):
@@ -619,7 +870,12 @@ func _cut(index: int, rock: bool) -> void:
 		_screens.toast(Texts.fmt("broke" if rock else "chopped", [int(_town_data.num("farm_life", "stone_yield" if rock else "wood_yield"))]))
 	else:
 		_sfx.play(&"error")
-		_screens.toast(Texts.get_text("bag_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy"))
+		var why: String = Texts.get_text("no_energy")
+		if r == Farm.Result.BAG_FULL:
+			why = Texts.get_text("barn_full")
+		elif r == Farm.Result.MISSING:
+			why = Texts.get_text("need_pickaxe" if rock else "need_axe")
+		_screens.toast(why)
 
 
 ## Opens the trees of an expansion area that was just bought (or loaded as bought).
@@ -662,7 +918,7 @@ func _update_spot() -> void:
 	if _started and not _screens.is_open() and _machine.is_idle():
 		var me: Vector2 = _fisherman.ground_pos
 		var best: float = INF
-		for spot: Spot in _spots:
+		for spot: Spot in (_indoor_spots if _state.map == GameState.MAP_INDOOR else _spots):
 			var d: float = me.distance_to(spot.pos)
 			if d <= spot.radius and d < best:
 				var label: String = spot.label.call()
@@ -670,7 +926,7 @@ func _update_spot() -> void:
 					best = d
 					_spot = spot
 					text = label
-		var boxes: Array[Vector2] = _truck.box_spots()
+		var boxes: Array[Vector2] = _truck.box_spots() if _state.map == GameState.MAP_OUTDOOR else ([] as Array[Vector2])
 		for i in boxes.size():
 			var d: float = me.distance_to(boxes[i])
 			if d <= _look.num("town", "door_reach") and d < best:

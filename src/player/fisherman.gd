@@ -91,6 +91,15 @@ var _rod_color: Color = Color.WHITE
 ## Position of the right hand from the right shoulder pivot (where the rod is held).
 var _hand_offset: Vector3 = Vector3.ZERO
 var _rod_holder: Node3D
+## True while the fisherman is in the water (swimming, 2026-11-22).
+var swimming: bool = false
+## Blocks the fisherman can stand on in another space (the house inside): when valid, it is
+## asked instead of the grid; [member height_fn] gives the floor height there.
+var blocked_fn: Callable
+var height_fn: Callable
+var _water_level: float = -0.1
+var _swim_depth: float = 0.55
+var _swim_speed: float = 0.6
 var _rod_visible: bool = true
 ## Clothing group -> its shader material, when the 3D model file is used.
 var _model_materials: Dictionary = {}
@@ -157,21 +166,55 @@ func step(delta: float, dir: Vector2, run: bool) -> void:
 	var before: Vector2 = ground_pos
 	var wants_move: bool = dir.length_squared() > 0.0001
 	if wants_move:
-		var move: Vector2 = dir.normalized() * (_run_speed if run else _walk_speed) * dt
-		if move.x != 0.0 and _grid.box_free(ground_pos.x + move.x, ground_pos.y, _half_width, _half_depth):
+		var speed: float = (_run_speed if run else _walk_speed) * (_swim_speed if swimming else 1.0)
+		var move: Vector2 = dir.normalized() * speed * dt
+		if move.x != 0.0 and _free(ground_pos.x + move.x, ground_pos.y):
 			ground_pos.x += move.x
-		if move.y != 0.0 and _grid.box_free(ground_pos.x, ground_pos.y + move.y, _half_width, _half_depth):
+		if move.y != 0.0 and _free(ground_pos.x, ground_pos.y + move.y):
 			ground_pos.y += move.y
 		rotation.y = lerp_angle(rotation.y, atan2(dir.x, dir.y), 1.0 - exp(-_turn_speed * delta))
 		_has_face_target = false
 	elif _has_face_target:
 		rotation.y = lerp_angle(rotation.y, _face_yaw, 1.0 - exp(-_turn_speed * delta))
 	var moved: bool = ground_pos.distance_squared_to(before) > 0.0000001
+	swimming = not blocked_fn.is_valid() and _grid.is_water(floori(ground_pos.x), floori(ground_pos.y))
 	_animate(delta, moved, run)
 	_apply_pose(delta)
-	var ground: float = _terrain.ground_height_at(ground_pos.x, ground_pos.y)
+	if swimming:
+		_swim_pose(delta, moved)
+	if _rod_holder != null:
+		_rod_holder.visible = _rod_visible and not swimming
+	var ground: float = height_fn.call(ground_pos.x, ground_pos.y) if height_fn.is_valid() else _terrain.ground_height_at(ground_pos.x, ground_pos.y)
+	if swimming:
+		ground = _water_level - _swim_depth + sin(_idle_time * 2.4) * 0.03
 	var y: float = lerpf(position.y, ground, 1.0 - exp(-_height_follow * delta))
 	position = Vector3(ground_pos.x, y, ground_pos.y)
+
+
+func _free(x: float, z: float) -> bool:
+	if blocked_fn.is_valid():
+		return not blocked_fn.call(x, z)
+	return _grid.box_free_swim(x, z, _half_width, _half_depth)
+
+
+## Swimming: breaststroke arms, kicking legs, body tilted forward, head above the water.
+func _swim_pose(delta: float, moving: bool) -> void:
+	var t: float = _idle_time * (5.0 if moving else 2.0)
+	_arm_left.rotation.x = -2.4 + sin(t) * 0.6
+	_arm_right.rotation.x = -2.4 + sin(t) * 0.6
+	_arm_left.rotation.z = -0.5 - cos(t) * 0.4
+	_arm_right.rotation.z = 0.5 + cos(t) * 0.4
+	_leg_left.rotation.x = sin(t * 2.0) * 0.5
+	_leg_right.rotation.x = -sin(t * 2.0) * 0.5
+	_torso.rotation.x = lerpf(_torso.rotation.x, 0.9 if moving else 0.3, minf(1.0, 6.0 * delta))
+	_head.rotation.x = -_torso.rotation.x * 0.8
+
+
+## Sets the water surface height and how deep the body sits when swimming.
+func setup_water(level: float, depth: float, speed_factor: float) -> void:
+	_water_level = level
+	_swim_depth = depth
+	_swim_speed = speed_factor
 
 
 func _animate(delta: float, moving: bool, running: bool) -> void:
