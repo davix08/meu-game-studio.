@@ -1,11 +1,13 @@
 class_name CropFieldView
 extends Node3D
-## Draws the field plots of the real-time farm (2026-11-21, look redone 2026-11-22 after the
-## user's crop-rows picture): each bought plot is a bed of mounded soil rows (running east-west, across the view) with clods between
-## dark furrows, and a dense line of stalks on every row. The stalks grow in three looks:
-## sprout (small, bright green), growing (taller, green-yellow) and ripe (full size, the crop's
-## stalk color with an ear of the crop color on top). Data: town.crop_* in world_look.json and
-## the crop's "stalk"/"color" in farm_prod.json. Redrawn every second.
+## Draws the field plots of the real-time farm (2026-11-21; look redone 2026-11-22 twice: crop
+## rows, then the owner's voxel farm picture). Each bought plot is a bed of blocky soil rows
+## with clods between dark furrows, and a line of plants on every row, in the pixel material:
+##   - growing: green blocks, sprout (small, bright) to half grown (taller, green-yellow),
+##     tinted per instance;
+##   - ripe: the crop's own blocky model (wheat ears, corn cobs, soy pods, carrot tops with the
+##     orange root showing, sugar cane), one MultiMesh per crop.
+## Data: town.crop_* in world_look.json, crop ids from farm_prod.json. Redrawn every second.
 ## Plot i sits at column i % cols, row i / cols of 2x2-block squares (town.field_plot_cols).
 ##
 ## Usage:
@@ -21,38 +23,43 @@ var _look: WorldLook
 var _state: GameState
 var _prod: Production
 var _soil: MultiMeshInstance3D
-var _stalks: MultiMeshInstance3D
-var _ears: MultiMeshInstance3D
-var _material: StandardMaterial3D
+var _young: MultiMeshInstance3D
+## Crop id -> MultiMeshInstance3D of its ripe model.
+var _ripe: Dictionary = {}
+var _material: Material
 var _timer: float = 0.0
 var _ridges: int = 3
-var _per_ridge: int = 6
+var _per_ridge: int = 5
 # Reused every refresh (no allocation per second).
 var _soil_t: Array[Transform3D] = []
 var _soil_c: Array[Color] = []
-var _stalk_t: Array[Transform3D] = []
-var _stalk_c: Array[Color] = []
-var _ear_t: Array[Transform3D] = []
-var _ear_c: Array[Color] = []
+var _young_t: Array[Transform3D] = []
+var _young_c: Array[Color] = []
+var _ripe_t: Dictionary = {}
+var _ripe_c: Dictionary = {}
 
 
-## Builds the soil bed mesh, the stalk clump and the ear.
+## Builds the soil bed, the growing plant and one ripe model per crop.
 func setup(look: WorldLook, state: GameState, production: Production) -> void:
 	_look = look
 	_state = state
 	_prod = production
 	_ridges = maxi(1, look.integer("town", "crop_ridges"))
 	_per_ridge = maxi(1, look.integer("town", "crop_stalks_per_ridge"))
-	_material = MeshBuilder.make_material(look.num("props", "roughness"))
+	_material = HouseInterior.pixel_material(look)
 	_soil = _layer(_bed_mesh())
-	_stalks = _layer(_stalk_mesh())
-	_ears = _layer(_ear_mesh())
+	_young = _layer(_young_mesh())
+	for id: String in ["trigo", "milho", "soja", "cenoura", "cana"]:
+		_ripe[id] = _layer(_ripe_mesh(id))
+		var t: Array[Transform3D] = []
+		var c: Array[Color] = []
+		_ripe_t[id] = t
+		_ripe_c[id] = c
 	state.town_changed.connect(refresh)
 	refresh()
 
 
-## One plot of soil: a dark furrow floor, [code]crop_ridges[/code] rounded rows and clods.
-## Vertex colors are final (the instance color stays white).
+## One plot of soil: a dark furrow floor, [code]crop_ridges[/code] blocky rows and clods.
 func _bed_mesh() -> ArrayMesh:
 	var b := MeshBuilder.new()
 	var furrow: Color = _look.color("town", "crop_furrow_color")
@@ -64,31 +71,63 @@ func _bed_mesh() -> ArrayMesh:
 	var step: float = PLOT_SIZE * 0.9 / float(_ridges)
 	for r in _ridges:
 		var z: float = -PLOT_SIZE * 0.45 + step * (float(r) + 0.5)
-		b.add_ellipsoid(Vector3(0.0, 0.06, z), Vector3(PLOT_SIZE * 0.46, 0.17, step * 0.45), ridge.darkened(0.15), ridge, 8, 4, true)
-		for k in 7:
+		b.add_box(Vector3(0.0, 0.1, z), Vector3(PLOT_SIZE * 0.9, 0.14, step * 0.8), ridge.darkened(0.1))
+		b.add_box(Vector3(0.0, 0.2, z), Vector3(PLOT_SIZE * 0.86, 0.06, step * 0.5), ridge)
+		for k in 6:
 			var x: float = rng.randf_range(-0.8, 0.8)
-			var side: float = rng.randf_range(-0.6, 0.6) * step * 0.4
-			var s: float = rng.randf_range(0.05, 0.09)
-			b.add_box(Vector3(x, 0.19 + rng.randf_range(-0.03, 0.02), z + side), Vector3(s, s * 0.8, s), clod)
+			var s: float = 0.0625 if k % 2 == 0 else 0.125
+			b.add_box(Vector3(x, 0.24, z + rng.randf_range(-0.12, 0.12)), Vector3(s, s * 0.8, s), clod)
 	return b.build()
 
 
-## A clump of thin leaves, white so the instance color tints it (brighter at the tips).
-func _stalk_mesh() -> ArrayMesh:
+## A growing plant: a few green blocks (white-ish, tinted per instance).
+func _young_mesh() -> ArrayMesh:
 	var b := MeshBuilder.new()
-	var base := Color(0.78, 0.78, 0.78)
-	for k in 7:
-		var a: float = float(k) * TAU / 7.0
-		var lean := Vector3(cos(a), 0.0, sin(a)) * 0.09
-		b.add_cone(lean * 0.3, 0.04, 0.006, 0.5 + 0.08 * float(k % 3), base, Color.WHITE, 4)
-		b.add_cone(lean, 0.03, 0.004, 0.32, base, Color.WHITE, 4)
+	var base := Color(0.8, 0.8, 0.8)
+	b.add_box(Vector3(0.0, 0.12, 0.0), Vector3(0.06, 0.24, 0.06), base)
+	for p: Vector3 in [Vector3(0.07, 0.2, 0.0), Vector3(-0.07, 0.28, 0.03), Vector3(0.0, 0.36, -0.07), Vector3(0.0, 0.44, 0.05)]:
+		b.add_box(p, Vector3(0.12, 0.06, 0.1), Color.WHITE)
 	return b.build()
 
 
-## The ripe ear on top of a stalk.
-func _ear_mesh() -> ArrayMesh:
+## The blocky ripe model of crop [param id] (colors from town.crop_* and the crop's color).
+func _ripe_mesh(id: String) -> ArrayMesh:
 	var b := MeshBuilder.new()
-	b.add_ellipsoid(Vector3.ZERO, Vector3(0.06, 0.14, 0.06), Color(0.85, 0.85, 0.85), Color.WHITE, 6, 4, true)
+	var crop: Dictionary = _prod.crop(id)
+	var main: Color = Color.html(str(crop.get("color", "#e8c860")))
+	var stalk: Color = Color.html(str(crop.get("stalk", "#5a9a30")))
+	var leaf: Color = _look.color("town", "crop_leaf")
+	match id:
+		"trigo":
+			for p: Vector2 in [Vector2(-0.06, -0.05), Vector2(0.07, -0.02), Vector2(0.0, 0.07)]:
+				b.add_box(Vector3(p.x, 0.22, p.y), Vector3(0.04, 0.44, 0.04), stalk)
+				for k in 4:
+					b.add_box(Vector3(p.x + (0.025 if k % 2 == 0 else -0.025), 0.48 + float(k) * 0.06, p.y), Vector3(0.06, 0.06, 0.07), main if k % 2 == 0 else main.darkened(0.12))
+				b.add_box(Vector3(p.x, 0.73, p.y), Vector3(0.02, 0.08, 0.02), main.lightened(0.2))
+		"milho":
+			b.add_box(Vector3(0.0, 0.42, 0.0), Vector3(0.07, 0.84, 0.07), leaf)
+			for k in 3:
+				var side: float = 1.0 if k % 2 == 0 else -1.0
+				b.add_box(Vector3(side * 0.1, 0.3 + float(k) * 0.2, 0.0), Vector3(0.18, 0.04, 0.06), leaf.lightened(0.1))
+			b.add_box(Vector3(0.07, 0.48, 0.05), Vector3(0.09, 0.2, 0.09), main)
+			b.add_box(Vector3(0.07, 0.6, 0.05), Vector3(0.06, 0.05, 0.06), leaf.lightened(0.2))
+			b.add_box(Vector3(0.0, 0.9, 0.0), Vector3(0.04, 0.1, 0.04), stalk.lightened(0.3))
+		"soja":
+			for p: Vector3 in [Vector3(0.0, 0.18, 0.0), Vector3(0.08, 0.26, 0.04), Vector3(-0.07, 0.3, -0.04), Vector3(0.0, 0.36, 0.06)]:
+				b.add_box(p, Vector3(0.16, 0.12, 0.14), leaf if p.y < 0.3 else leaf.lightened(0.12))
+			for p: Vector3 in [Vector3(0.1, 0.2, -0.06), Vector3(-0.1, 0.24, 0.07), Vector3(0.05, 0.4, -0.05)]:
+				b.add_box(p, Vector3(0.04, 0.09, 0.04), main)
+		"cenoura":
+			b.add_box(Vector3(0.0, 0.2, 0.0), Vector3(0.12, 0.08, 0.12), main)
+			b.add_box(Vector3(0.0, 0.25, 0.0), Vector3(0.09, 0.04, 0.09), main.lightened(0.1))
+			for p: Vector2 in [Vector2(-0.04, 0.0), Vector2(0.04, 0.03), Vector2(0.0, -0.04)]:
+				b.add_box(Vector3(p.x, 0.38, p.y), Vector3(0.04, 0.24, 0.04), stalk)
+				b.add_box(Vector3(p.x * 1.8, 0.5, p.y * 1.8), Vector3(0.08, 0.06, 0.08), stalk.lightened(0.15))
+		_:
+			for p: Vector2 in [Vector2(-0.05, -0.04), Vector2(0.06, 0.0), Vector2(0.0, 0.06)]:
+				for k in 4:
+					b.add_box(Vector3(p.x, 0.13 + float(k) * 0.24, p.y), Vector3(0.06, 0.22, 0.06), stalk if k % 2 == 0 else stalk.darkened(0.15))
+				b.add_box(Vector3(p.x + 0.06, 1.0, p.y), Vector3(0.14, 0.04, 0.05), leaf)
 	return b.build()
 
 
@@ -119,10 +158,11 @@ func _process(delta: float) -> void:
 func refresh() -> void:
 	_soil_t.clear()
 	_soil_c.clear()
-	_stalk_t.clear()
-	_stalk_c.clear()
-	_ear_t.clear()
-	_ear_c.clear()
+	_young_t.clear()
+	_young_c.clear()
+	for id: Variant in _ripe_t:
+		(_ripe_t[id] as Array).clear()
+		(_ripe_c[id] as Array).clear()
 	var sprout: Color = _look.color("town", "crop_sprout")
 	var growing: Color = _look.color("town", "crop_growing")
 	var step: float = PLOT_SIZE * 0.9 / float(_ridges)
@@ -133,38 +173,33 @@ func refresh() -> void:
 		var stage: int = _prod.plot_stage(i)
 		if stage == 0:
 			continue
-		var crop: Dictionary = _prod.crop(str(_state.crop_plots[i]["crop"]))
+		var id: String = str(_state.crop_plots[i]["crop"])
 		var growth: float = _prod.plot_growth(i)
-		var color: Color
-		var size: float
-		if stage == 2:
-			color = Color.html(str(crop.get("stalk", crop["color"])))
-			size = 1.0
-		elif growth < 0.5:
-			color = sprout
-			size = lerpf(0.3, 0.55, growth * 2.0)
-		else:
-			color = sprout.lerp(growing, (growth - 0.5) * 2.0)
-			size = lerpf(0.6, 0.9, (growth - 0.5) * 2.0)
-		var ear: Color = Color.html(str(crop["color"]))
+		var ripe: bool = stage == 2 and _ripe_t.has(id)
+		var color: Color = sprout if growth < 0.5 else sprout.lerp(growing, (growth - 0.5) * 2.0)
+		var size: float = lerpf(0.35, 0.6, growth * 2.0) if growth < 0.5 else lerpf(0.65, 0.95, (growth - 0.5) * 2.0)
 		for r in _ridges:
 			var z: float = c.y - PLOT_SIZE * 0.45 + step * (float(r) + 0.5)
 			for k in _per_ridge:
 				# Fixed jitter per spot (no random: the field must not flicker every second).
 				var h: int = (i * 131 + r * 31 + k * 17) % 97
 				var jx: float = (float(h % 7) - 3.0) * 0.012
-				var jz: float = (float(h % 5) - 2.0) * 0.02
+				var jz: float = (float(h % 5) - 2.0) * 0.015
 				var x: float = c.x - PLOT_SIZE * 0.4 + PLOT_SIZE * 0.8 * (float(k) + 0.5) / float(_per_ridge)
-				var s: float = size * (0.85 + float(h % 4) * 0.06)
-				var at := Vector3(x + jx, 0.19, z + jz)
-				_stalk_t.append(Transform3D(Basis(Vector3.UP, float(h)) * Basis.from_scale(Vector3(s, s, s)), at))
-				_stalk_c.append(color)
-				if stage == 2:
-					_ear_t.append(Transform3D(Basis(Vector3.RIGHT, (float(h % 3) - 1.0) * 0.15), at + Vector3(0.0, 0.56 * s, 0.0)))
-					_ear_c.append(ear)
+				var at := Vector3(x + jx, 0.12, z + jz)
+				var yaw := Basis(Vector3.UP, float(h % 4) * PI * 0.5)
+				if ripe:
+					var s: float = 0.9 + float(h % 3) * 0.08
+					(_ripe_t[id] as Array).append(Transform3D(yaw * Basis.from_scale(Vector3(s, s, s)), at))
+					(_ripe_c[id] as Array).append(Color.WHITE)
+				else:
+					var s2: float = size * (0.85 + float(h % 4) * 0.06)
+					_young_t.append(Transform3D(yaw * Basis.from_scale(Vector3(s2, s2, s2)), at))
+					_young_c.append(color)
 	_fill(_soil, _soil_t, _soil_c)
-	_fill(_stalks, _stalk_t, _stalk_c)
-	_fill(_ears, _ear_t, _ear_c)
+	_fill(_young, _young_t, _young_c)
+	for id: Variant in _ripe:
+		_fill(_ripe[id], _ripe_t[id], _ripe_c[id])
 
 
 func _layer(mesh: ArrayMesh) -> MultiMeshInstance3D:
@@ -180,7 +215,7 @@ func _layer(mesh: ArrayMesh) -> MultiMeshInstance3D:
 	return node
 
 
-func _fill(node: MultiMeshInstance3D, transforms: Array[Transform3D], colors: Array[Color]) -> void:
+func _fill(node: MultiMeshInstance3D, transforms: Array, colors: Array) -> void:
 	var multi: MultiMesh = node.multimesh
 	if multi.instance_count != transforms.size():
 		multi.instance_count = transforms.size()

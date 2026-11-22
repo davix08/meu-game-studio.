@@ -162,6 +162,9 @@ func append_transformed(other: MeshBuilder, xform: Transform3D) -> void:
 
 ## Builds the mesh from everything added so far.
 func build() -> ArrayMesh:
+	if _vertices.is_empty():
+		# Nothing added (e.g. a building with no glass): an empty mesh, not an engine error.
+		return ArrayMesh.new()
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = _vertices

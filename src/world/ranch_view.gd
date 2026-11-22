@@ -31,7 +31,7 @@ var _look: WorldLook
 var _town: TownData
 var _state: GameState
 var _terrain: LakeTerrain
-var _material: StandardMaterial3D
+var _material: Material
 var _meshes: Dictionary = {}
 var _critters: Array[Critter] = []
 var _areas: Dictionary = {}
@@ -49,11 +49,11 @@ func setup(look: WorldLook, town: TownData, state: GameState, terrain: LakeTerra
 	_state = state
 	_terrain = terrain
 	_rng.seed = look.integer("estate", "hen_seed")
-	_material = MeshBuilder.make_material(look.num("props", "roughness"))
+	_material = HouseInterior.pixel_material(look)
 	_meshes["galinha"] = [EstateMeshes.hen(look, true), EstateMeshes.hen(look, false)]
 	_meshes["ovelha"] = [_sheep()]
-	_meshes["vaca"] = [_cow()]
-	_meshes["bezerro"] = [_cow()]
+	_meshes["vaca"] = [VoxelModels.cow(look)]
+	_meshes["bezerro"] = [VoxelModels.cow(look)]
 	_meshes["porco"] = [_pig()]
 	var products := MultiMesh.new()
 	products.transform_format = MultiMesh.TRANSFORM_3D
@@ -232,31 +232,4 @@ func _pig() -> ArrayMesh:
 		mb.add_box(Vector3(0.45, 0.68, side * 0.1), Vector3(0.06, 0.1, 0.08), pink.darkened(0.15))
 	for p: Vector2 in [Vector2(-0.25, -0.15), Vector2(-0.25, 0.15), Vector2(0.25, -0.15), Vector2(0.25, 0.15)]:
 		mb.add_box(Vector3(p.x, 0.12, p.y), Vector3(0.1, 0.24, 0.1), pink.darkened(0.2))
-	return mb.build()
-
-
-## A blocky Holstein cow in the pixel style of the user's picture (2026-11-22): white body
-## with black patches, black head with a white blaze, pink snout and udder, small horns, black
-## hooves and a tail. It faces +x.
-func _cow() -> ArrayMesh:
-	var mb := MeshBuilder.new()
-	var white := Color(0.95, 0.94, 0.92)
-	var black := Color(0.1, 0.09, 0.1)
-	var pink := Color(0.95, 0.62, 0.6)
-	var horn := Color(0.92, 0.88, 0.75)
-	mb.add_box(Vector3(0.0, 0.78, 0.0), Vector3(1.15, 0.55, 0.6), white)
-	for patch: Array in [[Vector3(-0.25, 0.92, 0.301), Vector3(0.4, 0.3, 0.01)], [Vector3(0.2, 0.7, 0.301), Vector3(0.25, 0.25, 0.01)], [Vector3(-0.1, 0.85, -0.301), Vector3(0.45, 0.35, 0.01)], [Vector3(0.3, 1.056, 0.05), Vector3(0.3, 0.01, 0.35)], [Vector3(-0.35, 1.056, -0.1), Vector3(0.3, 0.01, 0.3)], [Vector3(-0.576, 0.8, 0.0), Vector3(0.01, 0.3, 0.3)]]:
-		mb.add_box(patch[0], patch[1], black)
-	mb.add_box(Vector3(0.0, 0.5, 0.0), Vector3(0.3, 0.06, 0.3), pink)
-	mb.add_box(Vector3(0.72, 0.95, 0.0), Vector3(0.34, 0.36, 0.38), black)
-	mb.add_box(Vector3(0.82, 0.98, 0.0), Vector3(0.16, 0.22, 0.1), white)
-	mb.add_box(Vector3(0.92, 0.84, 0.0), Vector3(0.1, 0.16, 0.3), pink)
-	for side: float in [-1.0, 1.0]:
-		mb.add_box(Vector3(0.66, 1.16, side * 0.15), Vector3(0.06, 0.12, 0.06), horn)
-		mb.add_box(Vector3(0.62, 1.02, side * 0.24), Vector3(0.06, 0.08, 0.12), black)
-	for p: Vector2 in [Vector2(-0.42, -0.2), Vector2(-0.42, 0.2), Vector2(0.38, -0.2), Vector2(0.38, 0.2)]:
-		mb.add_box(Vector3(p.x, 0.3, p.y), Vector3(0.15, 0.46, 0.15), white)
-		mb.add_box(Vector3(p.x, 0.05, p.y), Vector3(0.16, 0.1, 0.16), black)
-	mb.add_box(Vector3(-0.6, 0.7, 0.0), Vector3(0.05, 0.4, 0.05), white)
-	mb.add_box(Vector3(-0.6, 0.48, 0.0), Vector3(0.08, 0.1, 0.08), black)
 	return mb.build()

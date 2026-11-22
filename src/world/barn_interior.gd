@@ -58,7 +58,7 @@ func build(look: WorldLook, production: Production) -> void:
 	node.position = _origin
 	add_child(node)
 	for k in 3:
-		var horse: Node3D = _make_horse(look.color(GROUP, "horse_%d" % k), material)
+		var horse: Node3D = VoxelModels.horse(look, look.color(GROUP, "horse_%d" % k), material)
 		horse.position = _origin + Vector3(1.25, 0.0, 4.5 + float(k) * 1.8)
 		horse.rotation.y = PI * 0.5
 		add_child(horse)
@@ -132,13 +132,13 @@ func _build_stalls(mb: MeshBuilder) -> void:
 		var z: float = z0 + float(k) * 1.8
 		if z > _size.y:
 			break
-		_box(mb, Vector3(x1 * 0.5, 0.6, z), Vector3(x1, 1.2, 0.1), _c("wood"))
-		_box(mb, Vector3(x1 * 0.5, 1.22, z), Vector3(x1, 0.06, 0.14), _c("wood_dark"))
+		_box(mb, Vector3(x1 * 0.5, 0.45, z), Vector3(x1, 0.9, 0.1), _c("wood"))
+		_box(mb, Vector3(x1 * 0.5, 0.92, z), Vector3(x1, 0.06, 0.14), _c("wood_dark"))
 	# Front rail of each stall, with a gap at the head; feed trough and water bucket.
 	for k in 3:
 		var zc: float = z0 + 0.9 + float(k) * 1.8
-		_box(mb, Vector3(x1, 0.55, zc - 0.55), Vector3(0.1, 1.1, 0.7), _c("wood"))
-		_box(mb, Vector3(x1, 0.55, zc + 0.55), Vector3(0.1, 1.1, 0.7), _c("wood"))
+		_box(mb, Vector3(x1, 0.45, zc - 0.55), Vector3(0.1, 0.9, 0.7), _c("wood"))
+		_box(mb, Vector3(x1, 0.45, zc + 0.55), Vector3(0.1, 0.9, 0.7), _c("wood"))
 		_box(mb, Vector3(0.3, 0.45, zc - 0.4), Vector3(0.45, 0.3, 0.6), _c("wood_dark"))
 		_box(mb, Vector3(0.3, 0.6, zc - 0.4), Vector3(0.38, 0.04, 0.5), _c("hay"))
 		_box(mb, Vector3(0.35, 0.18, zc + 0.55), Vector3(0.3, 0.36, 0.3), _c("metal"))
@@ -254,48 +254,6 @@ func _process(delta: float) -> void:
 	if _timer <= 0.0:
 		_timer = 1.0
 		refresh()
-
-
-## A blocky horse (body, legs, neck and head on a pivot, tail on a pivot), facing +z.
-## Children: 0 body mesh, 1 head pivot, 2 tail pivot.
-func _make_horse(coat: Color, material: Material) -> Node3D:
-	var horse := Node3D.new()
-	var mane: Color = coat.darkened(0.45)
-	var hoof: Color = _c("hoof")
-	var body := MeshBuilder.new()
-	body.add_box(Vector3(0.0, 0.95, 0.0), Vector3(0.5, 0.5, 1.15), coat)
-	for p: Vector2 in [Vector2(-0.16, -0.42), Vector2(0.16, -0.42), Vector2(-0.16, 0.42), Vector2(0.16, 0.42)]:
-		body.add_box(Vector3(p.x, 0.38, p.y), Vector3(0.13, 0.66, 0.13), coat.darkened(0.08))
-		body.add_box(Vector3(p.x, 0.06, p.y), Vector3(0.15, 0.12, 0.15), hoof)
-	var body_node := MeshInstance3D.new()
-	body_node.mesh = body.build()
-	body_node.material_override = material
-	horse.add_child(body_node)
-	var head_pivot := Node3D.new()
-	head_pivot.position = Vector3(0.0, 1.1, 0.5)
-	horse.add_child(head_pivot)
-	var head := MeshBuilder.new()
-	head.add_box(Vector3(0.0, 0.25, 0.12), Vector3(0.24, 0.55, 0.26), coat)
-	head.add_box(Vector3(0.0, 0.5, 0.33), Vector3(0.22, 0.24, 0.5), coat)
-	head.add_box(Vector3(0.0, 0.46, 0.6), Vector3(0.2, 0.18, 0.08), coat.darkened(0.25))
-	head.add_box(Vector3(0.0, 0.42, 0.0), Vector3(0.08, 0.5, 0.18), mane)
-	for side: float in [-0.08, 0.08]:
-		head.add_box(Vector3(side, 0.68, 0.18), Vector3(0.06, 0.12, 0.05), coat)
-		head.add_box(Vector3(side * 1.45, 0.55, 0.36), Vector3(0.02, 0.05, 0.05), _c("eye"))
-	var head_node := MeshInstance3D.new()
-	head_node.mesh = head.build()
-	head_node.material_override = material
-	head_pivot.add_child(head_node)
-	var tail_pivot := Node3D.new()
-	tail_pivot.position = Vector3(0.0, 1.1, -0.58)
-	horse.add_child(tail_pivot)
-	var tail := MeshBuilder.new()
-	tail.add_box(Vector3(0.0, -0.3, -0.05), Vector3(0.1, 0.6, 0.1), mane)
-	var tail_node := MeshInstance3D.new()
-	tail_node.mesh = tail.build()
-	tail_node.material_override = material
-	tail_pivot.add_child(tail_node)
-	return horse
 
 
 ## True when the fisherman at (x, z) (world meters) hits a wall, a stall, a rail or a bale.

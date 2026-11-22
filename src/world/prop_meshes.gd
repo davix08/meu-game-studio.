@@ -187,11 +187,8 @@ static func lily(look: WorldLook) -> ArrayMesh:
 
 
 ## Where the chimney smoke starts, in world coordinates.
-static func chimney_top(look: WorldLook) -> Vector3:
-	var x1: float = float(WorldGrid.HOUSE.end.x)
-	var zc: float = float(WorldGrid.HOUSE.position.y) + float(WorldGrid.HOUSE.size.y) * 0.5
-	var ridge_y: float = look.num("house", "wall_height") + look.num("house", "roof_rise")
-	return Vector3(x1 - 1.0, ridge_y + 0.78, zc)
+static func chimney_top(_look: WorldLook) -> Vector3:
+	return VoxelModels.farmhouse_chimney(WorldGrid.HOUSE)
 
 
 

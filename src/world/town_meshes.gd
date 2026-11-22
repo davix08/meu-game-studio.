@@ -25,14 +25,16 @@ static func building(look: WorldLook, id: String, glass: MeshBuilder) -> ArrayMe
 	match id:
 		"prefeitura":
 			_townhall(mb, glass, look, r)
-		"armazem", "galpao":
+		"armazem":
 			_warehouse(mb, glass, look, r)
+		"galpao":
+			VoxelModels.barn(mb, glass, look, r)
 		"galinheiro":
 			_coop_lot(mb, glass, look, r)
 		"curral":
 			_corral(mb, look, r)
 		"plantacao":
-			_lot_fence(mb, look, r, "plantacao")
+			VoxelModels.field(mb, glass, look, r, TownPlan.lot_door(look, "plantacao"))
 		"silo":
 			_silo(mb, look, r)
 		"fabrica_racao":

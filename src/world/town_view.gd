@@ -41,7 +41,7 @@ func setup(look: WorldLook, town: TownData, state: GameState, grid: WorldGrid) -
 	_town = town
 	_state = state
 	_grid = grid
-	var material: StandardMaterial3D = MeshBuilder.make_material(look.num("props", "roughness"))
+	var material: Material = HouseInterior.pixel_material(look)
 	_glass_material = MeshBuilder.make_material(look.num("props", "roughness"))
 	_glass_material.emission_enabled = true
 	_glass_material.emission = look.color("estate", "glow_color")
@@ -131,7 +131,7 @@ func set_lights(on: bool) -> void:
 func add_lot(id: String) -> void:
 	if _built.has(id):
 		return
-	var material: StandardMaterial3D = MeshBuilder.make_material(_look.num("props", "roughness"))
+	var material: Material = HouseInterior.pixel_material(_look)
 	var glass := MeshBuilder.new()
 	_built[id] = _instance(TownMeshes.building(_look, id, glass), material)
 	_sites[id] = Node3D.new()
@@ -166,7 +166,7 @@ func _instance_into(mesh: ArrayMesh, material: Material) -> MeshInstance3D:
 
 func set_production(prod: Production) -> void:
 	_prod = prod
-	var material: StandardMaterial3D = MeshBuilder.make_material(_look.num("props", "roughness"))
+	var material: Material = HouseInterior.pixel_material(_look)
 	for id: String in TownPlan.lot_ids(_look):
 		var mark := _label("!", 140)
 		mark.modulate = _look.color("town", "ready_marker")
@@ -253,7 +253,7 @@ func _label(text: String, size: int) -> Label3D:
 	return label
 
 
-func _instance(mesh: ArrayMesh, material: StandardMaterial3D) -> MeshInstance3D:
+func _instance(mesh: ArrayMesh, material: Material) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	node.mesh = mesh
 	node.material_override = material

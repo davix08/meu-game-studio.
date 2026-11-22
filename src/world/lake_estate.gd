@@ -27,7 +27,7 @@ const SOLID_PREFIXES: Array[String] = ["shed", "tractor", "garden", "pen", "towe
 
 var _look: WorldLook
 var _terrain: LakeTerrain
-var _material: StandardMaterial3D
+var _material: Material
 var _glass_material: StandardMaterial3D
 var _glow_energy: float = 0.0
 var _hens: Array[Hen] = []
@@ -77,7 +77,7 @@ static func plan(grid: WorldGrid, look: WorldLook) -> void:
 func build(terrain: LakeTerrain, look: WorldLook) -> void:
 	_terrain = terrain
 	_look = look
-	_material = MeshBuilder.make_material(look.num("props", "roughness"))
+	_material = HouseInterior.pixel_material(look)
 	var glass := MeshBuilder.new()
 	_add_mesh(EstateMeshes.build_static(look, glass), _material)
 	_glass_material = MeshBuilder.make_material(look.num("props", "roughness"))
@@ -113,7 +113,7 @@ func _process(delta: float) -> void:
 		_update_hen(hen, delta)
 
 
-func _add_mesh(mesh: ArrayMesh, material: StandardMaterial3D) -> void:
+func _add_mesh(mesh: ArrayMesh, material: Material) -> void:
 	var node := MeshInstance3D.new()
 	node.mesh = mesh
 	node.material_override = material

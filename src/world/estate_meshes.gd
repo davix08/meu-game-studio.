@@ -275,92 +275,10 @@ static func _window(frame: MeshBuilder, glass: MeshBuilder, c: Vector3, east: bo
 # Models
 # ---------------------------------------------------------------------------------------------
 
+## The farmer's house: the voxel farmhouse (2026-11-22, VoxelModels.farmhouse) on the house
+## blocks, door at the grid door, plus the sign post (a solid block in the grid).
 static func _house(mb: MeshBuilder, look: WorldLook, glass: MeshBuilder) -> void:
-	var x0: float = float(WorldGrid.HOUSE.position.x)
-	var z0: float = float(WorldGrid.HOUSE.position.y)
-	var x1: float = float(WorldGrid.HOUSE.end.x)
-	var z1: float = float(WorldGrid.HOUSE.end.y)
-	var xm: float = (x0 + x1) * 0.5
-	var zc: float = (z0 + z1) * 0.5
-	var wall_h: float = look.num("house", "wall_height")
-	var rise: float = look.num("house", "roof_rise")
-	var c_wall: Color = look.color("colors", "wall")
-	var c_trim: Color = look.color("colors", "wall_trim")
-	var c_stone: Color = look.color("colors", "stone")
-	var c_door: Color = look.color("colors", "door")
-	var wood_a: Color = look.color("colors", "wood_a")
-	var wood_b: Color = look.color("colors", "wood_b")
-	var palette: Array[Color] = look.color_list(GROUP, "flowerbox_palette")
-	var leaf: Color = look.color("colors", "leaf_mid")
-	var no_flowers: Array[Color] = []
-
-	# Stone base, plaster walls, timber corner posts and top beams.
-	mb.add_box(Vector3(xm, 0.2, zc), Vector3(x1 - x0 + 0.1, 0.4, z1 - z0 + 0.1), c_stone)
-	mb.add_box(Vector3(xm, 0.4 + (wall_h - 0.4) * 0.5, zc), Vector3(x1 - x0, wall_h - 0.4, z1 - z0), c_wall)
-	for cx: float in [x0, x1]:
-		for cz: float in [z0, z1]:
-			mb.add_box(Vector3(cx, 0.4 + (wall_h - 0.4) * 0.5, cz), Vector3(0.16, wall_h - 0.4, 0.16), c_trim)
-	for cz: float in [z0, z1]:
-		mb.add_box(Vector3(xm, wall_h - 0.07, cz), Vector3(x1 - x0 + 0.16, 0.14, 0.16), c_trim)
-	for cx: float in [x0, x1]:
-		mb.add_box(Vector3(cx, wall_h - 0.07, zc), Vector3(0.16, 0.14, z1 - z0 + 0.16), c_trim)
-
-	# Exposed timber: vertical beams, a mid rail and diagonal braces on the south and east walls.
-	for bx: float in [x0 + 0.55, x1 - 0.35]:
-		_box(mb, bx - 0.05, 0.4, z1, bx + 0.05, wall_h - 0.14, z1 + 0.05, c_trim)
-	for bz: float in [z0 + 1.0, z0 + 3.0]:
-		_box(mb, x1, 0.4, bz - 0.05, x1 + 0.05, wall_h - 0.14, bz + 0.05, c_trim)
-	_box(mb, x0, 1.95, z1, x1, 2.02, z1 + 0.05, c_trim)
-	_box(mb, x1, 1.95, z0, x1 + 0.05, 2.02, z1, c_trim)
-	_beam(mb, Vector3(x0 + 0.1, 1.95, z1 + 0.03), Vector3(x0 + 0.55, 2.3, z1 + 0.03), 0.07, c_trim)
-	_beam(mb, Vector3(x1 - 0.1, 1.95, z1 + 0.03), Vector3(x1 - 0.35, 2.3, z1 + 0.03), 0.07, c_trim)
-
-	# Tiled gable roof, ridge along x.
-	_gable(mb, x0, x1, z0, z1, wall_h, rise, look.num("house", "roof_overhang"), look.integer("house", "roof_bands"), look.color("colors", "roof_a"), look.color("colors", "roof_b"), look.color("colors", "roof_ridge"), c_wall, c_trim)
-
-	# Chimney on the ridge: stone with darker courses and a dark cap.
-	var top: Vector3 = PropMeshes.chimney_top(look)
-	var ridge_y: float = wall_h + rise
-	mb.add_box(Vector3(top.x, (top.y - 0.08 + ridge_y - 0.6) * 0.5, top.z), Vector3(0.5, top.y - 0.08 - (ridge_y - 0.6), 0.5), c_stone)
-	for k in 3:
-		mb.add_box(Vector3(top.x, ridge_y + 0.1 + float(k) * 0.22, top.z), Vector3(0.54, 0.05, 0.54), c_stone.darkened(0.25))
-	mb.add_box(Vector3(top.x, top.y - 0.04, top.z), Vector3(0.62, 0.08, 0.62), look.color("colors", "roof_ridge"))
-
-	# Door with frame, knob, and the fish sign over it.
-	var door_x: float = float(WorldGrid.DOOR.x) + 0.5
-	mb.add_box(Vector3(door_x, 0.97, z1 + 0.05), Vector3(1.15, 1.9, 0.1), c_trim)
-	mb.add_box(Vector3(door_x, 0.9, z1 + 0.08), Vector3(0.95, 1.75, 0.1), c_door)
-	mb.add_box(Vector3(door_x + 0.3, 0.9, z1 + 0.16), Vector3(0.07, 0.07, 0.06), look.color("colors", "lantern_glass"))
-	mb.add_box(Vector3(door_x, 2.1, z1 + 0.06), Vector3(0.95, 0.32, 0.08), look.color("colors", "sign_board"))
-	mb.add_box(Vector3(door_x - 0.05, 2.1, z1 + 0.11), Vector3(0.5, 0.13, 0.03), look.color("colors", "sign_blue"))
-	mb.add_box(Vector3(door_x + 0.28, 2.1, z1 + 0.11), Vector3(0.12, 0.2, 0.03), look.color("colors", "sign_blue"))
-
-	# Windows: two on the south wall with flower boxes, one on the east wall.
-	var glass_color: Color = look.color("colors", "window")
-	for wx: float in [7.2, 9.8]:
-		_window(mb, glass, Vector3(wx, 1.35, z1), false, 0.7, 0.6, c_trim, glass_color, palette, leaf)
-	_window(mb, glass, Vector3(x1, 1.35, zc), true, 0.7, 0.6, c_trim, glass_color, no_flowers, leaf)
-
-	# Wooden porch in front of the door (low, so the fisherman walks over it): planks, posts,
-	# rails with balusters either side of the steps, and two steps.
-	var px0: float = x0 + 0.1
-	var px1: float = x1 - 1.1
-	for k in 5:
-		_box(mb, px0, 0.0, z1 + float(k) * 0.19, px1, 0.14, z1 + float(k + 1) * 0.19, wood_a if k % 2 == 0 else wood_b)
-	_box(mb, door_x - 0.5, 0.0, z1 + 0.95, door_x + 0.5, 0.08, z1 + 1.22, wood_b)
-	_box(mb, door_x - 0.5, 0.0, z1 + 1.22, door_x + 0.5, 0.04, z1 + 1.45, wood_a)
-	for post_x: float in [px0 + 0.05, door_x - 0.55, door_x + 0.55, px1 - 0.05]:
-		_box(mb, post_x - 0.05, 0.0, z1 + 0.82, post_x + 0.05, 1.0, z1 + 0.92, c_trim)
-	for seg: Vector2 in [Vector2(px0 + 0.05, door_x - 0.55), Vector2(door_x + 0.55, px1 - 0.05)]:
-		_box(mb, seg.x, 0.92, z1 + 0.84, seg.y, 1.0, z1 + 0.9, c_trim)
-		_box(mb, seg.x, 0.45, z1 + 0.85, seg.y, 0.5, z1 + 0.89, c_trim)
-		var count: int = int((seg.y - seg.x) / 0.3)
-		for k in count:
-			var bx: float = seg.x + (float(k) + 0.5) * (seg.y - seg.x) / float(count)
-			_box(mb, bx - 0.025, 0.14, z1 + 0.85, bx + 0.025, 0.92, z1 + 0.89, wood_b)
-	_box(mb, px0 + 0.0, 0.92, z1, px0 + 0.06, 1.0, z1 + 0.9, c_trim)
-	_box(mb, px1 - 0.06, 0.92, z1, px1, 1.0, z1 + 0.9, c_trim)
-
+	VoxelModels.farmhouse(mb, glass, look, WorldGrid.HOUSE, float(WorldGrid.DOOR.x) + 0.5)
 	# Sign post beside the door (a solid block in the grid).
 	mb.add_box(Vector3(WorldGrid.SIGN.x, 0.475, WorldGrid.SIGN.y), Vector3(0.09, 0.95, 0.09), look.color("colors", "wood_dark"))
 	mb.add_box(Vector3(WorldGrid.SIGN.x, 1.0, WorldGrid.SIGN.y), Vector3(0.62, 0.42, 0.06), look.color("colors", "sign_board"))
