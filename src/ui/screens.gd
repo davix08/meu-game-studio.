@@ -321,6 +321,8 @@ func open_settings() -> void:
 	body.add_child(UiKit.button(_look, "%s: %s" % [Texts.get_text("show_fps"), Texts.get_text("on") if s.show_fps else Texts.get_text("off")], _act5))
 	body.add_child(UiKit.button(_look, Texts.get_text("continue"), _close_clicked))
 	body.add_child(UiKit.button(_look, Texts.get_text("new_game"), _confirm_new.bind(open_settings)))
+	if AdminTools.available():
+		body.add_child(UiKit.button(_look, Texts.get_text("admin"), open_admin))
 
 
 func _confirm_new(back: Callable) -> void:
@@ -682,6 +684,101 @@ func open_warehouse() -> void:
 			var r: Town.Result = t.upgrade_storage()
 			_result(r == Town.Result.OK, Texts.get_text("bought") if r == Town.Result.OK else _town_text(r))
 		body.add_child(UiKit.button(_look, Texts.fmt("warehouse_upgrade", [int(_ctx.town_data.num("storage", "upgrade_step")), cost]), _act14, s.coins >= cost))
+
+
+# --- Owner test mode (2026-11-22) ---
+
+var _admin_open: bool = false
+
+
+## The admin mode: first creates the password, then asks for it, then shows the cheats. Only in
+## debug builds ([method AdminTools.available]).
+func open_admin() -> void:
+	if not AdminTools.available():
+		return
+	if _admin_open:
+		_admin_panel()
+		return
+	var body: VBoxContainer = _sheet(Texts.get_text("admin"), open_admin)
+	var first: bool = not AdminTools.has_password()
+	if first:
+		body.add_child(UiKit.label(Texts.get_text("admin_create"), 22))
+	var pass1: LineEdit = _password_field(Texts.get_text("admin_password"))
+	body.add_child(pass1)
+	var pass2: LineEdit = _password_field(Texts.get_text("admin_repeat"))
+	if first:
+		body.add_child(pass2)
+	var _go: Callable = func() -> void:
+		if first:
+			if pass1.text != pass2.text:
+				_result(false, Texts.get_text("admin_mismatch"))
+				return
+			if not AdminTools.create_password(pass1.text):
+				_result(false, Texts.get_text("admin_short"))
+				return
+			toast(Texts.get_text("admin_saved"))
+			_admin_open = true
+			_admin_panel()
+			return
+		if AdminTools.lock_left() > 0:
+			_result(false, Texts.fmt("admin_locked", [AdminTools.lock_left()]))
+			return
+		if AdminTools.check_password(pass1.text):
+			_admin_open = true
+			_sfx.play(&"level")
+			toast(Texts.get_text("admin_on"))
+			_admin_panel()
+		else:
+			_result(false, Texts.get_text("admin_wrong") if AdminTools.lock_left() == 0 else Texts.fmt("admin_locked", [AdminTools.lock_left()]))
+	body.add_child(UiKit.button(_look, Texts.get_text("admin_save") if first else Texts.get_text("admin_enter"), _go))
+
+
+func _password_field(placeholder: String) -> LineEdit:
+	var field := LineEdit.new()
+	field.secret = true
+	field.placeholder_text = placeholder
+	field.custom_minimum_size = Vector2(0.0, 60.0)
+	field.add_theme_font_size_override(&"font_size", 26)
+	field.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_PASSWORD
+	return field
+
+
+func _admin_panel() -> void:
+	var admin := AdminTools.new(_ctx)
+	var body: VBoxContainer = _sheet(Texts.get_text("admin"), _admin_panel)
+	var actions: Array = [
+		[Texts.fmt("admin_coins", [10000]), admin.give_coins.bind(10000)],
+		[Texts.fmt("admin_coins", [100000]), admin.give_coins.bind(100000)],
+		[Texts.fmt("admin_goods", [100]), admin.give_all_goods.bind(100)],
+		[Texts.get_text("admin_level"), admin.farm_level_up.bind(false)],
+		[Texts.get_text("admin_level_max"), admin.farm_level_up.bind(true)],
+		[Texts.get_text("admin_energy"), admin.fill_energy],
+		[Texts.get_text("admin_tools"), admin.give_tools],
+		[Texts.get_text("admin_timers"), admin.finish_timers],
+		[Texts.get_text("admin_storage"), admin.big_storage],
+	]
+	for a: Array in actions:
+		body.add_child(UiKit.button(_look, str(a[0]), _admin_do.bind(a[1])))
+	var _exit: Callable = func() -> void:
+		_admin_open = false
+		_click()
+		close()
+	body.add_child(UiKit.button(_look, Texts.get_text("admin_exit"), _exit))
+	var _forget: Callable = func() -> void:
+		AdminTools.forget_password()
+		_admin_open = false
+		_click()
+		close()
+	body.add_child(UiKit.button(_look, Texts.get_text("admin_forget"), _forget))
+
+
+func _admin_do(action: Callable) -> void:
+	if not _admin_open or not AdminTools.available():
+		return
+	action.call()
+	_sfx.play(&"coin")
+	toast(Texts.get_text("admin_done"))
+	_refresh()
 
 
 # --- Shed (galpão, farm map) ---

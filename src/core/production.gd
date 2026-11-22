@@ -628,6 +628,24 @@ func buy_tool(id: String) -> Result:
 	return Result.OK
 
 
+## Moves every running timer [param seconds] closer to its end (owner test mode).
+func skip_time(seconds: float) -> void:
+	for plot: Dictionary in _state.crop_plots:
+		plot["ready_at"] = float(plot["ready_at"]) - seconds
+	for id: Variant in _state.factories:
+		for q: Variant in (_state.factories[id] as Dictionary)["queue"]:
+			(q as Dictionary)["ready_at"] = float((q as Dictionary)["ready_at"]) - seconds
+	for a: Dictionary in _state.animals:
+		a["ready_at"] = float(a.get("ready_at", 0.0)) - seconds
+	for s: Variant in stall():
+		if not (s as Dictionary).is_empty():
+			(s as Dictionary)["sell_at"] = float((s as Dictionary)["sell_at"]) - seconds
+	for o: Dictionary in _state.order_board:
+		o["wait_until"] = float(o["wait_until"]) - seconds
+	tick()
+	_changed()
+
+
 # --- Every second ---
 
 ## Updates the stall sales, refills orders and lets the milking machine collect the milk.
