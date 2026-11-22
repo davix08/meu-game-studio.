@@ -689,6 +689,9 @@ func open_warehouse() -> void:
 # --- Owner test mode (2026-11-22) ---
 
 var _admin_open: bool = false
+## Kept as a member: the panel buttons call its methods, and a local one would be freed as soon as
+## the panel is built (the Callables do not keep it alive).
+var _admin_tools: AdminTools
 
 
 ## The admin mode: first creates the password, then asks for it, then shows the cheats. Only in
@@ -744,7 +747,9 @@ func _password_field(placeholder: String) -> LineEdit:
 
 
 func _admin_panel() -> void:
-	var admin := AdminTools.new(_ctx)
+	if _admin_tools == null:
+		_admin_tools = AdminTools.new(_ctx)
+	var admin: AdminTools = _admin_tools
 	var body: VBoxContainer = _sheet(Texts.get_text("admin"), _admin_panel)
 	var actions: Array = [
 		[Texts.fmt("admin_coins", [10000]), admin.give_coins.bind(10000)],
@@ -773,7 +778,7 @@ func _admin_panel() -> void:
 
 
 func _admin_do(action: Callable) -> void:
-	if not _admin_open or not AdminTools.available():
+	if not _admin_open or not AdminTools.available() or not action.is_valid():
 		return
 	action.call()
 	_sfx.play(&"coin")
