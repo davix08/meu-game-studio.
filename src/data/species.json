@@ -84,6 +84,54 @@
 		"time": "any"
 	},
 	{
+		"id": "lambari",
+		"name": "Lambari",
+		"r": 0,
+		"kg": [
+			0.02,
+			0.15
+		],
+		"v": 9,
+		"d": 0.06,
+		"time": "any"
+	},
+	{
+		"id": "bagre",
+		"name": "Bagre",
+		"r": 0,
+		"kg": [
+			0.5,
+			4
+		],
+		"v": 15,
+		"d": 0.15,
+		"time": "night"
+	},
+	{
+		"id": "corvina",
+		"name": "Corvina",
+		"r": 0,
+		"kg": [
+			0.4,
+			3
+		],
+		"v": 14,
+		"d": 0.14,
+		"time": "any"
+	},
+	{
+		"id": "anchova",
+		"name": "Anchova",
+		"r": 0,
+		"kg": [
+			0.2,
+			1.5
+		],
+		"v": 13,
+		"d": 0.17,
+		"time": "day"
+	},
+	{
 		"id": "tucunare",
 		"name": "Tucunaré",
 		"r": 1,
@@ -177,6 +225,66 @@
 		],
 		"v": 50,
 		"d": 0.24,
+		"time": "any"
+	},
+	{
+		"id": "traira",
+		"name": "Traíra",
+		"r": 1,
+		"kg": [
+			0.5,
+			4
+		],
+		"v": 44,
+		"d": 0.38,
+		"time": "night"
+	},
+	{
+		"id": "pacu",
+		"name": "Pacu",
+		"r": 1,
+		"kg": [
+			1,
+			8
+		],
+		"v": 40,
+		"d": 0.3,
+		"time": "day"
+	},
+	{
+		"id": "robalo",
+		"name": "Robalo",
+		"r": 1,
+		"kg": [
+			1,
+			10
+		],
+		"v": 52,
+		"d": 0.4,
+		"time": "any"
+	},
+	{
+		"id": "truta",
+		"name": "Truta-arco-íris",
+		"r": 1,
+		"kg": [
+			0.5,
+			5
+		],
+		"v": 48,
+		"d": 0.36,
+		"time": "day"
+	},
+	{
+		"id": "linguado",
+		"name": "Linguado",
+		"r": 1,
+		"kg": [
+			0.5,
+			4
+		],
+		"v": 46,
+		"d": 0.34,
 		"time": "any"
 	},
 	{
@@ -276,6 +384,66 @@
 		"time": "any"
 	},
 	{
+		"id": "piranha",
+		"name": "Piranha",
+		"r": 2,
+		"kg": [
+			0.3,
+			3
+		],
+		"v": 165,
+		"d": 0.56,
+		"time": "day"
+	},
+	{
+		"id": "garoupa",
+		"name": "Garoupa",
+		"r": 2,
+		"kg": [
+			3,
+			40
+		],
+		"v": 190,
+		"d": 0.6,
+		"time": "any"
+	},
+	{
+		"id": "voador",
+		"name": "Peixe-voador",
+		"r": 2,
+		"kg": [
+			0.2,
+			1
+		],
+		"v": 175,
+		"d": 0.58,
+		"time": "day"
+	},
+	{
+		"id": "enguia",
+		"name": "Enguia",
+		"r": 2,
+		"kg": [
+			0.5,
+			5
+		],
+		"v": 185,
+		"d": 0.62,
+		"time": "night"
+	},
+	{
+		"id": "peixegato",
+		"name": "Peixe-gato",
+		"r": 2,
+		"kg": [
+			2,
+			20
+		],
+		"v": 160,
+		"d": 0.54,
+		"time": "night"
+	},
+	{
 		"id": "espada",
 		"name": "Peixe-espada",
 		"r": 3,
@@ -360,6 +528,54 @@
 		"time": "night"
 	},
 	{
+		"id": "pintado",
+		"name": "Pintado",
+		"r": 3,
+		"kg": [
+			10,
+			80
+		],
+		"v": 560,
+		"d": 0.74,
+		"time": "any"
+	},
+	{
+		"id": "tambaqui",
+		"name": "Tambaqui",
+		"r": 3,
+		"kg": [
+			5,
+			40
+		],
+		"v": 520,
+		"d": 0.7,
+		"time": "day"
+	},
+	{
+		"id": "esturjao",
+		"name": "Esturjão",
+		"r": 3,
+		"kg": [
+			20,
+			200
+		],
+		"v": 680,
+		"d": 0.79,
+		"time": "any"
+	},
+	{
+		"id": "peixesapo",
+		"name": "Peixe-sapo",
+		"r": 3,
+		"kg": [
+			1,
+			10
+		],
+		"v": 600,
+		"d": 0.76,
+		"time": "night"
+	},
+	{
 		"id": "lua",
 		"name": "Peixe-lua",
 		"r": 4,
@@ -418,5 +634,29 @@
 		"v": 3500,
 		"d": 0.9,
 		"time": "any"
+	},
+	{
+		"id": "pirarucu",
+		"name": "Pirarucu",
+		"r": 4,
+		"kg": [
+			50,
+			200
+		],
+		"v": 3300,
+		"d": 0.9,
+		"time": "day"
+	},
+	{
+		"id": "dragao",
+		"name": "Peixe-dragão",
+		"r": 4,
+		"kg": [
+			1,
+			5
+		],
+		"v": 4200,
+		"d": 0.96,
+		"time": "night"
 	}
 ]

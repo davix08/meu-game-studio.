@@ -64,6 +64,12 @@ var _barn: BarnInterior
 var _barn_spots: Array[Spot] = []
 ## The horse being ridden (a node on the farm), or null.
 var _ride_horse: Node3D
+## Chopping (2026-11-22): hits so far per tree/rock, the one being hit, the progress label.
+var _hits: Dictionary = {}
+var _hit_target: int = -1
+var _hit_rock: bool = false
+var _hit_label: Label3D
+var _hit_label_left: float = 0.0
 ## Waiting for the horse to finish rearing before climbing on.
 var _mount_wait: bool = false
 ## Sound timers (2026-11-22).
@@ -274,6 +280,7 @@ func _build_interface() -> void:
 
 
 func _connect_events() -> void:
+	_fisherman.tool_hit.connect(_on_tool_hit)
 	_fisherman.dismounted.connect(_on_dismounted)
 	_state.fish_caught.connect(_on_fish_caught)
 	_state.town_changed.connect(_mark_save)
@@ -614,6 +621,9 @@ func _process(delta: float) -> void:
 	# yawed by +_input_yaw around Y, so rotate the input by -_input_yaw (Vector2.rotated).
 	_fisherman.step(delta, dir.rotated(-_input_yaw), run)
 	_update_sounds(delta, dir != Vector2.ZERO)
+	if _hit_label != null and _hit_label_left > 0.0:
+		_hit_label_left -= delta
+		_hit_label.visible = _hit_label_left > 0.0
 	if _fisherman.swimming and dir != Vector2.ZERO:
 		_state.energy = maxf(0.0, _state.energy - _look.num("player", "swim_energy_per_second") * delta)
 	_actions.set_resting(_state.resting)
@@ -1115,21 +1125,107 @@ func _label_cut(index: int, rock: bool) -> String:
 	return Texts.get_text("act_rock" if rock else "act_chop")
 
 
-## Cuts the tree or breaks the rock of placement [param index].
+## One swing of the axe at a tree or of the pickaxe at a rock (2026-11-22). It takes several
+## hits (farm_life.chop_hits / rock_hits): each one shakes it, throws chips and shows the
+## progress; the last one gives the wood or stone ([method Farm.gather]) and the tree falls or
+## the rock crumbles. Checks the tool, the energy and the barn room before swinging.
 func _cut(index: int, rock: bool) -> void:
+	if _fisherman.swinging() or _ride_horse != null:
+		return
+	var tool: String = "picareta" if rock else "machado"
+	var why: String = ""
+	if not _state.tools.has(tool):
+		why = Texts.get_text("need_pickaxe" if rock else "need_axe")
+	elif _state.energy < _town_data.num("farm_life", "rock_energy" if rock else "chop_energy"):
+		why = Texts.get_text("no_energy")
+	elif _production.room_for("pedra" if rock else "madeira") < int(_town_data.num("farm_life", "stone_yield" if rock else "wood_yield")):
+		why = Texts.get_text("barn_full")
+	if why != "":
+		_sfx.play(&"error")
+		_screens.toast(why)
+		return
+	var p: WorldGrid.Placement = _world.grid.placements[index]
+	_fisherman.face_toward(Vector3(p.pos.x, 0.0, p.pos.y))
+	_hit_target = index
+	_hit_rock = rock
+	_fisherman.swing_tool(tool)
+
+
+## The swing reached the tree or rock: shake, chips, sound, count; the last hit cuts it.
+func _on_tool_hit() -> void:
+	var index: int = _hit_target
+	if index < 0:
+		return
+	var rock: bool = _hit_rock
+	var p: WorldGrid.Placement = _world.grid.placements[index]
+	var at := Vector3(p.pos.x, _world.terrain.ground_height_at(p.pos.x, p.pos.y), p.pos.y)
+	var from: Vector2 = (p.pos - _fisherman.ground_pos).normalized()
+	var axis := Vector3(from.y, 0.0, -from.x)
+	_sfx.play_at(&"picareta" if rock else &"machado", at + Vector3(0.0, 0.8, 0.0), 3.0)
+	_chips(at + Vector3(0.0, 0.5 if rock else 0.9, 0.0) - Vector3(from.x, 0.0, from.y) * 0.3, rock)
+	_world.props.shake(index, axis)
+	var need: int = int(_town_data.num("farm_life", "rock_hits" if rock else "chop_hits"))
+	var done: int = int(_hits.get(index, 0)) + 1
+	_hits[index] = done
+	_show_hits(at + Vector3(0.0, 1.6 if rock else 3.0, 0.0), done, need)
+	if done < need:
+		return
+	_hits.erase(index)
+	_hit_target = -1
 	var r: Farm.Result = _farm.gather(index, rock)
 	if r == Farm.Result.OK:
-		_set_cut(index, true)
+		_world.grid.set_solid(p.cell.x, p.cell.y, false)
+		_world.props.fall(index, axis, rock)
+		_sfx.play_at(&"pedra_quebra" if rock else &"arvore_cai", at + Vector3(0.0, 1.0, 0.0), 3.0)
 		_sfx.play(&"coin")
 		_screens.toast(Texts.fmt("broke" if rock else "chopped", [int(_town_data.num("farm_life", "stone_yield" if rock else "wood_yield"))]))
 	else:
 		_sfx.play(&"error")
-		var why: String = Texts.get_text("no_energy")
-		if r == Farm.Result.BAG_FULL:
-			why = Texts.get_text("barn_full")
-		elif r == Farm.Result.MISSING:
-			why = Texts.get_text("need_pickaxe" if rock else "need_axe")
-		_screens.toast(why)
+		_screens.toast(Texts.get_text("barn_full") if r == Farm.Result.BAG_FULL else Texts.get_text("no_energy"))
+
+
+## A burst of wood chips or stone bits at [param at].
+func _chips(at: Vector3, rock: bool) -> void:
+	var p := CPUParticles3D.new()
+	p.one_shot = true
+	p.emitting = false
+	p.amount = 14
+	p.lifetime = 0.6
+	p.explosiveness = 0.95
+	p.direction = Vector3(0.0, 1.0, 0.0)
+	p.spread = 70.0
+	p.initial_velocity_min = 1.5
+	p.initial_velocity_max = 3.0
+	p.gravity = Vector3(0.0, -9.0, 0.0)
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.2
+	var cube := BoxMesh.new()
+	cube.size = Vector3.ONE * 0.07
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = _look.color("farm", "chip_rock" if rock else "chip_wood")
+	cube.material = mat
+	p.mesh = cube
+	p.position = at
+	add_child(p)
+	p.emitting = true
+	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
+
+
+## Shows "■■■□□" over the tree or rock for a moment.
+func _show_hits(at: Vector3, done: int, need: int) -> void:
+	if _hit_label == null:
+		_hit_label = Label3D.new()
+		_hit_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_hit_label.font_size = 48
+		_hit_label.outline_size = 12
+		_hit_label.pixel_size = 0.008
+		_hit_label.no_depth_test = true
+		add_child(_hit_label)
+	_hit_label.text = "■".repeat(done) + "□".repeat(maxi(0, need - done))
+	_hit_label.modulate = _look.color("farm", "hits_done") if done >= need else Color.WHITE
+	_hit_label.global_position = at
+	_hit_label.visible = true
+	_hit_label_left = 2.0
 
 
 ## Opens the trees of an expansion area that was just bought (or loaded as bought).

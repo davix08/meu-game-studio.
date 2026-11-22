@@ -942,6 +942,8 @@
 		],
 		"truck_speed": 5.0,
 		"truck_unload_seconds": 2.5,
-		"truck_delay_seconds": 3.0
+		"truck_delay_seconds": 3.0,
+		"chop_hits": 5,
+		"rock_hits": 6
 	}
 }

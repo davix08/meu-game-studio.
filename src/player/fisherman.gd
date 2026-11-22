@@ -111,6 +111,14 @@ var _body_scale: float = 1.0
 ## Riding (2026-11-22): the horse node walks under him; [member _ride_k] goes 0 (on the ground,
 ## beside the horse) to 1 (in the saddle) while mounting, and back while getting off.
 signal dismounted(horse: Node3D)
+## A swing of the axe or pickaxe reached the tree or rock (2026-11-22).
+signal tool_hit
+var _tools: Dictionary = {}
+var _tool_kind: String = ""
+var _swing_t: float = -1.0
+var _swing_secs: float = 0.55
+var _tool_hold: float = 0.0
+var _hit_sent: bool = false
 var _horse: Node3D
 var _ride_k: float = 0.0
 var _ride_dir: int = 0
@@ -182,7 +190,7 @@ func step(delta: float, dir: Vector2, run: bool) -> void:
 		return
 	var dt: float = minf(delta, _max_step)
 	var before: Vector2 = ground_pos
-	var wants_move: bool = dir.length_squared() > 0.0001 and _ride_dir == 0
+	var wants_move: bool = dir.length_squared() > 0.0001 and _ride_dir == 0 and _swing_t < 0.0
 	if wants_move:
 		var speed: float = (_run_speed if run else _walk_speed) * (_swim_speed if swimming else 1.0) * (float(_ride_cfg.get("speed_factor", 1.0)) if riding() else 1.0)
 		var move: Vector2 = dir.normalized() * speed * dt
@@ -203,8 +211,9 @@ func step(delta: float, dir: Vector2, run: bool) -> void:
 		return
 	if swimming:
 		_swim_pose(delta, moved)
+	_tool_pose(delta)
 	if _rod_holder != null:
-		_rod_holder.visible = _rod_visible and not swimming
+		_rod_holder.visible = _rod_visible and not swimming and _tool_kind == ""
 	var ground: float = height_fn.call(ground_pos.x, ground_pos.y) if height_fn.is_valid() else _terrain.ground_height_at(ground_pos.x, ground_pos.y)
 	if swimming:
 		ground = _water_level - _swim_depth + sin(_idle_time * 2.4) * 0.03
@@ -219,6 +228,87 @@ func _free(x: float, z: float) -> bool:
 		# A horse does not swim: water blocks it.
 		return _grid.box_free(x, z, _half_width * 1.6, _half_depth * 2.0)
 	return _grid.box_free_swim(x, z, _half_width, _half_depth)
+
+
+## Swings the axe ("machado") or the pickaxe ("picareta") once: the tool appears in the hands,
+## goes up over the head and comes down; [signal tool_hit] fires at the moment of the hit.
+## Ignored while a swing is still going.
+func swing_tool(kind: String) -> void:
+	if _swing_t >= 0.0:
+		return
+	_show_tool(kind)
+	_swing_t = 0.0
+	_hit_sent = false
+
+
+## True while a swing is going.
+func swinging() -> bool:
+	return _swing_t >= 0.0
+
+
+func _show_tool(kind: String) -> void:
+	if not _tools.has(kind):
+		_tools[kind] = _build_tool(kind)
+	for k: Variant in _tools:
+		(_tools[k] as Node3D).visible = str(k) == kind
+	_tool_kind = kind
+	_tool_hold = 1.6
+
+
+## Arms during a swing: both hands on the handle, up over the head (wind-up), then down hard
+## with the body bending; after it the tool stays in the hand a moment, then is put away.
+func _tool_pose(delta: float) -> void:
+	if _tool_kind == "":
+		return
+	if _swing_t >= 0.0:
+		_swing_t += delta
+		var k: float = clampf(_swing_t / _swing_secs, 0.0, 1.0)
+		var arm: float
+		if k < 0.55:
+			arm = lerpf(-0.3, -2.9, smoothstep(0.0, 1.0, k / 0.55))
+		else:
+			arm = lerpf(-2.9, -0.55, smoothstep(0.0, 1.0, (k - 0.55) / 0.2))
+		if k >= 0.72 and not _hit_sent:
+			_hit_sent = true
+			tool_hit.emit()
+		_arm_right.rotation = Vector3(arm, 0.0, 0.12)
+		_arm_left.rotation = Vector3(arm + 0.1, 0.0, -0.45)
+		_torso.rotation.x = 0.25 if k > 0.6 else -0.1
+		if k >= 1.0:
+			_swing_t = -1.0
+		return
+	_tool_hold -= delta
+	_arm_right.rotation.x = lerpf(_arm_right.rotation.x, -0.35, 1.0 - exp(-10.0 * delta))
+	if _tool_hold <= 0.0:
+		(_tools[_tool_kind] as Node3D).visible = false
+		_tool_kind = ""
+
+
+## The axe or the pickaxe, held in the right hand (handle along the forearm, head at the end).
+func _build_tool(kind: String) -> Node3D:
+	var holder := Node3D.new()
+	holder.position = _hand_offset if _hand_offset != Vector3.ZERO else Vector3(0.0, -0.4, 0.0)
+	holder.rotation.x = PI * 0.5
+	_arm_right.add_child(holder)
+	var mb := MeshBuilder.new()
+	var wood := Color("#8a5a32")
+	var metal := Color("#b8bcc4")
+	mb.add_box(Vector3(0.0, 0.2, 0.0), Vector3(0.045, 0.62, 0.045), wood)
+	if kind == "picareta":
+		mb.add_box(Vector3(0.0, 0.5, 0.0), Vector3(0.06, 0.07, 0.2), metal.darkened(0.2))
+		mb.add_box(Vector3(0.0, 0.48, 0.17), Vector3(0.04, 0.05, 0.16), metal)
+		mb.add_box(Vector3(0.0, 0.45, 0.28), Vector3(0.03, 0.04, 0.07), metal.lightened(0.2))
+		mb.add_box(Vector3(0.0, 0.48, -0.17), Vector3(0.04, 0.05, 0.16), metal)
+		mb.add_box(Vector3(0.0, 0.45, -0.28), Vector3(0.03, 0.04, 0.07), metal.lightened(0.2))
+	else:
+		mb.add_box(Vector3(0.0, 0.46, 0.07), Vector3(0.03, 0.14, 0.12), metal.darkened(0.15))
+		mb.add_box(Vector3(0.0, 0.46, 0.16), Vector3(0.025, 0.22, 0.08), metal)
+		mb.add_box(Vector3(0.0, 0.46, 0.205), Vector3(0.02, 0.24, 0.02), metal.lightened(0.35))
+	var node := MeshInstance3D.new()
+	node.mesh = mb.build()
+	node.material_override = MeshBuilder.make_material(0.6)
+	holder.add_child(node)
+	return holder
 
 
 ## True while in the saddle (not while getting on or off).

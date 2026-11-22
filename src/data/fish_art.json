@@ -141,6 +141,86 @@
 		"remo": {
 			"sprite": 35,
 			"tint": "#ffffff"
+		},
+		"lambari": {
+			"sprite": 49,
+			"tint": "#ffffff"
+		},
+		"bagre": {
+			"sprite": 50,
+			"tint": "#ffffff"
+		},
+		"corvina": {
+			"sprite": 51,
+			"tint": "#ffffff"
+		},
+		"anchova": {
+			"sprite": 52,
+			"tint": "#ffffff"
+		},
+		"traira": {
+			"sprite": 53,
+			"tint": "#ffffff"
+		},
+		"pacu": {
+			"sprite": 54,
+			"tint": "#ffffff"
+		},
+		"robalo": {
+			"sprite": 55,
+			"tint": "#ffffff"
+		},
+		"truta": {
+			"sprite": 56,
+			"tint": "#ffffff"
+		},
+		"linguado": {
+			"sprite": 57,
+			"tint": "#ffffff"
+		},
+		"piranha": {
+			"sprite": 58,
+			"tint": "#ffffff"
+		},
+		"garoupa": {
+			"sprite": 59,
+			"tint": "#ffffff"
+		},
+		"voador": {
+			"sprite": 60,
+			"tint": "#ffffff"
+		},
+		"enguia": {
+			"sprite": 61,
+			"tint": "#ffffff"
+		},
+		"peixegato": {
+			"sprite": 62,
+			"tint": "#ffffff"
+		},
+		"pintado": {
+			"sprite": 63,
+			"tint": "#ffffff"
+		},
+		"tambaqui": {
+			"sprite": 64,
+			"tint": "#ffffff"
+		},
+		"esturjao": {
+			"sprite": 65,
+			"tint": "#ffffff"
+		},
+		"peixesapo": {
+			"sprite": 66,
+			"tint": "#ffffff"
+		},
+		"pirarucu": {
+			"sprite": 67,
+			"tint": "#ffffff"
+		},
+		"dragao": {
+			"sprite": 68,
+			"tint": "#ffffff"
 		}
 	}
 }

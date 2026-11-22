@@ -1367,7 +1367,11 @@
 			"splash": "res://assets/audio/splash.wav",
 			"nado": "res://assets/audio/nado.wav",
 			"arremesso": "res://assets/audio/arremesso.wav",
-			"molinete": "res://assets/audio/molinete.wav"
+			"molinete": "res://assets/audio/molinete.wav",
+			"machado": "res://assets/audio/machado.wav",
+			"picareta": "res://assets/audio/picareta.wav",
+			"arvore_cai": "res://assets/audio/arvore_cai.wav",
+			"pedra_quebra": "res://assets/audio/pedra_quebra.wav"
 		},
 		"farm_ambience_db": -14.0,
 		"lake_ambience_db": -10.0,
@@ -1690,7 +1694,10 @@
 		"truck_start": [
 			59.5,
 			20.5
-		]
+		],
+		"chip_wood": "#c8904a",
+		"chip_rock": "#9a9a9a",
+		"hits_done": "#8aff7a"
 	},
 	"truck": {
 		"body": "#6f9aa8",

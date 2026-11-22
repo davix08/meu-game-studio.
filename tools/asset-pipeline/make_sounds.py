@@ -97,5 +97,23 @@ tt = t(0.6); clicks = np.zeros(len(tt))
 for k in range(12):
     i = int(k * 0.05 * R); clicks[i:i + 60] += bandpass(rng.standard_normal(60), 2000, 6000) * np.exp(-np.arange(60) / 12)
 save("molinete", clicks)
+# Axe chop: a dull wooden thunk.
+tt = t(0.28); ch = lowpass(rng.standard_normal(len(tt)), 900) * np.exp(-tt * 22) + osc(150 + 0 * tt, "sin") * np.exp(-tt * 30) * 0.8 + bandpass(rng.standard_normal(len(tt)), 1500, 4000) * np.exp(-tt * 60) * 0.4
+save("machado", ch)
+# Pickaxe on stone: a bright clink with ringing partials.
+tt = t(0.45); cl = sum(osc(f + 0 * tt, "sin") * np.exp(-tt * d) * g for f, d, g in ((2350, 14, 1.0), (3710, 18, 0.6), (5230, 25, 0.35), (1180, 10, 0.3)))
+cl += bandpass(rng.standard_normal(len(tt)), 2000, 7000) * np.exp(-tt * 80) * 0.8
+save("picareta", cl)
+# Tree falls: crack, then leaves rustle and a thud.
+tt = t(0.25); crack = bandpass(rng.standard_normal(len(tt)), 600, 5000) * np.exp(-tt * 8) * (1 + (rng.random(len(tt)) > 0.97) * 3)
+tt2 = t(0.7); rustle = bandpass(rng.standard_normal(len(tt2)), 1500, 6000) * np.sin(np.pi * tt2 / 0.7) * 0.5
+tt3 = t(0.35); thud = lowpass(rng.standard_normal(len(tt3)), 200) * np.exp(-tt3 * 12) * 2 + osc(55 + 0 * tt3, "sin") * np.exp(-tt3 * 10)
+save("arvore_cai", np.concatenate([crack, rustle, thud]))
+# Rock breaks: crunchy burst and falling pebbles.
+tt = t(0.5); crunch = bandpass(rng.standard_normal(len(tt)), 300, 4000) * np.exp(-tt * 10)
+peb = np.zeros(int(R * 0.5))
+for k in range(9):
+    i = int(rng.uniform(0.02, 0.45) * R); peb[i:i + 300] += bandpass(rng.standard_normal(300), 2500, 7000) * np.exp(-np.arange(300) / 60) * 0.5
+save("pedra_quebra", np.concatenate([crunch, peb]))
 # Footstep in the house (wood) — unused by default, kept for the house floor.
 print("ok")

@@ -22,6 +22,8 @@ var _material: StandardMaterial3D
 var _where: Dictionary = {}
 var _ids: Array[int] = []
 var _outline: ShaderMaterial
+## Placement index -> [seconds, mode ("shake" or "fall"), axis] while a tree or rock moves.
+var _moves: Dictionary = {}
 ## Painted material with no outline (thin blades would turn into dark blobs).
 var _shore_grass: ShaderMaterial
 ## Decoration (logs, stumps) -> [MultiMesh, instance index, Transform3D, cell], hidden under
@@ -311,6 +313,55 @@ func set_cut(index: int, cut: bool) -> void:
 	var multi: MultiMesh = entry[0]
 	var base: Transform3D = entry[2]
 	multi.set_instance_transform(int(entry[1]), Transform3D(base.basis.scaled(Vector3.ONE * 0.001), base.origin) if cut else base)
+
+
+## Shakes the tree or rock [param index] once (a hit of the axe or pickaxe).
+func shake(index: int, axis: Vector3) -> void:
+	if _where.has(index):
+		_moves[index] = [0.0, "shake", axis]
+
+
+## Plays the end of a cut: a tree tips over away from [param axis] side and is gone, a rock
+## crumbles; then the placement stays hidden like [method set_cut].
+func fall(index: int, axis: Vector3, rock: bool) -> void:
+	if _where.has(index):
+		_moves[index] = [0.0, "crumble" if rock else "fall", axis]
+
+
+func _process(delta: float) -> void:
+	if _moves.is_empty():
+		return
+	for index: Variant in _moves.keys():
+		var m: Array = _moves[index]
+		m[0] = float(m[0]) + delta
+		var t: float = m[0]
+		var entry: Array = _where[index]
+		var multi: MultiMesh = entry[0]
+		var base: Transform3D = entry[2]
+		var axis: Vector3 = m[2]
+		var xform: Transform3D = base
+		match str(m[1]):
+			"shake":
+				var a: float = sin(t * 45.0) * 0.08 * maxf(0.0, 1.0 - t / 0.35)
+				xform = Transform3D(Basis(axis, a) * base.basis, base.origin)
+				if t >= 0.35:
+					_moves.erase(index)
+					xform = base
+			"fall":
+				var k: float = minf(t / 0.8, 1.0)
+				xform = Transform3D(Basis(axis, k * k * PI * 0.48) * base.basis, base.origin)
+				if t >= 1.1:
+					_moves.erase(index)
+					set_cut(int(index), true)
+					continue
+			"crumble":
+				var k2: float = maxf(0.001, 1.0 - t / 0.3)
+				xform = Transform3D(base.basis.scaled(Vector3(1.0 + (1.0 - k2) * 0.3, k2, 1.0 + (1.0 - k2) * 0.3)), base.origin)
+				if t >= 0.3:
+					_moves.erase(index)
+					set_cut(int(index), true)
+					continue
+		multi.set_instance_transform(int(entry[1]), xform)
 
 
 ## Indices of the placements that can be cut or broken.
