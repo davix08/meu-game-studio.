@@ -64,6 +64,15 @@ var _barn: BarnInterior
 var _barn_spots: Array[Spot] = []
 ## The horse being ridden (a node on the farm), or null.
 var _ride_horse: Node3D
+## Waiting for the horse to finish rearing before climbing on.
+var _mount_wait: bool = false
+## Sound timers (2026-11-22).
+var _ambience_timer: float = 0.0
+var _hoof_timer: float = 0.0
+var _swim_timer: float = 0.0
+var _reel_timer: float = 0.0
+var _splash_soon: float = -1.0
+var _splash_at: Vector3 = Vector3.ZERO
 ## Sleep steps: 0 awake, 1 lying down, 2 asleep (the night passes), then he gets up.
 var _bed_phase: int = 0
 var _bed_timer: float = 0.0
@@ -168,6 +177,7 @@ func _ready() -> void:
 	_barn.build(_look, _production)
 
 	_build_interface()
+	_wire_sounds()
 	_build_spots()
 	_connect_events()
 	_run_threshold = _look.num("joystick", "run_threshold")
@@ -411,7 +421,7 @@ func _label_sofa() -> String:
 func _enter_house() -> void:
 	if not _machine.is_idle():
 		return
-	_sfx.play(&"click")
+	_sfx.play(&"porta")
 	_state.map = GameState.MAP_INDOOR
 	_apply_space()
 	_fisherman.teleport(_house.entry())
@@ -419,7 +429,7 @@ func _enter_house() -> void:
 
 
 func _exit_house() -> void:
-	_sfx.play(&"click")
+	_sfx.play(&"porta")
 	_state.resting = false
 	_state.map = GameState.MAP_OUTDOOR
 	_apply_space()
@@ -430,7 +440,7 @@ func _exit_house() -> void:
 func _enter_barn() -> void:
 	if not _machine.is_idle():
 		return
-	_sfx.play(&"click")
+	_sfx.play(&"porta")
 	_state.resting = false
 	_state.map = GameState.MAP_BARN
 	_apply_space()
@@ -439,7 +449,7 @@ func _enter_barn() -> void:
 
 
 func _exit_barn() -> void:
-	_sfx.play(&"click")
+	_sfx.play(&"porta")
 	_state.map = GameState.MAP_OUTDOOR
 	_apply_space()
 	_fisherman.teleport(TownPlan.lot_door(_look, "galpao") + Vector2(0.0, 0.8))
@@ -594,7 +604,7 @@ func _process(delta: float) -> void:
 		run = Input.is_physical_key_pressed(KEY_SHIFT)
 	var phase: FishingMachine.Phase = _machine.phase
 	_update_bed(delta)
-	if not _started or _screens.is_open() or _bed_phase != 0:
+	if not _started or _screens.is_open() or _bed_phase != 0 or _mount_wait:
 		dir = Vector2.ZERO
 	if phase == FishingMachine.Phase.BITE or phase == FishingMachine.Phase.FIGHT or phase == FishingMachine.Phase.CAUGHT or _fishing_hud.card_open:
 		dir = Vector2.ZERO
@@ -603,6 +613,7 @@ func _process(delta: float) -> void:
 	# Screen-space input (up = -y, right = +x) to world ground direction (x, z): the camera is
 	# yawed by +_input_yaw around Y, so rotate the input by -_input_yaw (Vector2.rotated).
 	_fisherman.step(delta, dir.rotated(-_input_yaw), run)
+	_update_sounds(delta, dir != Vector2.ZERO)
 	if _fisherman.swimming and dir != Vector2.ZERO:
 		_state.energy = maxf(0.0, _state.energy - _look.num("player", "swim_energy_per_second") * delta)
 	_actions.set_resting(_state.resting)
@@ -768,6 +779,9 @@ func _try_cast(world_point: Vector3) -> void:
 	if result == FishingMachine.CastResult.CAST:
 		_fisherman.face_toward(world_point)
 		_sfx.play(&"cast")
+		_sfx.play(&"arremesso")
+		_splash_soon = 0.55
+		_splash_at = world_point
 	else:
 		_show_cast_result(result)
 
@@ -861,7 +875,7 @@ func _build_spots() -> void:
 		var spot := Spot.new()
 		spot.pos = _barn.spot(str(entry[0]))
 		spot.radius = float(entry[3])
-		spot.label = _label_upstairs if entry[0] == "chests" else _label_fixed.bind(str(entry[1]))
+		spot.label = _label_upstairs if entry[0] == "chests" else (_label_ride if entry[0] == "ride" else _label_fixed.bind(str(entry[1])))
 		spot.action = entry[2]
 		_barn_spots.append(spot)
 	if TownPlan.has_lot(_look, "quadro"):
@@ -904,26 +918,117 @@ func _use_barn_door() -> void:
 ## Takes the first horse out of the barn (2026-11-22): the farmer comes out at the door and
 ## climbs on; the horse waits outside the barn door.
 func _take_horse() -> void:
-	if _ride_horse != null:
+	if _ride_horse != null or _mount_wait:
+		return
+	if _horses_owned() == 0:
+		_sfx.play(&"error")
+		_screens.toast(Texts.get_text("need_horse"))
 		return
 	_sfx.play(&"click")
 	_exit_barn()
-	_fisherman.teleport(TownPlan.lot_door(_look, "galpao") + Vector2(0.0, 1.6))
+	var at: Vector2 = TownPlan.lot_door(_look, "galpao") + Vector2(0.0, 1.6)
+	_fisherman.teleport(at)
 	_fisherman.rotation.y = 0.0
 	_ride_horse = AnimalModels.horse_node(_look, _look.color("barn", "horse_0"), HouseInterior.pixel_material(_look))
 	add_child(_ride_horse)
+	_barn.set_horses(_horses_owned(), true)
+	# The horse rears and neighs before the farmer climbs on.
+	_ride_horse.global_position = Vector3(at.x, _world.terrain.ground_height_at(at.x, at.y), at.y)
+	_ride_horse.rotation.y = 0.0
+	_sfx.play_at(&"cavalo", _ride_horse.global_position + Vector3(0.0, 1.2, 0.0), 3.0)
+	if _ride_horse is AnimalRig:
+		_mount_wait = true
+		(_ride_horse as AnimalRig).play_rear()
+		await get_tree().create_timer(float((_look.raw("animal_rigs", "anim") as Dictionary)["rear_seconds"])).timeout
+		_mount_wait = false
+		if _ride_horse == null:
+			return
 	var cfg: Dictionary = {}
 	for key: String in ["saddle_height", "seat_forward", "side_offset", "mount_seconds", "speed_factor", "gallop_freq"]:
 		cfg[key] = _look.num("ride", key)
 	_fisherman.mount(_ride_horse, cfg)
-	_barn.set_horse_out(true)
+
+
+## Horses bought at the auction (they live in the barn stalls).
+func _horses_owned() -> int:
+	var n: int = 0
+	for a: Dictionary in _state.animals:
+		n += 1 if str(a["kind"]) == "cavalo" else 0
+	return n
+
+
+func _label_ride() -> String:
+	return Texts.get_text("act_ride") if _horses_owned() > 0 else Texts.get_text("act_no_horse")
+
+
+## Gives every system its sounds and puts the "ears" on the farmer (2026-11-22).
+func _wire_sounds() -> void:
+	_ranch.sfx = _sfx
+	_barn.sfx = _sfx
+	_truck.sfx = _sfx
+	var ears := AudioListener3D.new()
+	ears.position = Vector3(0.0, 1.2, 0.0)
+	_fisherman.add_child(ears)
+	ears.make_current()
+	_state.town_changed.connect(func() -> void: _barn.set_horses(_horses_owned(), _ride_horse != null))
+	_barn.set_horses(_horses_owned(), false)
+
+
+## Ambience (farm birds and wind; the lake when near water), hooves, swimming strokes,
+## the bobber splash and the reel during a fight.
+func _update_sounds(delta: float, moving: bool) -> void:
+	var p: Vector3 = _fisherman.global_position
+	_ambience_timer -= delta
+	if _ambience_timer <= 0.0:
+		_ambience_timer = 0.5
+		var outside: bool = _state.map == GameState.MAP_OUTDOOR
+		_sfx.set_loop(&"fazenda", _look.num("sfx", "farm_ambience_db") if outside else _look.num("sfx", "indoor_ambience_db"))
+		var lake_db: float = -80.0
+		if outside:
+			var near: float = _water_distance(_fisherman.ground_pos, int(_look.num("sfx", "lake_hear_distance")))
+			if near >= 0.0:
+				lake_db = lerpf(_look.num("sfx", "lake_ambience_db"), -40.0, near / _look.num("sfx", "lake_hear_distance"))
+		_sfx.set_loop(&"lago", lake_db)
+	if _fisherman.riding() and moving:
+		_hoof_timer -= delta
+		if _hoof_timer <= 0.0:
+			_hoof_timer = _look.num("sfx", "hoof_interval")
+			_sfx.play_at(&"casco", p, 2.0)
+	if _fisherman.swimming and moving:
+		_swim_timer -= delta
+		if _swim_timer <= 0.0:
+			_swim_timer = _look.num("sfx", "swim_interval")
+			_sfx.play_at(&"nado", p, 2.0)
+	if _splash_soon >= 0.0:
+		_splash_soon -= delta
+		if _splash_soon < 0.0:
+			_sfx.play_at(&"splash", _splash_at, 2.0)
+	if _machine.phase == FishingMachine.Phase.FIGHT:
+		_reel_timer -= delta
+		if _reel_timer <= 0.0:
+			_reel_timer = 0.65
+			_sfx.play_at(&"molinete", p + Vector3(0.0, 1.0, 0.0), -2.0)
+
+
+## Distance (blocks) from [param at] to the nearest water block within [param radius], or -1.
+func _water_distance(at: Vector2, radius: int) -> float:
+	var best: float = -1.0
+	var cx: int = floori(at.x)
+	var cy: int = floori(at.y)
+	for dy in range(-radius, radius + 1, 1):
+		for dx in range(-radius, radius + 1, 1):
+			if _world.grid.is_water(cx + dx, cy + dy):
+				var d: float = Vector2(dx, dy).length()
+				if best < 0.0 or d < best:
+					best = d
+	return best
 
 
 func _on_dismounted(horse: Node3D) -> void:
 	if horse != null:
 		horse.queue_free()
 	_ride_horse = null
-	_barn.set_horse_out(false)
+	_barn.set_horses(_horses_owned(), false)
 	_screens.toast(Texts.get_text("horse_stored"))
 
 
@@ -935,7 +1040,7 @@ func _end_ride_now() -> void:
 	if horse != null:
 		horse.queue_free()
 	_ride_horse = null
-	_barn.set_horse_out(false)
+	_barn.set_horses(_horses_owned(), false)
 
 
 ## "Baús" only up on the barn loft (the ground under it is close but not the same floor).
@@ -1084,7 +1189,7 @@ func _update_spot() -> void:
 				best = d
 				_box_spot.action = _open_box.bind(i)
 				_spot = _box_spot
-				text = Texts.get_text("act_box")
+				text = Texts.get_text("act_cage") if _truck.box_has_animal(i) else Texts.get_text("act_box")
 	_actions.show_context(text)
 
 

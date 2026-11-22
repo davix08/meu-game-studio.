@@ -250,7 +250,7 @@ func order_good(id: String, amount: int) -> Result:
 func order_animal(kind: String) -> Result:
 	var info: Dictionary = _town_data.animal(kind)
 	var home_id: String = str(info["home"])
-	if not _state.is_built(home_id):
+	if not home_ready(home_id):
 		return Result.NOT_BUILT
 	var capacity: int = 0
 	for h: Variant in _town_data.homes():
@@ -264,6 +264,12 @@ func order_animal(kind: String) -> Result:
 	_state.coins -= price
 	_add_order(home_id, kind, 1)
 	return Result.OK
+
+
+## True when animals can live in [param home_id]: its building is built, or it is always there
+## (the barn stalls for horses, 2026-11-22).
+func home_ready(home_id: String) -> bool:
+	return _state.is_built(home_id) or bool(_town_data.home(home_id).get("always_built", false))
 
 
 ## Animals already bought for [param home_id] that are on the way or in a box.

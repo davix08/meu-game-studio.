@@ -1297,7 +1297,18 @@
 		"menu_pill": "#f2cf8e",
 		"menu_pill_pressed": "#e8b866",
 		"menu_margin": 48,
-		"menu_shade": "#1e140c55"
+		"menu_shade": "#1e140c55",
+		"money_fill": "#8a5430",
+		"money_border": "#e8c38a",
+		"money_text": "#fff3d6",
+		"money_radius": 12,
+		"bar_fill": "#f6e7c8",
+		"bar_border": "#8a5a32",
+		"bar_radius": 16,
+		"bar_button": 76,
+		"bar_gap": 12,
+		"bar_margin": 14,
+		"bar_label_size": 13
 	},
 	"sfx": {
 		"mix_rate": 22050,
@@ -1337,7 +1348,35 @@
 			180,
 			0.18,
 			0.0
-		]
+		],
+		"players_3d": 6,
+		"unit_size": 6.0,
+		"max_distance": 40.0,
+		"files": {
+			"vaca": "res://assets/audio/vaca.wav",
+			"cavalo": "res://assets/audio/cavalo.wav",
+			"galinha": "res://assets/audio/galinha.wav",
+			"porco": "res://assets/audio/porco.wav",
+			"ovelha": "res://assets/audio/ovelha.wav",
+			"casco": "res://assets/audio/casco.wav",
+			"lago": "res://assets/audio/lago.wav",
+			"fazenda": "res://assets/audio/fazenda.wav",
+			"motor": "res://assets/audio/motor.wav",
+			"buzina": "res://assets/audio/buzina.wav",
+			"porta": "res://assets/audio/porta.wav",
+			"splash": "res://assets/audio/splash.wav",
+			"nado": "res://assets/audio/nado.wav",
+			"arremesso": "res://assets/audio/arremesso.wav",
+			"molinete": "res://assets/audio/molinete.wav"
+		},
+		"farm_ambience_db": -14.0,
+		"lake_ambience_db": -10.0,
+		"lake_hear_distance": 9.0,
+		"indoor_ambience_db": -30.0,
+		"animal_call_min": 7.0,
+		"animal_call_max": 20.0,
+		"hoof_interval": 0.32,
+		"swim_interval": 0.7
 	},
 	"town_village": {
 		"roads": [
@@ -1935,5 +1974,68 @@
 		"speed_factor": 2.0,
 		"gallop_freq": 9.0,
 		"store_reach": 2.2
+	},
+	"animal_rigs": {
+		"vaca": {
+			"belly_y": 0.33,
+			"front_z": [
+				0.12,
+				0.48
+			],
+			"back_z": [
+				-0.72,
+				-0.36
+			],
+			"head_z": 0.5,
+			"head_y": 0.5,
+			"head_pivot": [
+				0.8,
+				0.5
+			],
+			"tail_z": -0.8,
+			"tail_max_y": 0.66,
+			"tail_pivot": [
+				0.66,
+				-0.82
+			]
+		},
+		"cavalo": {
+			"belly_y": 0.56,
+			"front_z": [
+				0.1,
+				0.5
+			],
+			"back_z": [
+				-0.82,
+				-0.4
+			],
+			"head_z": 0.42,
+			"head_y": 0.95,
+			"head_pivot": [
+				1.05,
+				0.4
+			],
+			"tail_z": -0.93,
+			"tail_pivot": [
+				1.05,
+				-0.93
+			]
+		},
+		"anim": {
+			"walk_freq": 6.0,
+			"walk_leg": 0.35,
+			"trot_freq": 9.0,
+			"trot_leg": 0.5,
+			"gallop_freq": 12.0,
+			"gallop_leg": 0.75,
+			"bob": 0.025,
+			"gallop_rock": 0.07,
+			"graze_head": 0.95,
+			"sleep_fold": 1.35,
+			"sleep_drop": 0.75,
+			"tail_swish": 0.3,
+			"rear_seconds": 1.3,
+			"rear_angle": 0.7
+		}
 	}
 }

@@ -1,8 +1,7 @@
 class_name ActionBar
 extends Control
-## The bottom-right buttons of the HUD (Story 006), placed around the big fishing button
-## ([PullButton], from Story 003) so none of them covers it or the joystick: Mochila,
-## Descansar, Livro and Loja, plus the context button that appears near a building, a plot, an
+## The HUD buttons (Story 006): since 2026-11-22 a bottom bar of square icon buttons (Loja,
+## Livro, Mochila, Vara) centered between the joystick and the big fishing button, plus the context button that appears near a building, a plot, an
 ## animal home or a neighbor ("Plantar", "Armazém", "Falar: Dona Ana"...). It only emits signals.
 ##
 ## Usage:
@@ -25,7 +24,7 @@ signal context_pressed
 
 var _look: WorldLook
 var _rest: Button
-var _rod: Button
+var _rod_icon: IconButton
 var _context: Button
 
 
@@ -38,13 +37,23 @@ func setup(look: WorldLook) -> void:
 	var pull: float = (look.num("fishing", "pull_radius") + look.num("fishing", "pull_pad")) * 2.0
 	var d: float = look.num("ui", "round_button") * 2.0
 	var gap: float = look.num("ui", "action_gap")
-	_round(Texts.get_text("btn_bag"), Vector2(m + pull + gap + d, m + d), bag_pressed)
 	_rest = _round(Texts.get_text("btn_rest"), Vector2(m + pull + gap + d, m + d * 2.0 + gap), rest_pressed)
 	# Resting moved into the house (sofa and bed, 2026-11-22): the rod button takes its place.
 	_rest.visible = false
-	_rod = _round(Texts.get_text("btn_rod_stow"), Vector2(m + pull + gap + d, m + d * 2.0 + gap), rod_pressed)
-	_round(Texts.get_text("btn_book"), Vector2(m + d, m + pull + gap + d), book_pressed)
-	_round(Texts.get_text("btn_shop"), Vector2(m + d * 2.0 + gap, m + pull + gap + d), shop_pressed)
+	# The bottom bar of square icon buttons (2026-11-22, the owner's picture): shop, book, bag,
+	# rod, centered at the bottom between the joystick and the big fishing button.
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override(&"separation", int(look.num("ui", "bar_gap")))
+	bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	bar.offset_bottom = -look.num("ui", "bar_margin")
+	bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	add_child(bar)
+	_bar_button(bar, IconButton.Icon.SHOP, Texts.get_text("btn_shop"), shop_pressed)
+	_bar_button(bar, IconButton.Icon.BOOK, Texts.get_text("btn_book"), book_pressed)
+	_bar_button(bar, IconButton.Icon.BAG, Texts.get_text("btn_bag"), bag_pressed)
+	_rod_icon = _bar_button(bar, IconButton.Icon.ROD, Texts.get_text("btn_rod_stow"), rod_pressed)
 	_context = Button.new()
 	_context.focus_mode = Control.FOCUS_NONE
 	_context.add_theme_font_size_override(&"font_size", 24)
@@ -68,7 +77,17 @@ func set_resting(on: bool) -> void:
 
 ## Shows the rod button as "Guardar" while the rod is in the hand, "Pegar vara" otherwise.
 func set_rod(out: bool) -> void:
-	_rod.text = Texts.get_text("btn_rod_stow") if out else Texts.get_text("btn_rod_take")
+	_rod_icon.set_label(Texts.get_text("btn_rod_stow") if out else Texts.get_text("btn_rod_take"))
+	_rod_icon.off = not out
+	_rod_icon.queue_redraw()
+
+
+func _bar_button(bar: HBoxContainer, kind: IconButton.Icon, label_text: String, signal_to_emit: Signal) -> IconButton:
+	var b := IconButton.new()
+	b.setup(_look, kind, label_text)
+	b.pressed.connect(signal_to_emit.emit)
+	bar.add_child(b)
+	return b
 
 
 ## Shows the context button with [param text], or hides it when [param text] is empty.

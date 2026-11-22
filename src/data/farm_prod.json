@@ -262,6 +262,12 @@
 			"seconds": 21600,
 			"product": "la",
 			"xp": 10
+		},
+		"cavalo": {
+			"feed": "milho",
+			"seconds": 3600,
+			"product": "",
+			"xp": 0
 		}
 	},
 	"storage": {

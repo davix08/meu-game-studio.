@@ -284,8 +284,14 @@ func _step_ride(delta: float, moved: bool) -> void:
 	var bob: float = absf(sin(_gallop)) * 0.07 if moved else 0.0
 	var seat: float = float(_ride_cfg.get("saddle_height", 1.05)) - _hip_height
 	var feet := Vector3(ground_pos.x, ground, ground_pos.y)
-	_horse.global_position = feet + Vector3(0.0, bob * 0.6, 0.0) - fwd * float(_ride_cfg.get("seat_forward", 0.0))
-	_horse.rotation = Vector3(sin(_gallop) * 0.05 if moved else 0.0, yaw, 0.0)
+	if _horse.has_method(&"set_motion"):
+		# The animated horse moves its own legs (gallop while moving, standing still).
+		_horse.call(&"set_motion", moved, true)
+		_horse.global_position = feet - fwd * float(_ride_cfg.get("seat_forward", 0.0))
+		_horse.rotation = Vector3(0.0, yaw, 0.0)
+	else:
+		_horse.global_position = feet + Vector3(0.0, bob * 0.6, 0.0) - fwd * float(_ride_cfg.get("seat_forward", 0.0))
+		_horse.rotation = Vector3(sin(_gallop) * 0.05 if moved else 0.0, yaw, 0.0)
 	# From beside the horse (side offset) up an arc into the saddle.
 	var arc: float = sin(k * PI) * 0.25
 	position = feet + side * float(_ride_cfg.get("side_offset", 0.7)) * (1.0 - k) + Vector3(0.0, seat * k + arc + bob * k, 0.0)

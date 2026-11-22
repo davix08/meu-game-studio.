@@ -110,6 +110,14 @@ func homes() -> Array:
 	return list("ranch", "homes")
 
 
+## The ranch home [param id] ({} when unknown).
+func home(id: String) -> Dictionary:
+	for h: Variant in homes():
+		if str((h as Dictionary)["id"]) == id:
+			return h
+	return {}
+
+
 ## The city lots, in file order.
 func lots() -> Array:
 	return list("city", "lots")

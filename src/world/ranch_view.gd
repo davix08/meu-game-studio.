@@ -16,7 +16,11 @@ extends Node3D
 ## One walking animal.
 class Critter:
 	extends RefCounted
-	var node: MeshInstance3D
+	var node: Node3D
+	## The animated model (cows and calves, 2026-11-22), or null for the block animals.
+	var rig: AnimalRig
+	var kind: String = ""
+	var call_timer: float = 0.0
 	var home: String = ""
 	var pos: Vector2 = Vector2.ZERO
 	var target: Vector2 = Vector2.ZERO
@@ -28,6 +32,8 @@ class Critter:
 	var speed: float = 0.4
 
 var _look: WorldLook
+## Animal calls (moo, cluck, oink, baa), heard near the animals; set by the game.
+var sfx: Sfx
 var _town: TownData
 var _state: GameState
 var _terrain: LakeTerrain
@@ -132,11 +138,19 @@ func _process(delta: float) -> void:
 
 func _add_critter(kind: String, home: String, index: int) -> void:
 	var c := Critter.new()
-	var options: Array = _meshes[kind]
-	c.node = MeshInstance3D.new()
-	c.node.mesh = options[index % options.size()]
-	# Models with their own material (the textured cow) keep it.
-	c.node.material_override = _material if c.node.mesh.surface_get_material(0) == null else null
+	c.kind = kind
+	c.call_timer = _rng.randf_range(_look.num("sfx", "animal_call_min"), _look.num("sfx", "animal_call_max"))
+	if kind == "vaca" or kind == "bezerro":
+		c.rig = AnimalRig.create(_look, "vaca", true)
+	if c.rig != null:
+		c.node = c.rig
+	else:
+		var options: Array = _meshes[kind]
+		var mesh_node := MeshInstance3D.new()
+		mesh_node.mesh = options[index % options.size()]
+		# Models with their own material (the textured cow) keep it.
+		mesh_node.material_override = _material if mesh_node.mesh.surface_get_material(0) == null else null
+		c.node = mesh_node
 	add_child(c.node)
 	c.home = home
 	c.pos = _random_point(home)
@@ -159,8 +173,13 @@ func _random_point(home: String) -> Vector2:
 
 func _update(c: Critter, delta: float) -> void:
 	c.phase += delta
+	_call(c, delta)
 	if _night:
-		_place(c, 0.0, -0.08)
+		if c.rig != null:
+			c.rig.state = AnimalRig.State.SLEEP
+			_place(c, 0.0, 0.0)
+		else:
+			_place(c, 0.0, -0.08)
 		return
 	c.timer -= delta
 	var tilt: float = 0.0
@@ -184,7 +203,25 @@ func _update(c: Critter, delta: float) -> void:
 	_place(c, tilt, bob)
 
 
+## Now and then the animal calls (not at night).
+func _call(c: Critter, delta: float) -> void:
+	if sfx == null or _night:
+		return
+	c.call_timer -= delta
+	if c.call_timer > 0.0:
+		return
+	c.call_timer = _rng.randf_range(_look.num("sfx", "animal_call_min"), _look.num("sfx", "animal_call_max"))
+	var sound: StringName = &"vaca" if c.kind == "bezerro" else StringName(c.kind)
+	sfx.play_at(sound, c.node.global_position + Vector3(0.0, 0.8, 0.0), 3.0 if c.kind == "bezerro" else 0.0)
+
+
 func _place(c: Critter, tilt: float, bob: float) -> void:
+	if c.rig != null:
+		# The animated model moves its own legs and head: walking or grazing.
+		if not _night:
+			c.rig.state = AnimalRig.State.GRAZE if c.resting else AnimalRig.State.WALK
+		tilt = 0.0
+		bob = 0.0
 	c.node.position = Vector3(c.pos.x, _terrain.ground_height_at(c.pos.x, c.pos.y) + c.lift + bob, c.pos.y)
 	c.node.rotation = Vector3(0.0, c.heading, tilt)
 

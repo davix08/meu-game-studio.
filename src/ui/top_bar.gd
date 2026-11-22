@@ -112,12 +112,21 @@ func _draw() -> void:
 		var fk: float = 1.0 if bounds.y < 0 else clampf(float(_state.farm_xp - bounds.x) / float(maxi(bounds.y - bounds.x, 1)), 0.0, 1.0)
 		_bar(Rect2(x + 52.0, m + 36.0, w - 66.0, 16.0), fk, _look.color("ui", "coin"))
 		x += w + m
-	# Coins.
-	w = 160.0
-	_pill(Rect2(x, m, w, h))
-	draw_circle(Vector2(x + 30.0, m + h * 0.5), 15.0, _look.color("ui", "coin"))
-	draw_arc(Vector2(x + 30.0, m + h * 0.5), 15.0, 0.0, TAU, 20, _look.color("ui", "coin_dark"), 3.0)
-	draw_string(font, Vector2(x + 54.0, m + h * 0.5 + 9.0), str(_state.coins), HORIZONTAL_ALIGNMENT_LEFT, w - 60.0, 26, text_color)
+	# Coins (2026-11-22, the owner's picture): a wooden plate with a light border and "$ 1.234".
+	w = 170.0
+	var plate := Rect2(x, m + 4.0, w, h - 8.0)
+	var wood: StyleBoxFlat = UiKit.flat(_look.color("ui", "money_fill"), int(_look.num("ui", "money_radius")))
+	wood.set_border_width_all(3)
+	wood.border_color = _look.color("ui", "money_border")
+	wood.shadow_color = Color(0, 0, 0, 0.35)
+	wood.shadow_size = 4
+	wood.shadow_offset = Vector2(0, 3)
+	draw_style_box(wood, plate)
+	draw_line(plate.position + Vector2(8, 6), plate.position + Vector2(w - 8, 6), _look.color("ui", "money_fill").lightened(0.18), 2.0)
+	var money: String = "$ " + _thousands(_state.coins)
+	var mpos := Vector2(x, m + h * 0.5 + 10.0)
+	draw_string_outline(font, mpos, money, HORIZONTAL_ALIGNMENT_CENTER, w, 28, 5, _look.color("ui", "money_fill").darkened(0.45))
+	draw_string(font, mpos, money, HORIZONTAL_ALIGNMENT_CENTER, w, 28, _look.color("ui", "money_text"))
 	x += w + m
 	# Energy.
 	w = 200.0
@@ -144,6 +153,16 @@ func _draw() -> void:
 		draw_circle(icon_c, 13.0, _look.color("ui", "sun"))
 	draw_string(font, Vector2(x + 62.0, m + 27.0), Texts.fmt("day_fmt", [_state.day]) + "  " + _clock.clock_text(_state.minutes), HORIZONTAL_ALIGNMENT_LEFT, w - 70.0, 22, text_color)
 	draw_string(font, Vector2(x + 62.0, m + 52.0), _clock.period_name(_state.minutes), HORIZONTAL_ALIGNMENT_LEFT, w - 70.0, 18, _look.color("ui", "row_alt"))
+
+
+## [param n] with dots every three digits (1.234.567).
+static func _thousands(n: int) -> String:
+	var digits: String = str(absi(n))
+	var out: String = ""
+	while digits.length() > 3:
+		out = "." + digits.right(3) + out
+		digits = digits.left(digits.length() - 3)
+	return ("-" if n < 0 else "") + digits + out
 
 
 func _pill(rect: Rect2) -> void:

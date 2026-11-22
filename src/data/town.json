@@ -158,6 +158,13 @@
 				"name": "Cercado de ovelhas",
 				"capacity": 6,
 				"lot": "ovelhas"
+			},
+			{
+				"id": "estabulo",
+				"name": "Baias do celeiro",
+				"capacity": 3,
+				"lot": "galpao",
+				"always_built": true
 			}
 		],
 		"animals": [
@@ -202,6 +209,14 @@
 				"price": 900,
 				"product": "la",
 				"home": "ovelhas",
+				"feed": 1
+			},
+			{
+				"id": "cavalo",
+				"name": "Cavalo",
+				"price": 1500,
+				"product": "",
+				"home": "estabulo",
 				"feed": 1
 			}
 		]

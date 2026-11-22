@@ -34,6 +34,9 @@ var _chests: Node3D
 var _chest_labels: Array[Label3D] = []
 var _shown_chests: int = -1
 var _horses: Array[Node3D] = []
+## Neighs now and then (set by the game).
+var sfx: Sfx
+var _neigh_timer: float = 6.0
 var _time: float = 0.0
 var _timer: float = 0.0
 
@@ -234,10 +237,11 @@ func refresh() -> void:
 		_chest_labels[i].modulate = _look.color(GROUP, "chest_full") if full else (_look.color(GROUP, "chest_used") if fill.x > 0 else Color.WHITE)
 
 
-## Hides the horse of the first stall while it is out riding (shown again when put back).
-func set_horse_out(out: bool) -> void:
-	if not _horses.is_empty():
-		_horses[0].visible = not out
+## Shows one horse per stall for the [param owned] horses (bought at the auction), the first
+## one missing while it is [param out] riding.
+func set_horses(owned: int, out: bool) -> void:
+	for k in _horses.size():
+		_horses[k].visible = k < owned and not (out and k == 0)
 
 
 ## Where chest [param i] stands (room meters, on the loft floor).
@@ -255,7 +259,10 @@ func _process(delta: float) -> void:
 	for k in _horses.size():
 		var horse: Node3D = _horses[k]
 		var t: float = _time + float(k) * 1.7
-		if horse.get_child_count() >= 3:
+		if horse is AnimalRig:
+			# Eating at the trough or standing, taking turns.
+			(horse as AnimalRig).state = AnimalRig.State.GRAZE if sin(t * 0.21) > 0.35 else AnimalRig.State.IDLE
+		elif horse.get_child_count() >= 3:
 			(horse.get_child(1) as Node3D).rotation.x = 0.12 + sin(t * 0.8) * 0.12 + maxf(0.0, sin(t * 0.23)) * 0.5
 			(horse.get_child(2) as Node3D).rotation.z = sin(t * 2.1) * 0.25
 		else:
@@ -263,6 +270,13 @@ func _process(delta: float) -> void:
 			var body: Node3D = horse.get_child(0)
 			body.scale = Vector3(1.0, 1.0 + sin(t * 1.3) * 0.012, 1.0)
 			body.rotation.x = maxf(0.0, sin(t * 0.23)) * 0.04
+	_neigh_timer -= delta
+	if _neigh_timer <= 0.0:
+		_neigh_timer = randf_range(8.0, 18.0)
+		for horse: Node3D in _horses:
+			if horse.visible and sfx != null:
+				sfx.play_at(&"cavalo", horse.global_position + Vector3(0.0, 1.2, 0.0))
+				break
 	_timer -= delta
 	if _timer <= 0.0:
 		_timer = 1.0

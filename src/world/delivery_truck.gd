@@ -44,6 +44,14 @@ var _box_root: Node3D
 var _box_mesh: ArrayMesh
 var _material: ShaderMaterial
 var _pickups: int = 0
+## Sounds (2026-11-22): set by the game; engine while driving, horn at each stop.
+var sfx: Sfx
+var _engine: AudioStreamPlayer3D
+## The animal cage on the bed (visible when the trip brings animals) and its contents.
+var _cage: Node3D
+var _cage_animal: Node3D
+var _cage_mesh: ArrayMesh
+var _pixel: Material
 
 
 ## Builds the truck, the barrier arm and the box drawing.
@@ -65,6 +73,16 @@ func setup(look: WorldLook, town: TownData, state: GameState, farm: Farm, grid: 
 	_material.set_shader_parameter("colors_srgb", 1.0)
 	_build_truck()
 	_build_arm()
+	_pixel = HouseInterior.pixel_material(look)
+	_cage_mesh = _make_cage_mesh()
+	_cage = Node3D.new()
+	_cage.position = Vector3(0.0, 0.53, -0.55)
+	var cage_node := MeshInstance3D.new()
+	cage_node.mesh = _cage_mesh
+	cage_node.material_override = _pixel
+	_cage.add_child(cage_node)
+	_cage.visible = false
+	_body.add_child(_cage)
 	_box_root = Node3D.new()
 	add_child(_box_root)
 	_box_mesh = _crate_mesh()
@@ -88,6 +106,11 @@ func box_spots() -> Array[Vector2]:
 		per_dest[dest] = k + 1
 		out.append(_drop_point(dest) + Vector2(float(k) * 0.8 - 0.4, 0.0))
 	return out
+
+
+## True when box [param index] is an animal cage.
+func box_has_animal(index: int) -> bool:
+	return index >= 0 and index < _state.boxes.size() and _animal_in(_state.boxes[index]["items"]) != ""
 
 
 ## Short text of what is inside box [param index].
@@ -120,19 +143,25 @@ func _process(delta: float) -> void:
 				_heading = -PI * 0.5
 				_body.visible = true
 				var delivering: int = _stops.size() - (1 if pickup_now else 0)
+				var kind: String = _trip_animal()
+				_set_cage(kind)
 				for k in _cargo.size():
-					_cargo[k].visible = k < delivering
+					_cargo[k].visible = k < delivering and (kind == "" or k > 0)
+				_sound_engine(true)
 				_go_to(_stop_cell(_stops[0]))
 				_mode = Mode.DRIVE
 		Mode.DRIVE, Mode.LEAVE:
 			if _drive(delta):
 				if _mode == Mode.LEAVE:
 					_body.visible = false
+					_sound_engine(false)
 					_mode = Mode.IDLE
 				else:
 					_unload_t = 0.0
 					_dropped = false
 					_mode = Mode.UNLOAD
+					if sfx != null:
+						sfx.play_at(&"buzina", _body.position, 2.0)
 		Mode.UNLOAD:
 			_unload_t += delta
 			var total: float = _town.num("farm_life", "truck_unload_seconds")
@@ -145,6 +174,8 @@ func _process(delta: float) -> void:
 							c.visible = true
 							break
 				else:
+					if _order_animal(_stops[0]) != "":
+						_cage.visible = false
 					_farm.drop_box(_stops[0])
 					for c: Node3D in _cargo:
 						if c.visible:
@@ -199,7 +230,7 @@ func _go_to(target: Vector2i) -> void:
 
 ## The road cell where the truck stops for [param dest]: one block past the door, on the road.
 func _stop_cell(dest: String) -> Vector2i:
-	dest = dest.trim_prefix("@")
+	dest = _lot_of(dest.trim_prefix("@"))
 	var door: Vector2i = TownPlan.door_cell(_look, dest)
 	var best: Vector2i = door
 	var best_d: float = INF
@@ -217,7 +248,108 @@ func _stop_cell(dest: String) -> Vector2i:
 
 ## Where the boxes for [param dest] are left (the door block).
 func _drop_point(dest: String) -> Vector2:
-	return TownPlan.lot_door(_look, dest)
+	return TownPlan.lot_door(_look, _lot_of(dest))
+
+
+## The farm lot of an order destination: a ranch home lives in its building's lot (the horse
+## stalls "estabulo" are in the barn "galpao").
+func _lot_of(dest: String) -> String:
+	var home: Dictionary = _town.home(dest)
+	return str(home.get("lot", dest)) if not home.is_empty() else dest
+
+
+## The first animal kind in the order for [param dest] ("" when it carries goods).
+func _order_animal(dest: String) -> String:
+	for o: Dictionary in _state.orders:
+		if str(o["dest"]) == dest:
+			return _animal_in(o["items"])
+	return ""
+
+
+func _animal_in(items: Dictionary) -> String:
+	for id: Variant in items:
+		if not _town.animal(str(id)).is_empty():
+			return str(id)
+	return ""
+
+
+## The animal this trip brings (the first animal order), or "".
+func _trip_animal() -> String:
+	for dest: String in _stops:
+		if not dest.begins_with("@"):
+			var kind: String = _order_animal(dest)
+			if kind != "":
+				return kind
+	return ""
+
+
+## Shows the cage on the bed with an animal of [param kind] inside (hidden when "").
+func _set_cage(kind: String) -> void:
+	if _cage_animal != null:
+		_cage_animal.queue_free()
+		_cage_animal = null
+	_cage.visible = kind != ""
+	if kind != "":
+		_cage_animal = _animal_figure(kind)
+		_cage.add_child(_cage_animal)
+
+
+## A small figure of [param kind] that fits in the cage (the owner's models for cow, calf and
+## horse; the block hen for chickens; a colored block for the others).
+func _animal_figure(kind: String) -> Node3D:
+	var model_id: String = "cavalo" if kind == "cavalo" else ("vaca" if kind == "vaca" or kind == "bezerro" else "")
+	var node := MeshInstance3D.new()
+	if model_id != "":
+		node.mesh = AnimalModels.mesh(_look, model_id, true)
+		node.scale = Vector3.ONE * (0.45 if model_id == "cavalo" else 0.65)
+	if node.mesh == null:
+		node.mesh = EstateMeshes.hen(_look, true) if kind == "galinha" else _crate_mesh()
+		node.material_override = _pixel
+		node.scale = Vector3.ONE * (1.6 if kind == "galinha" else 0.8)
+	node.position = Vector3(0.0, 0.08, 0.0)
+	return node
+
+
+## A wooden animal cage about 1.1 x 1.0 x 1.3 m: floor, corner posts, top frame and bars.
+func _make_cage_mesh() -> ArrayMesh:
+	var mb := MeshBuilder.new()
+	var wood: Color = _look.color("voxel", "fence_rail")
+	var post: Color = _look.color("voxel", "fence_post")
+	var bar: Color = _look.color("voxel", "metal")
+	var w: float = 0.55
+	var d: float = 0.65
+	var h: float = 1.0
+	mb.add_box(Vector3(0.0, 0.04, 0.0), Vector3(w * 2.0, 0.08, d * 2.0), wood)
+	for x: float in [-w, w]:
+		for z: float in [-d, d]:
+			mb.add_box(Vector3(x, h * 0.5, z), Vector3(0.1, h, 0.1), post)
+	for y: float in [h - 0.04]:
+		mb.add_box(Vector3(0.0, y, -d), Vector3(w * 2.0, 0.08, 0.08), post)
+		mb.add_box(Vector3(0.0, y, d), Vector3(w * 2.0, 0.08, 0.08), post)
+		mb.add_box(Vector3(-w, y, 0.0), Vector3(0.08, 0.08, d * 2.0), post)
+		mb.add_box(Vector3(w, y, 0.0), Vector3(0.08, 0.08, d * 2.0), post)
+	for k in 5:
+		var x: float = -w + (float(k) + 1.0) * w * 2.0 / 6.0
+		for z: float in [-d, d]:
+			mb.add_box(Vector3(x, h * 0.5, z), Vector3(0.03, h, 0.03), bar)
+	for k in 6:
+		var z2: float = -d + (float(k) + 1.0) * d * 2.0 / 7.0
+		for x2: float in [-w, w]:
+			mb.add_box(Vector3(x2, h * 0.5, z2), Vector3(0.03, h, 0.03), bar)
+	return mb.build()
+
+
+func _sound_engine(on: bool) -> void:
+	if sfx == null:
+		return
+	if _engine == null:
+		_engine = sfx.make_player_3d(&"motor", true)
+		_engine.position = Vector3(0.0, 0.8, 1.0)
+		_body.add_child(_engine)
+	if on:
+		_engine.play()
+	else:
+		_engine.stop()
 
 
 func _road(c: Vector2i) -> bool:
@@ -263,8 +395,15 @@ func _draw_boxes() -> void:
 	var spots: Array[Vector2] = box_spots()
 	for i in spots.size():
 		var node := MeshInstance3D.new()
-		node.mesh = _box_mesh
-		node.material_override = _material
+		var animal: String = _animal_in(_state.boxes[i]["items"])
+		if animal != "":
+			# Animals wait in a cage with the animal inside.
+			node.mesh = _cage_mesh
+			node.material_override = _pixel
+			node.add_child(_animal_figure(animal))
+		else:
+			node.mesh = _box_mesh
+			node.material_override = _material
 		node.position = Vector3(spots[i].x, _terrain.ground_height_at(spots[i].x, spots[i].y), spots[i].y)
 		node.rotation.y = 0.3 * float(i)
 		var label := Label3D.new()
