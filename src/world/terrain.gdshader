@@ -14,6 +14,8 @@ uniform float road_tile = 3.0;
 uniform float edge_noise = 0.35;
 /** Tint over the road texture (white = as painted). */
 uniform vec4 road_tint : source_color = vec4(1.0);
+/** Light graphics (phones): one noise octave instead of two. */
+uniform bool cheap = false;
 
 varying vec3 world_pos;
 
@@ -33,7 +35,7 @@ void vertex() {
 }
 
 void fragment() {
-	float n = value_noise(world_pos.xz * 1.7) * 0.6 + value_noise(world_pos.xz * 4.3) * 0.4;
+	float n = cheap ? value_noise(world_pos.xz * 2.2) : value_noise(world_pos.xz * 1.7) * 0.6 + value_noise(world_pos.xz * 4.3) * 0.4;
 	float road = smoothstep(0.42, 0.58, COLOR.a + (n - 0.5) * edge_noise);
 	vec3 dirt = texture(road_tex, world_pos.xz / road_tile).rgb * road_tint.rgb;
 	ALBEDO = mix(COLOR.rgb, dirt, road);

@@ -64,6 +64,9 @@ var _barn: BarnInterior
 var _barn_spots: Array[Spot] = []
 ## The horse being ridden (a node on the farm), or null.
 var _ride_horse: Node3D
+## Current 3D render scale and the timer of the light-graphics adaptation (2026-11-23).
+var _render_scale: float = 1.0
+var _adapt_timer: float = 2.0
 ## Chopping (2026-11-22): hits so far per tree/rock, the one being hit, the progress label.
 var _hits: Dictionary = {}
 var _hit_target: int = -1
@@ -623,6 +626,7 @@ func _process(delta: float) -> void:
 	# yawed by +_input_yaw around Y, so rotate the input by -_input_yaw (Vector2.rotated).
 	_fisherman.step(delta, dir.rotated(-_input_yaw), run)
 	_update_sounds(delta, dir != Vector2.ZERO)
+	_adapt_resolution(delta)
 	if _hit_label != null and _hit_label_left > 0.0:
 		_hit_label_left -= delta
 		_hit_label.visible = _hit_label_left > 0.0
@@ -1338,3 +1342,39 @@ func _apply_performance() -> void:
 		RenderingServer.directional_shadow_atlas_set_size(_look.integer("performance", "low_shadow_atlas") if light else _look.integer("light", "shadow_atlas_size"), false)
 	if _world != null and _world.props != null:
 		_world.props.set_light_mode(light)
+	if _world != null:
+		# Light: no sun shadows at all, no color-adjust pass, cheap ground and water shaders.
+		if _world.sun != null:
+			_world.sun.shadow_enabled = not light and _look.integer("light", "shadow_enabled") == 1
+		if _world.environment != null:
+			_world.environment.adjustment_enabled = not light
+		for node: GeometryInstance3D in [_world.terrain, _world.water]:
+			if node != null and node.material_override is ShaderMaterial:
+				(node.material_override as ShaderMaterial).set_shader_parameter("cheap", light)
+	_render_scale = _target_scale() if light else _look.num("performance", "render_scale")
+	viewport.scaling_3d_scale = _render_scale
+
+
+## Light graphics: the 3D scale that draws about performance.low_render_height pixels high,
+## whatever the phone screen is (a 1080-pixel tall screen draws the 3D at about half).
+func _target_scale() -> float:
+	var h: float = float(get_window().size.y)
+	return clampf(_look.num("performance", "low_render_height") / maxf(h, 1.0), _look.num("performance", "low_scale_min"), 1.0)
+
+
+## Light graphics adapt to the phone: below performance.slow_fps the 3D resolution goes down a
+## step, above performance.fast_fps it goes back up (never above the target). Every 2 s.
+func _adapt_resolution(delta: float) -> void:
+	if not _state.graphics_light:
+		return
+	_adapt_timer -= delta
+	if _adapt_timer > 0.0:
+		return
+	_adapt_timer = 2.0
+	var fps: float = Engine.get_frames_per_second()
+	var step: float = _look.num("performance", "scale_step")
+	if fps < _look.num("performance", "slow_fps"):
+		_render_scale = maxf(_look.num("performance", "low_scale_min"), _render_scale - step)
+	elif fps > _look.num("performance", "fast_fps"):
+		_render_scale = minf(_target_scale(), _render_scale + step * 0.5)
+	get_viewport().scaling_3d_scale = _render_scale

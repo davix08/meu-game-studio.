@@ -20,6 +20,8 @@ uniform vec4 moss_color : source_color = vec4(0.36, 0.55, 0.2, 1.0);
 uniform float moss_amount = 0.0;
 /** Light added in the shade, like the bright painted shadows of the diorama. */
 uniform float shade_fill = 0.18;
+/** Light graphics (phones): plain vertex color with the sun tint, no brush noise or moss. */
+uniform bool cheap = false;
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -45,6 +47,11 @@ void vertex() {
 void fragment() {
 	// COLOR (vertex x instance color) and source_color uniforms arrive already linear.
 	vec3 base = COLOR.rgb;
+	if (cheap) {
+		ALBEDO = base;
+		EMISSION = base * shade_fill;
+		ROUGHNESS = 1.0;
+	} else {
 	float n = value_noise(world_pos / brush_scale);
 	// Patches snap to three steps, like separate brush dabs.
 	float dab = floor(n * 3.0) / 2.0 - 0.5;
@@ -56,4 +63,5 @@ void fragment() {
 	ALBEDO = col;
 	EMISSION = col * shade_fill;
 	ROUGHNESS = 1.0;
+	}
 }

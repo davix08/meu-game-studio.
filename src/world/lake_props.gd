@@ -27,6 +27,7 @@ var _outline: ShaderMaterial
 var _outline_nodes: Array[MultiMeshInstance3D] = []
 var _small_nodes: Array[MultiMeshInstance3D] = []
 var _shadow_nodes: Array[MultiMeshInstance3D] = []
+var _painted_materials: Array[ShaderMaterial] = []
 ## Placement index -> [seconds, mode ("shake" or "fall"), axis] while a tree or rock moves.
 var _moves: Dictionary = {}
 ## Painted material with no outline (thin blades would turn into dark blobs).
@@ -69,6 +70,7 @@ func build(grid: WorldGrid, terrain: LakeTerrain, look: WorldLook) -> void:
 ## A painted-prop material with [param moss] (0 = none); [method _add_chunk] adds the outline.
 func _painted(moss: float) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
+	_painted_materials.append(m)
 	m.shader = load(_look.text("painted", "shader")) as Shader
 	m.set_shader_parameter("brush_scale", _look.num("painted", "brush_scale"))
 	m.set_shader_parameter("brush_strength", _look.num("painted", "brush_strength"))
@@ -329,6 +331,8 @@ func set_cut(index: int, cut: bool) -> void:
 func set_light_mode(on: bool) -> void:
 	for node: MultiMeshInstance3D in _shadow_nodes:
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if on else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	for m: ShaderMaterial in _painted_materials:
+		m.set_shader_parameter("cheap", on)
 	for node: MultiMeshInstance3D in _outline_nodes:
 		node.visible = not on
 	var range_end: float = _look.num("performance", "low_small_prop_range") if on else _look.num("town", "small_prop_range")

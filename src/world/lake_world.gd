@@ -29,6 +29,7 @@ var props: LakeProps
 ## The sun, the environment and the sky material, driven by [DayNight] (Story 008).
 var sun: DirectionalLight3D
 var environment: Environment
+var water: LakeWater
 var sky_material: ProceduralSkyMaterial
 
 var _smoke: Array[MeshInstance3D] = []
@@ -49,7 +50,7 @@ func build(look: WorldLook) -> void:
 	terrain = LakeTerrain.new()
 	add_child(terrain)
 	terrain.build(grid, look)
-	var water := LakeWater.new()
+	water = LakeWater.new()
 	add_child(water)
 	water.build(terrain, look)
 	props = LakeProps.new()

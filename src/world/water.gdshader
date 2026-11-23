@@ -34,6 +34,8 @@ uniform float ripple_scale = 0.18;
 uniform float ripple_speed = 0.02;
 uniform float ripple_strength = 0.55;
 uniform float ripple_sparkle = 0.9;
+/** Light graphics (phones): one ripple read, no wave glints or current stripes, no waves. */
+uniform bool cheap = false;
 
 varying vec3 wpos;
 varying float depth01;
@@ -44,12 +46,21 @@ void vertex() {
 	depth01 = COLOR.r;
 	river = COLOR.g;
 	float w = sin(wpos.x * wave_scale + TIME * wave_speed) * cos(wpos.z * wave_scale * 0.8 - TIME * wave_speed * 0.7);
-	VERTEX.y += w * wave_height * clamp(depth01 * 4.0, 0.0, 1.0);
+	VERTEX.y += cheap ? 0.0 : w * wave_height * clamp(depth01 * 4.0, 0.0, 1.0);
 }
 
 void fragment() {
 	float d = clamp(depth01, 0.0, 1.0);
 	vec3 col = mix(shallow_color.rgb, deep_color.rgb, smoothstep(0.0, 0.85, d));
+	if (cheap) {
+		float shore_c = 1.0 - smoothstep(0.0, foam_width, d);
+		float w1 = texture(ripple_tex, wpos.xz * ripple_scale + vec2(TIME * ripple_speed, TIME * ripple_speed * 0.6)).r;
+		col *= mix(1.0, 0.6 + w1 * 0.8, ripple_strength);
+		ALBEDO = mix(col, foam_color.rgb, shore_c * 0.6);
+		EMISSION = glint_color.rgb * w1 * w1 * w1 * ripple_sparkle * 0.5;
+		ROUGHNESS = 0.2;
+		ALPHA = clamp(mix(alpha_shallow, alpha_deep, d) + shore_c * 0.25, 0.0, 1.0);
+	} else {
 	float ripple = sin(wpos.x * 5.0 + TIME * 1.7) * sin(wpos.z * 4.3 - TIME * 1.3);
 	col += vec3(0.015 * ripple);
 	float shore = 1.0 - smoothstep(0.0, foam_width, d);
@@ -69,4 +80,5 @@ void fragment() {
 	EMISSION = glint_color.rgb * glint;
 	ROUGHNESS = 0.2;
 	ALPHA = clamp(mix(alpha_shallow, alpha_deep, d) + foam * 0.4, 0.0, 1.0);
+	}
 }

@@ -194,7 +194,12 @@
 		"low_render_scale": 0.75,
 		"low_shadow_distance": 22.0,
 		"low_shadow_atlas": 1024,
-		"low_small_prop_range": 28.0
+		"low_small_prop_range": 28.0,
+		"low_render_height": 560.0,
+		"low_scale_min": 0.35,
+		"slow_fps": 26.0,
+		"fast_fps": 50.0,
+		"scale_step": 0.08
 	},
 	"props": {
 		"roughness": 0.9,
