@@ -186,7 +186,10 @@ var placed: Dictionary = {}
 var expanded: PackedStringArray = PackedStringArray()
 ## Settings: sound on, FPS counter shown (Story 006).
 var sound_on: bool = true
-var show_fps: bool = false
+var show_fps: bool = true
+## Light graphics (no outlines, shorter shadows, lower 3D resolution): on by default on phones,
+## where walking stuttered (2026-11-22).
+var graphics_light: bool = OS.has_feature("mobile")
 
 
 ## A new game, as the 2D freshState builds it, from config.json values.

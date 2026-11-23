@@ -22,6 +22,11 @@ var _material: StandardMaterial3D
 var _where: Dictionary = {}
 var _ids: Array[int] = []
 var _outline: ShaderMaterial
+## The outline nodes and the small-decoration nodes (turned off / shortened in the light
+## graphics mode, 2026-11-22).
+var _outline_nodes: Array[MultiMeshInstance3D] = []
+var _small_nodes: Array[MultiMeshInstance3D] = []
+var _shadow_nodes: Array[MultiMeshInstance3D] = []
 ## Placement index -> [seconds, mode ("shake" or "fall"), axis] while a tree or rock moves.
 var _moves: Dictionary = {}
 ## Painted material with no outline (thin blades would turn into dark blobs).
@@ -291,8 +296,11 @@ func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[C
 	node.multimesh = multi
 	node.material_override = material
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if casts_shadow else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if casts_shadow:
+		_shadow_nodes.append(node)
 	if small:
 		node.visibility_range_end = _look.num("town", "small_prop_range")
+		_small_nodes.append(node)
 	add_child(node)
 	if material != _material and material != _shore_grass:
 		# The outline is its own node with no shadow: as a material pass its hull would also
@@ -302,6 +310,7 @@ func _add_chunk(mesh: ArrayMesh, transforms: Array[Transform3D], colors: Array[C
 		line.material_override = _outline
 		line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(line)
+		_outline_nodes.append(line)
 	return multi
 
 
@@ -313,6 +322,18 @@ func set_cut(index: int, cut: bool) -> void:
 	var multi: MultiMesh = entry[0]
 	var base: Transform3D = entry[2]
 	multi.set_instance_transform(int(entry[1]), Transform3D(base.basis.scaled(Vector3.ONE * 0.001), base.origin) if cut else base)
+
+
+## Light graphics (phones): no outlines, trees and rocks cast no shadow (buildings, animals
+## and the farmer still do), small decorations drawn only near the camera.
+func set_light_mode(on: bool) -> void:
+	for node: MultiMeshInstance3D in _shadow_nodes:
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if on else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	for node: MultiMeshInstance3D in _outline_nodes:
+		node.visible = not on
+	var range_end: float = _look.num("performance", "low_small_prop_range") if on else _look.num("town", "small_prop_range")
+	for node: MultiMeshInstance3D in _small_nodes:
+		node.visibility_range_end = range_end
 
 
 ## Shakes the tree or rock [param index] once (a hit of the axe or pickaxe).

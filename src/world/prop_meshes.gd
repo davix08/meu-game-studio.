@@ -24,12 +24,12 @@ static func tree(look: WorldLook) -> ArrayMesh:
 		mb.add_cone(Vector3(cos(a) * 0.12, 0.0, sin(a) * 0.12), 0.08, 0.02, 0.22, bark_dark, bark, 4)
 	mb.add_cone(Vector3(0.05, 0.85, 0.0), 0.06, 0.03, 0.45, bark, bark, 4)
 	# Round crown of overlapping blobs: darker below, sunlit on top (the painted diorama trees).
-	mb.add_ellipsoid(Vector3(0.0, 1.5, 0.0), Vector3(0.95, 0.75, 0.95), dark, mid, 9, 6, true)
-	mb.add_ellipsoid(Vector3(0.55, 1.35, 0.3), Vector3(0.58, 0.5, 0.58), dark, mid, 8, 5, true)
-	mb.add_ellipsoid(Vector3(-0.5, 1.4, -0.3), Vector3(0.6, 0.52, 0.6), dark, mid, 8, 5, true)
-	mb.add_ellipsoid(Vector3(-0.2, 1.35, 0.55), Vector3(0.5, 0.45, 0.5), dark, mid, 8, 5, true)
-	mb.add_ellipsoid(Vector3(0.1, 2.0, 0.05), Vector3(0.62, 0.48, 0.62), mid, light, 8, 5, true)
-	mb.add_ellipsoid(Vector3(0.35, 1.8, -0.35), Vector3(0.42, 0.36, 0.42), mid, light, 7, 5, true)
+	mb.add_ellipsoid(Vector3(0.0, 1.5, 0.0), Vector3(0.95, 0.75, 0.95), dark, mid, 7, 4, true)
+	mb.add_ellipsoid(Vector3(0.55, 1.35, 0.3), Vector3(0.58, 0.5, 0.58), dark, mid, 6, 4, true)
+	mb.add_ellipsoid(Vector3(-0.5, 1.4, -0.3), Vector3(0.6, 0.52, 0.6), dark, mid, 6, 4, true)
+	mb.add_ellipsoid(Vector3(-0.2, 1.35, 0.55), Vector3(0.5, 0.45, 0.5), dark, mid, 6, 4, true)
+	mb.add_ellipsoid(Vector3(0.1, 2.0, 0.05), Vector3(0.62, 0.48, 0.62), mid, light, 6, 4, true)
+	mb.add_ellipsoid(Vector3(0.35, 1.8, -0.35), Vector3(0.42, 0.36, 0.42), mid, light, 6, 3, true)
 	return mb.build()
 
 
@@ -43,8 +43,8 @@ static func pine(look: WorldLook) -> ArrayMesh:
 		var y: float = 0.4 + float(k) * 0.52
 		var r: float = 0.95 - float(k) * 0.2
 		# Each tier: a skirt that flares out and down, then the cone up to the next tier.
-		mb.add_cone(Vector3(0.0, y - 0.12, 0.0), r * 1.05, r * 0.75, 0.16, dark.darkened(0.15), dark, 9)
-		mb.add_cone(Vector3(0.0, y + 0.04, 0.0), r * 0.78, 0.0, 0.95 - float(k) * 0.1, dark, light, 9)
+		mb.add_cone(Vector3(0.0, y - 0.12, 0.0), r * 1.05, r * 0.75, 0.16, dark.darkened(0.15), dark, 7)
+		mb.add_cone(Vector3(0.0, y + 0.04, 0.0), r * 0.78, 0.0, 0.95 - float(k) * 0.1, dark, light, 7)
 	return mb.build()
 
 

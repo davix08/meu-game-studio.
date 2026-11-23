@@ -100,7 +100,8 @@ static func to_dict(state: GameState) -> Dictionary:
 		"tools": Array(state.tools),
 		"placed": state.placed.duplicate(true),
 		"sound_on": state.sound_on,
-		"show_fps": state.show_fps,
+		"fps_on": state.show_fps,
+		"graphics_light": state.graphics_light,
 	}
 
 
@@ -355,8 +356,11 @@ static func _apply_town(state: GameState, data: GameData, save: Dictionary) -> v
 		state.expanded = PackedStringArray(save["expanded"])
 	if save.get("sound_on") is bool:
 		state.sound_on = save["sound_on"]
-	if save.get("show_fps") is bool:
-		state.show_fps = save["show_fps"]
+	# "fps_on" replaces "show_fps" (2026-11-22): the counter is on for everybody once.
+	if save.get("fps_on") is bool:
+		state.show_fps = save["fps_on"]
+	if save.get("graphics_light") is bool:
+		state.graphics_light = save["graphics_light"]
 
 
 static func _apply_bag(state: GameState, data: GameData, bag: Array) -> void:

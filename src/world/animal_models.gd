@@ -15,6 +15,8 @@ extends RefCounted
 const GROUP: String = "animal_models"
 
 static var _cache: Dictionary = {}
+## True only for the tool that bakes the light versions (it needs the full model).
+static var _use_full: bool = false
 
 
 ## The model [param id] as one mesh facing +x ([param face_x]) or +z, or null when the file is
@@ -32,29 +34,39 @@ static func _build(look: WorldLook, id: String, face_x: bool) -> ArrayMesh:
 	if not look.has(GROUP, id):
 		return null
 	var d: Dictionary = look.raw(GROUP, id)
-	var path: String = str(d.get("path", ""))
-	if not ResourceLoader.exists(path):
-		push_warning("AnimalModels: missing %s" % path)
-		return null
-	var scene: PackedScene = load(path) as PackedScene
-	if scene == null:
-		return null
-	var root: Node = scene.instantiate()
-	var found: Array[Node] = root.find_children("*", "MeshInstance3D", true, false)
-	if found.is_empty():
-		root.free()
-		return null
-	var mi: MeshInstance3D = found[0]
-	var src: Mesh = mi.mesh
-	var material: Material = mi.get_active_material(0)
-	# Transform of the mesh inside the file, then the turn to face +z (yaw_degrees) and +x.
+	var src: Mesh = null
+	var material: Material = null
 	var xform: Transform3D = Transform3D.IDENTITY
-	var n: Node = mi
-	while n != null and n is Node3D:
-		xform = (n as Node3D).transform * xform
-		n = n.get_parent()
-	root.free()
-	var yaw: float = deg_to_rad(float(d.get("yaw_degrees", 0.0))) + (PI * 0.5 if face_x else 0.0)
+	var yaw: float = PI * 0.5 if face_x else 0.0
+	# The light version (about 6 000 triangles instead of 50 000, made by
+	# tools/asset-pipeline/bake_low_poly.gd) is already turned to face +z and sized.
+	var low: String = str(d.get("low_path", ""))
+	if not _use_full and low != "" and ResourceLoader.exists(low):
+		src = load(low) as Mesh
+		material = src.surface_get_material(0)
+	else:
+		var path: String = str(d.get("path", ""))
+		if not ResourceLoader.exists(path):
+			push_warning("AnimalModels: missing %s" % path)
+			return null
+		var scene: PackedScene = load(path) as PackedScene
+		if scene == null:
+			return null
+		var root: Node = scene.instantiate()
+		var found: Array[Node] = root.find_children("*", "MeshInstance3D", true, false)
+		if found.is_empty():
+			root.free()
+			return null
+		var mi: MeshInstance3D = found[0]
+		src = mi.mesh
+		material = mi.get_active_material(0)
+		# Transform of the mesh inside the file, then the turn to face +z (yaw_degrees) and +x.
+		var n: Node = mi
+		while n != null and n is Node3D:
+			xform = (n as Node3D).transform * xform
+			n = n.get_parent()
+		root.free()
+		yaw += deg_to_rad(float(d.get("yaw_degrees", 0.0)))
 	var basis: Basis = Basis(Vector3.UP, yaw) * xform.basis
 	var arrays: Array = src.surface_get_arrays(0)
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]

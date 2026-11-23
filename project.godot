@@ -22,4 +22,6 @@ window/handheld/orientation=4
 [rendering]
 
 renderer/rendering_method="mobile"
+; Phones use the Compatibility (OpenGL) renderer: smoother on mid and low-end devices (2026-11-22).
+renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true

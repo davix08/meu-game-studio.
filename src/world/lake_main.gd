@@ -116,13 +116,13 @@ func _ready() -> void:
 	if _look == null or _data == null or _town_data == null:
 		return
 	_data.town = _town_data
-	_apply_performance()
 	_world = LakeWorld.new()
 	add_child(_world)
 	_world.build(_look)
 
 	_state = GameState.create_new(_data)
 	_state.init_town(_town_data)
+	_apply_performance()
 	var rng := RandomSource.new(_data.seed_value)
 	_town = Town.new(_data, _town_data, _state, RandomSource.new(_data.seed_value + 7))
 	_town_view = TownView.new()
@@ -280,6 +280,7 @@ func _build_interface() -> void:
 
 
 func _connect_events() -> void:
+	_screens.graphics_changed.connect(_apply_performance)
 	_fisherman.tool_hit.connect(_on_tool_hit)
 	_fisherman.dismounted.connect(_on_dismounted)
 	_state.fish_caught.connect(_on_fish_caught)
@@ -560,6 +561,7 @@ func _begin(fresh: bool) -> void:
 	_set_menu_mode(false)
 	if not fresh:
 		SaveGame.apply(_state, _data, SaveGame.read())
+		_apply_performance()
 		var pos := Vector2(_state.position.x, _state.position.z) / WorldGrid.PIXELS_PER_BLOCK
 		if _state.position != Vector3.ZERO and _world.grid.box_free(pos.x, pos.y, 0.25, 0.16):
 			_fisherman.teleport(pos)
@@ -1324,7 +1326,15 @@ func _keyboard_direction() -> Vector2:
 	return dir.normalized()
 
 
+## Graphics quality: full, or light (phones): no MSAA, 3D drawn at a lower resolution, shorter
+## and smaller sun shadows, no prop outlines, small decorations only near the camera.
 func _apply_performance() -> void:
+	var light: bool = _state.graphics_light
 	var viewport: Viewport = get_viewport()
-	viewport.msaa_3d = _look.integer("performance", "msaa_3d") as Viewport.MSAA
-	viewport.scaling_3d_scale = _look.num("performance", "render_scale")
+	viewport.msaa_3d = (_look.integer("performance", "low_msaa_3d") if light else _look.integer("performance", "msaa_3d")) as Viewport.MSAA
+	viewport.scaling_3d_scale = _look.num("performance", "low_render_scale") if light else _look.num("performance", "render_scale")
+	if _world != null and _world.sun != null:
+		_world.sun.directional_shadow_max_distance = _look.num("performance", "low_shadow_distance") if light else _look.num("light", "shadow_max_distance")
+		RenderingServer.directional_shadow_atlas_set_size(_look.integer("performance", "low_shadow_atlas") if light else _look.integer("light", "shadow_atlas_size"), false)
+	if _world != null and _world.props != null:
+		_world.props.set_light_mode(light)

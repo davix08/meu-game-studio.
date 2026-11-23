@@ -100,7 +100,7 @@
 		"model_colors_srgb": 0,
 		"model_kind": "split",
 		"split_model_path": "res://assets/characters/fazendeiro.glb",
-		"split_baked_dir": "res://assets/characters/fazendeiro_partes",
+		"split_baked_dir": "res://assets/characters/fazendeiro_partes_leve",
 		"split_shader": "res://src/player/spatial_char_textured.gdshader",
 		"split_units_tall": 0.986,
 		"split_floor": -0.4925,
@@ -119,7 +119,8 @@
 		"split_red_ref": 0.1,
 		"swim_depth": 0.62,
 		"swim_speed": 0.55,
-		"swim_energy_per_second": 0.6
+		"swim_energy_per_second": 0.6,
+		"split_texture": "res://assets/characters/fazendeiro_partes/texture.png"
 	},
 	"terrain": {
 		"land_height": 0.0,
@@ -188,7 +189,12 @@
 	},
 	"performance": {
 		"msaa_3d": 1,
-		"render_scale": 1.0
+		"render_scale": 1.0,
+		"low_msaa_3d": 0,
+		"low_render_scale": 0.75,
+		"low_shadow_distance": 22.0,
+		"low_shadow_atlas": 1024,
+		"low_small_prop_range": 28.0
 	},
 	"props": {
 		"roughness": 0.9,
@@ -1967,12 +1973,14 @@
 		"vaca": {
 			"path": "res://assets/animals/vaca.glb",
 			"yaw_degrees": 0,
-			"height": 1.1
+			"height": 1.1,
+			"low_path": "res://assets/animals/vaca_leve.res"
 		},
 		"cavalo": {
 			"path": "res://assets/animals/cavalo.glb",
 			"yaw_degrees": -90,
-			"height": 1.65
+			"height": 1.65,
+			"low_path": "res://assets/animals/cavalo_leve.res"
 		}
 	},
 	"ride": {

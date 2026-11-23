@@ -26,6 +26,8 @@ signal start_chosen(fresh: bool)
 signal outfit_changed
 ## A screen opened or closed.
 signal open_changed(open: bool)
+## The graphics setting (light / full) changed.
+signal graphics_changed
 ## The player chose a building to place (2026-11-22).
 signal place_requested(id: String)
 
@@ -322,6 +324,12 @@ func open_settings() -> void:
 		_click()
 		_refresh()
 	body.add_child(UiKit.button(_look, "%s: %s" % [Texts.get_text("show_fps"), Texts.get_text("on") if s.show_fps else Texts.get_text("off")], _act5))
+	var _gfx: Callable = func() -> void:
+		s.graphics_light = not s.graphics_light
+		_click()
+		graphics_changed.emit()
+		_refresh()
+	body.add_child(UiKit.button(_look, "%s: %s" % [Texts.get_text("graphics"), Texts.get_text("graphics_light") if s.graphics_light else Texts.get_text("graphics_full")], _gfx))
 	if _start_save >= 0:
 		# Opened from the start menu: the game has not begun, so only the options and Voltar.
 		body.add_child(UiKit.button(_look, Texts.get_text("back"), show_start.bind(_start_save == 1)))

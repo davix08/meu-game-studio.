@@ -636,7 +636,7 @@ static func load_baked_parts(look: WorldLook) -> Dictionary:
 	if not look.has("player", "split_baked_dir"):
 		return {}
 	var dir: String = look.text("player", "split_baked_dir")
-	var texture_path: String = dir + "/texture.png"
+	var texture_path: String = look.text("player", "split_texture") if look.has("player", "split_texture") else dir + "/texture.png"
 	if not ResourceLoader.exists(texture_path):
 		return {}
 	var parts: Dictionary = {}

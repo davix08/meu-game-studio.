@@ -63,7 +63,8 @@ func setup(look: WorldLook, data: GameData, state: GameState, clock: GameClock, 
 	_fps.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_fps.add_theme_color_override(&"font_color", look.color("ui", "pill_text"))
 	_fps.add_theme_color_override(&"font_outline_color", Color(0, 0, 0))
-	_fps.add_theme_constant_override(&"outline_size", 6)
+	_fps.add_theme_constant_override(&"outline_size", 8)
+	_fps.add_theme_font_size_override(&"font_size", 22)
 	add_child(_fps)
 	state.coins_changed.connect(func(_c: int) -> void: queue_redraw())
 	state.energy_changed.connect(func(_e: float) -> void: queue_redraw())
@@ -76,7 +77,10 @@ func _process(delta: float) -> void:
 	if _refresh <= 0.0:
 		_refresh = 0.25
 		_fps.visible = _state.show_fps
-		_fps.text = "FPS %d" % Engine.get_frames_per_second()
+		var fps: int = int(Engine.get_frames_per_second())
+		_fps.text = "FPS %d" % fps
+		# Green when smooth, yellow when so-so, red when slow.
+		_fps.add_theme_color_override(&"font_color", Color("#8aff7a") if fps >= 50 else (Color("#ffe066") if fps >= 28 else Color("#ff6a5a")))
 		queue_redraw()
 
 
